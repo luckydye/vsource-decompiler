@@ -163,6 +163,33 @@ export default class BSPFile {
         }
     }
 
+    static readFaceLump(lump) {
+
+        const face = (data) => {
+            return {
+                planenum: null,		// the plane number
+                side: null,			// faces opposite to the node's plane direction
+                onNode: null,			// 1 of on node, 0 if in leaf
+                firstedge: null,		// index into surfedges
+                numedges: null,		// number of surfedges
+                texinfo: null,		// texture info
+                dispinfo: null,		// displacement info
+                surfaceFogVolumeID: null,	// ?
+                styles: new Array(4),		// switchable lighting info
+                lightofs: null,		// offset into lightmap lump
+                area: null,			// face area in units^2
+                LightmapTextureMinsInLuxels: new Array(2),	// texture lighting info
+                LightmapTextureSizeInLuxels: new Array(2),	// texture lighting info
+                origFace: null,		// original face this was split from
+                numPrims: null,		// primitives
+                firstPrimID: null,
+                smoothingGroups: null,	// lightmap smoothing group
+            }
+        }
+
+        console.log(lump);
+    }
+
     constructor(dataArray) {
 
         const headerView = new Uint32Array(dataArray.slice(0, BSPFile.FILE_HEADER_BYTE_LENGTH));
@@ -176,6 +203,8 @@ export default class BSPFile {
         }
 
         this.lumps = BSPFile.readLumpData(this.header.lumps, dataArray);
+
+        BSPFile.readFaceLump(this.lumps[BSPFile.LUMP.FACES]);
     }
 
 }
