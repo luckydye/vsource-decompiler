@@ -292,78 +292,50 @@ export default class BSPFile {
         let structData = {};
 
         const parseBytes = type => {
+            type = type.toLocaleLowerCase();
+
             let data = null;
+            let typeByteSize = 0;
+            let typeBufferType = null;
 
-            switch (type.toLocaleLowerCase()) {
-                case 'int': {
-                    const typeByteSize = 4;
-                    const bytes = byteArray.slice(byteIndex, byteIndex + typeByteSize);
-                    data = new Int32Array(bytes)[0];
-                    byteIndex += typeByteSize;
-                    break;
-                }
-                case 'unsigned int': {
-                    const typeByteSize = 4;
-                    const bytes = byteArray.slice(byteIndex, byteIndex + typeByteSize)
-                    data = new Uint32Array(bytes)[0];
-                    byteIndex += typeByteSize;
-                    break;
-                }
-                case 'float': {
-                    const typeByteSize = 4;
-                    const bytes = byteArray.slice(byteIndex, byteIndex + typeByteSize);
-                    data = new Float32Array(bytes)[0];
-                    byteIndex += typeByteSize;
-                    break;
-                }
-                case 'vector': {
-                    const typeByteSize = 4;
-                    
-                    data = [];
-
-                    for(let i = 0; i < 3; i++) {
-                        const bytes = byteArray.slice(
-                            byteIndex + (i * typeByteSize), 
-                            byteIndex + (i * typeByteSize) + typeByteSize
-                        );
-                        data[i] = new Float32Array(bytes)[0];
-                    }
-                    
-                    byteIndex += typeByteSize;
-                    break;
-                }
-                case 'short': {
-                    const typeByteSize = 2;
-                    const bytes = byteArray.slice(byteIndex, byteIndex + typeByteSize)
-                    data = new Int16Array(bytes)[0];
-                    byteIndex += typeByteSize;
-                    break;
-                }
-                case 'unsigned short': {
-                    const typeByteSize = 2;
-                    const bytes = byteArray.slice(byteIndex, byteIndex + typeByteSize)
-                    data = new Uint16Array(bytes)[0];
-                    byteIndex += typeByteSize;
-                    break;
-                }
-                case 'byte': {
-                    const typeByteSize = 1;
-                    const bytes = byteArray.slice(byteIndex, byteIndex + typeByteSize)
-                    data = bytes[0];
-                    byteIndex += typeByteSize;
-                    break;
-                }
-                default:
-                    throw new Error('Unknown data type "' + type + '"');
+            const typeMapping = {
+                'int': Int32Array,
+                'unsigned int': Uint32Array,
+                'float': Float32Array,
+                'short': Int16Array,
+                'unsigned short': Uint16Array,
+                'byte': Uint8Array,
             }
+
+            switch (type) {
+                case 'vector': {
+                    data = [];
+                    for(let i = 0; i < 3; i++) {
+                        data[i] = parseBytes('float');
+                    }
+                    break;
+                }
+                default: {
+                    if(type in typeMapping) {
+                        typeBufferType = typeMapping[type];
+                    } else {
+                        throw new Error('Unknown data type "' + type + '"');
+                    }
+                }
+            }
+
+            if(typeBufferType) {
+                typeByteSize = typeBufferType.BYTES_PER_ELEMENT;
+                data = new typeBufferType(byteArray.slice(byteIndex, byteIndex + typeByteSize))[0];
+            }
+
+            byteIndex += typeByteSize;
 
             return data;
         }
 
-        for(let key in struct) {
-            const type = struct[key];
+        const parseType = type => {
             const isArray = type[type.length-1] == "]";
-            
             if(isArray) {
                 const arrayData = [];
                 const arrayIdentifier = type.match(/\[[0-9]+\]/g)[0];
@@ -371,13 +343,17 @@ export default class BSPFile {
                 const arrayDataType = type.replace(arrayIdentifier, '');
 
                 for(let i = 0; i < arrayLength; i++) {
-                    arrayData[i] = parseBytes(arrayDataType);
+                    arrayData[i] = parseType(arrayDataType);
                 }
 
-                structData[key] = arrayData;
+                return arrayData;
             } else {
-                structData[key] = parseBytes(type);
+                return parseBytes(type);
             }
+        }
+
+        for(let key in struct) {
+            structData[key] = parseType(struct[key]);
         }
 
         return {
@@ -426,7 +402,11 @@ export default class BSPFile {
         bsp.faces = BSPFile.parseLump(lumps[BSPFile.LUMP.FACES], BSPFile.STRUCT.dface_t);
         bsp.planes = BSPFile.parseLump(lumps[BSPFile.LUMP.PLANES], BSPFile.STRUCT.dplane_t);
         bsp.edges = BSPFile.parseLump(lumps[BSPFile.LUMP.EDGES], BSPFile.STRUCT.dedge_t);
+        bsp.surfedges = BSPFile.parseLump(lumps[BSPFile.LUMP.SURFEDGES], { edge: 'int' });
         bsp.vertecies = BSPFile.parseLump(lumps[BSPFile.LUMP.VERTEXES], BSPFile.STRUCT.vertex);
+
+        // requires 2d array parsing
+        // bsp.texinfo = BSPFile.parseLump(lumps[BSPFile.LUMP.TEXINFO], BSPFile.STRUCT.texinfo_t);
 
         return bsp;
     }
