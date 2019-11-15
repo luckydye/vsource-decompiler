@@ -9,6 +9,18 @@ function Uint32ToBytes(int) {
     return bytes.reverse();
 }
 
+function bytesToInteger(bytes) {
+    return (bytes[0] << 24) | (bytes[1] << 16) | (bytes[2] << 8) | bytes[3];
+}
+
+function bytesToFloat(bytes) {
+    return (bytes[0] << 24) | (bytes[1] << 16) | (bytes[2] << 8) | bytes[3];
+}
+
+function bytesToShort(bytes) {
+    return (bytes[0] << 8) | bytes[1];
+}
+
 export default class BSPFile {
 
     static get known_types() {
@@ -27,23 +39,109 @@ export default class BSPFile {
                 type: 'int'
             },
             dface_t: {
-                planenum: null,		// the plane number
-                side: null,			// faces opposite to the node's plane direction
-                onNode: null,			// 1 of on node, 0 if in leaf
-                firstedge: null,		// index into surfedges
-                numedges: null,		// number of surfedges
-                texinfo: null,		// texture info
-                dispinfo: null,		// displacement info
-                surfaceFogVolumeID: null,	// ?
-                styles: new Array(4),		// switchable lighting info
-                lightofs: null,		// offset into lightmap lump
-                area: null,			// face area in units^2
-                LightmapTextureMinsInLuxels: new Array(2),	// texture lighting info
-                LightmapTextureSizeInLuxels: new Array(2),	// texture lighting info
-                origFace: null,		// original face this was split from
-                numPrims: null,		// primitives
-                firstPrimID: null,
-                smoothingGroups: null,	// lightmap smoothing group
+                planenum: 'unsigned short',
+                side: 'byte',
+                onNode: 'byte',
+                firstedge: 'int',
+                numedges: 'short',
+                texinfo: 'short',
+                dispinfo: 'short',
+                surfaceFogVolumeID: 'short',
+                styles: 'byte[4]',
+                lightofs: 'int',
+                area: 'float',
+                LightmapTextureMinsInLuxels: 'int[2]',
+                LightmapTextureSizeInLuxels: 'int[2]',
+                origFace: 'int',
+                numPrims: 'unsigned short',
+                firstPrimID: 'unsigned short',
+                smoothingGroups: 'unsigned int',
+            },
+            vertex: {
+                x: 'float',
+                y: 'float',
+                z: 'float',
+            },
+            dedge_t: {
+                v: 'unsigned short[2]'
+            },
+            surfedge: {
+                v: 'int'
+            },
+            dbrush_t: {
+                firstside: 'int',
+                numsides: 'int',
+                contents: 'int',
+            },
+            dbrushside_t: {
+                planenum:'unsigned short',
+                texinfo: 'short',
+                dispinfo: 'short',
+                bevel: 'short',
+            },
+            dnode_t: {
+                planenum: 'int',
+                children: 'int',
+                mins: 'short',
+                maxs: 'short',
+                firstface: 'unsigned short',
+                numfaces: 'unsigned short',
+                area: 'short',
+                paddding: 'short',
+            },
+            dleaf_t: {
+                contents: 'int',
+                cluster: 'short',
+                area: 'short:9',
+                flags: 'short:7',
+                mins: 'int[3]',
+                maxs: 'int[3]',
+                firstleafface: 'unsigned short',
+                numleaffaces: 'unsigned short',
+                firstleafbrush: 'unsigned short',
+                numleafbrushes: 'unsigned short',
+                leafWaterDataID: 'short',
+            },
+            texinfo_t: {
+                textureVecs: 'float[2][4]',
+                lightmapVecs: 'float[2][4]',
+                flags: 'int',
+                texdata: 'int',
+            },
+            dtexdata_t: {
+                reflectivity: 'vector',
+                nameStringTableID: 'int',
+                width_height: 'int, int',
+                view_width_view_height: 'int, int'
+            },
+            dmodel_t: {
+                mins_maxs: 'vector, vector',
+                origin: 'vector',
+                headnode: 'int',
+                firstface_numfaces: 'int, int'
+            },
+            ddispinfo_t: {
+                startPosition: 'vector',
+                DispVertStart: 'int',
+                DispTriStart: 'int',
+                power: 'int',
+                minTess: 'int',
+                smoothingAngle: 'float',
+                contents: 'int',
+                MapFace: 'unsigned short',
+                LightmapAlphaStart: 'int',
+                LightmapSamplePositionStart: 'int',
+                EdgeNeighbors: 'CDispNeighbor[4]',
+                DispVertStart: 'CDispCornerNeighbors[4]',
+                AllowedVerts: 'unsigned int[10]',
+            },
+            dDispVert: {
+                vec: 'vector',
+                dist: 'float',
+                alpha: 'float',
+            },
+            dDispTri: {
+                Tags: 'unsigned short'
             }
         }
     }
@@ -212,43 +310,59 @@ export default class BSPFile {
             switch (type.toLocaleLowerCase()) {
                 case 'int': {
                     const typeByteSize = 4;
-                    data = byteArray.slice(byteIndex, byteIndex + typeByteSize);
+                    const bytes = byteArray.slice(byteIndex, byteIndex + typeByteSize);
+                    data = bytesToInteger(bytes);
                     byteIndex += typeByteSize;
                     break;
                 }
                 case 'unsigned int': {
                     const typeByteSize = 4;
-                    data = byteArray.slice(byteIndex, byteIndex + typeByteSize);
+                    const bytes = byteArray.slice(byteIndex, byteIndex + typeByteSize)
+                    data = bytesToInteger(bytes);
                     byteIndex += typeByteSize;
                     break;
                 }
                 case 'float': {
                     const typeByteSize = 4;
-                    data = byteArray.slice(byteIndex, byteIndex + typeByteSize);
+                    const bytes = byteArray.slice(byteIndex, byteIndex + typeByteSize)
+                    data = bytesToFloat(bytes);
                     byteIndex += typeByteSize;
                     break;
                 }
                 case 'vector': {
-                    const typeByteSize = 4 * 3;
-                    data = byteArray.slice(byteIndex, byteIndex + typeByteSize);
+                    const typeByteSize = 4;
+                    
+                    data = [];
+
+                    for(let i = 0; i < 3; i++) {
+                        const bytes = byteArray.slice(
+                            byteIndex + (i * typeByteSize), 
+                            byteIndex + (i * typeByteSize) + typeByteSize
+                        );
+                        data[i] = bytesToFloat(bytes);
+                    }
+                    
                     byteIndex += typeByteSize;
                     break;
                 }
                 case 'short': {
                     const typeByteSize = 2;
-                    data = byteArray.slice(byteIndex, byteIndex + typeByteSize);
+                    const bytes = byteArray.slice(byteIndex, byteIndex + typeByteSize)
+                    data = bytesToShort(bytes);
                     byteIndex += typeByteSize;
                     break;
                 }
                 case 'unsigned short': {
                     const typeByteSize = 2;
-                    data = byteArray.slice(byteIndex, byteIndex + typeByteSize);
+                    const bytes = byteArray.slice(byteIndex, byteIndex + typeByteSize)
+                    data = bytesToShort(bytes);
                     byteIndex += typeByteSize;
                     break;
                 }
                 case 'byte': {
                     const typeByteSize = 1;
-                    data = byteArray.slice(byteIndex, byteIndex + typeByteSize);
+                    const bytes = byteArray.slice(byteIndex, byteIndex + typeByteSize)
+                    data = bytes[0];
                     byteIndex += typeByteSize;
                     break;
                 }
@@ -265,10 +379,12 @@ export default class BSPFile {
             
             if(isArray) {
                 const arrayData = [];
-                const arrayLength = parseInt(type[type.length-2]);
+                const arrayIdentifier = type.match(/\[[0-9]+\]/g)[0];
+                const arrayLength = parseInt(arrayIdentifier.replace(/(\[|\]])/g, ''));
+                const arrayDataType = type.replace(arrayIdentifier, '');
 
                 for(let i = 0; i < arrayLength; i++) {
-                    arrayData[i] = parseBytes(type);
+                    arrayData[i] = parseBytes(arrayDataType);
                 }
 
                 structData[key] = arrayData;
@@ -277,19 +393,28 @@ export default class BSPFile {
             }
         }
 
-        return structData;
+        return {
+            byteSize: byteIndex,
+            data: structData
+        };
     }
 
-    static parseLump(lumpByteArray, structByteSize, struct) {
+    static parseLump(lumpByteArray, struct) {
         const structs = [];
-        const structCount = lumpByteArray.length / structByteSize;
 
-        for(let i = 0; i < structCount; i++) {
-            const byteOffsetIndex = i * structByteSize;
-            const byteArray = lumpByteArray.slice(byteOffsetIndex, byteOffsetIndex + structByteSize);
+        const lumpByteSize = lumpByteArray.length;
+
+        let lastByteOffset = 0;
+        let guessByteSize = 255;
+
+        while(lastByteOffset < lumpByteArray.length) {
+            const byteArray = lumpByteArray.slice(lastByteOffset, lastByteOffset + guessByteSize);
             const structData = this.parseStruct(byteArray, struct);
 
-            structs.push(structData);
+            guessByteSize = structData.byteSize;
+            lastByteOffset += structData.byteSize;
+
+            structs.push(structData.data);
         }
 
         return structs;
@@ -308,9 +433,12 @@ export default class BSPFile {
             throw err;
         }
 
-        bsp.lumps = BSPFile.readLumpData(bsp.header.lumps, dataArray);
-        bsp.faces = BSPFile.parseLump(bsp.lumps[BSPFile.LUMP.FACES], 56, BSPFile.STRUCT.dface_t);
-        bsp.planes = BSPFile.parseLump(bsp.lumps[BSPFile.LUMP.PLANES], 20, BSPFile.STRUCT.dplane_t);
+        const lumps = BSPFile.readLumpData(bsp.header.lumps, dataArray);
+
+        bsp.faces = BSPFile.parseLump(lumps[BSPFile.LUMP.FACES], BSPFile.STRUCT.dface_t);
+        bsp.planes = BSPFile.parseLump(lumps[BSPFile.LUMP.PLANES], BSPFile.STRUCT.dplane_t);
+        bsp.edges = BSPFile.parseLump(lumps[BSPFile.LUMP.EDGES], BSPFile.STRUCT.dedge_t);
+        bsp.vertecies = BSPFile.parseLump(lumps[BSPFile.LUMP.VERTEXES], BSPFile.STRUCT.vertex);
 
         return bsp;
     }
