@@ -11,6 +11,43 @@ function Uint32ToBytes(int) {
 
 export default class BSPFile {
 
+    static get known_types() {
+        return ["VBSP"];
+    }
+
+    static get supported_version() {
+        return 21;
+    }
+
+    static get STRUCT() {
+        return {
+            dplane_t: {
+                normal: 'vector',
+                dist: 'float',
+                type: 'int'
+            },
+            dface_t: {
+                planenum: null,		// the plane number
+                side: null,			// faces opposite to the node's plane direction
+                onNode: null,			// 1 of on node, 0 if in leaf
+                firstedge: null,		// index into surfedges
+                numedges: null,		// number of surfedges
+                texinfo: null,		// texture info
+                dispinfo: null,		// displacement info
+                surfaceFogVolumeID: null,	// ?
+                styles: new Array(4),		// switchable lighting info
+                lightofs: null,		// offset into lightmap lump
+                area: null,			// face area in units^2
+                LightmapTextureMinsInLuxels: new Array(2),	// texture lighting info
+                LightmapTextureSizeInLuxels: new Array(2),	// texture lighting info
+                origFace: null,		// original face this was split from
+                numPrims: null,		// primitives
+                firstPrimID: null,
+                smoothingGroups: null,	// lightmap smoothing group
+            }
+        }
+    }
+
     static get LUMP() {
         return {
             ENTITIES: 0,
@@ -141,6 +178,15 @@ export default class BSPFile {
         return dheader_t;
     }
 
+    static verifyHeader(header) {
+        if(this.known_types.indexOf(header.indent) == -1) {
+            throw new Error('Uknown bsp type');
+        }
+        if(header.version > this.supported_version) {
+            throw new Error('Unknown bsp version');
+        }
+    }
+
     static readLumpData(lumps, dataArray) {
         const lumpsData = [];
 
@@ -155,56 +201,118 @@ export default class BSPFile {
         return lumpsData;
     }
 
-    static verifyHeader(header) {
-        const knownTypes = ['VBSP'];
+    static parseStruct(byteArray, struct) {
 
-        if(knownTypes.indexOf(header.indent) == -1) {
-            throw new Error('Uknown bsp type.');
+        let byteIndex = 0;
+        let structData = {};
+
+        const parseBytes = type => {
+            let data = null;
+
+            switch (type.toLocaleLowerCase()) {
+                case 'int': {
+                    const typeByteSize = 4;
+                    data = byteArray.slice(byteIndex, byteIndex + typeByteSize);
+                    byteIndex += typeByteSize;
+                    break;
+                }
+                case 'unsigned int': {
+                    const typeByteSize = 4;
+                    data = byteArray.slice(byteIndex, byteIndex + typeByteSize);
+                    byteIndex += typeByteSize;
+                    break;
+                }
+                case 'float': {
+                    const typeByteSize = 4;
+                    data = byteArray.slice(byteIndex, byteIndex + typeByteSize);
+                    byteIndex += typeByteSize;
+                    break;
+                }
+                case 'vector': {
+                    const typeByteSize = 4 * 3;
+                    data = byteArray.slice(byteIndex, byteIndex + typeByteSize);
+                    byteIndex += typeByteSize;
+                    break;
+                }
+                case 'short': {
+                    const typeByteSize = 2;
+                    data = byteArray.slice(byteIndex, byteIndex + typeByteSize);
+                    byteIndex += typeByteSize;
+                    break;
+                }
+                case 'unsigned short': {
+                    const typeByteSize = 2;
+                    data = byteArray.slice(byteIndex, byteIndex + typeByteSize);
+                    byteIndex += typeByteSize;
+                    break;
+                }
+                case 'byte': {
+                    const typeByteSize = 1;
+                    data = byteArray.slice(byteIndex, byteIndex + typeByteSize);
+                    byteIndex += typeByteSize;
+                    break;
+                }
+                default:
+                    throw new Error('Unknown data type "' + type + '"');
+            }
+
+            return data;
         }
-    }
 
-    static readFaceLump(lump) {
+        for(let key in struct) {
+            const type = struct[key];
+            const isArray = type[type.length-1] == "]";
+            
+            if(isArray) {
+                const arrayData = [];
+                const arrayLength = parseInt(type[type.length-2]);
 
-        const face = (data) => {
-            return {
-                planenum: null,		// the plane number
-                side: null,			// faces opposite to the node's plane direction
-                onNode: null,			// 1 of on node, 0 if in leaf
-                firstedge: null,		// index into surfedges
-                numedges: null,		// number of surfedges
-                texinfo: null,		// texture info
-                dispinfo: null,		// displacement info
-                surfaceFogVolumeID: null,	// ?
-                styles: new Array(4),		// switchable lighting info
-                lightofs: null,		// offset into lightmap lump
-                area: null,			// face area in units^2
-                LightmapTextureMinsInLuxels: new Array(2),	// texture lighting info
-                LightmapTextureSizeInLuxels: new Array(2),	// texture lighting info
-                origFace: null,		// original face this was split from
-                numPrims: null,		// primitives
-                firstPrimID: null,
-                smoothingGroups: null,	// lightmap smoothing group
+                for(let i = 0; i < arrayLength; i++) {
+                    arrayData[i] = parseBytes(type);
+                }
+
+                structData[key] = arrayData;
+            } else {
+                structData[key] = parseBytes(type);
             }
         }
 
-        console.log(lump);
+        return structData;
     }
 
-    constructor(dataArray) {
+    static parseLump(lumpByteArray, structByteSize, struct) {
+        const structs = [];
+        const structCount = lumpByteArray.length / structByteSize;
+
+        for(let i = 0; i < structCount; i++) {
+            const byteOffsetIndex = i * structByteSize;
+            const byteArray = lumpByteArray.slice(byteOffsetIndex, byteOffsetIndex + structByteSize);
+            const structData = this.parseStruct(byteArray, struct);
+
+            structs.push(structData);
+        }
+
+        return structs;
+    }
+
+    static fromDataArray(dataArray) {
+        const bsp = new BSPFile();
 
         const headerView = new Uint32Array(dataArray.slice(0, BSPFile.FILE_HEADER_BYTE_LENGTH));
 
-        this.header = BSPFile.readHeader(headerView);
+        bsp.header = BSPFile.readHeader(headerView);
 
         try {
-            BSPFile.verifyHeader(this.header);
+            BSPFile.verifyHeader(bsp.header);
         } catch(err) {
             throw err;
         }
 
-        this.lumps = BSPFile.readLumpData(this.header.lumps, dataArray);
+        bsp.lumps = BSPFile.readLumpData(bsp.header.lumps, dataArray);
+        bsp.faces = BSPFile.parseLump(bsp.lumps[BSPFile.LUMP.FACES], 56, BSPFile.STRUCT.dface_t);
+        bsp.planes = BSPFile.parseLump(bsp.lumps[BSPFile.LUMP.PLANES], 20, BSPFile.STRUCT.dplane_t);
 
-        BSPFile.readFaceLump(this.lumps[BSPFile.LUMP.FACES]);
+        return bsp;
     }
 
 }

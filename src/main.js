@@ -5,7 +5,7 @@ async function start() {
 
     const startParse = performance.now();
 
-    const bsp = new BSPFile(await req.arrayBuffer());
+    const bsp = BSPFile.fromDataArray(await req.arrayBuffer());
 
     console.log(bsp);
     console.log('File read in', performance.now() - startParse, 'ms');
