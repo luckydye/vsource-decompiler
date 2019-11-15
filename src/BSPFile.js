@@ -9,36 +9,6 @@ function Uint32ToBytes(int) {
     return bytes.reverse();
 }
 
-function bytesToInteger(bytes) {
-    return (bytes[0] << 24) | (bytes[1] << 16) | (bytes[2] << 8) | bytes[3];
-}
-
-function bytesToFloat(bytes) {
-    return Bytes2Float32(bytesToInteger(bytes));   
-}
-
-// https://stackoverflow.com/questions/4414077/read-write-bytes-of-float-in-js
-function Bytes2Float32(bytes) {
-    var sign = (bytes & 0x80000000) ? -1 : 1;
-    var exponent = ((bytes >> 23) & 0xFF) - 127;
-    var significand = (bytes & ~(-1 << 23));
-
-    if (exponent == 128) 
-        return sign * ((significand) ? Number.NaN : Number.POSITIVE_INFINITY);
-
-    if (exponent == -127) {
-        if (significand == 0) return sign * 0.0;
-        exponent = -126;
-        significand /= (1 << 22);
-    } else significand = (significand | (1 << 23)) / (1 << 23);
-
-    return sign * significand * Math.pow(2, exponent);
-}
-
-function bytesToShort(bytes) {
-    return (bytes[0] << 8) | bytes[1];
-}
-
 export default class BSPFile {
 
     static get known_types() {
@@ -310,8 +280,7 @@ export default class BSPFile {
             const lumpLength = lump.filelen;
             const lumpOffset = lump.fileofs;
             
-            const lumpData = new Uint8Array(dataArray.slice(lumpOffset, lumpOffset + lumpLength));
-            lumpsData.push(lumpData);
+            lumpsData.push(dataArray.slice(lumpOffset, lumpOffset + lumpLength));
         }
 
         return lumpsData;
@@ -329,21 +298,21 @@ export default class BSPFile {
                 case 'int': {
                     const typeByteSize = 4;
                     const bytes = byteArray.slice(byteIndex, byteIndex + typeByteSize);
-                    data = bytesToInteger(bytes);
+                    data = new Int32Array(bytes)[0];
                     byteIndex += typeByteSize;
                     break;
                 }
                 case 'unsigned int': {
                     const typeByteSize = 4;
                     const bytes = byteArray.slice(byteIndex, byteIndex + typeByteSize)
-                    data = bytesToInteger(bytes);
+                    data = new Uint32Array(bytes)[0];
                     byteIndex += typeByteSize;
                     break;
                 }
                 case 'float': {
                     const typeByteSize = 4;
-                    const bytes = byteArray.slice(byteIndex, byteIndex + typeByteSize)
-                    data = bytesToFloat(bytes);
+                    const bytes = byteArray.slice(byteIndex, byteIndex + typeByteSize);
+                    data = new Float32Array(bytes)[0];
                     byteIndex += typeByteSize;
                     break;
                 }
@@ -357,7 +326,7 @@ export default class BSPFile {
                             byteIndex + (i * typeByteSize), 
                             byteIndex + (i * typeByteSize) + typeByteSize
                         );
-                        data[i] = bytesToFloat(bytes);
+                        data[i] = new Float32Array(bytes)[0];
                     }
                     
                     byteIndex += typeByteSize;
@@ -366,14 +335,14 @@ export default class BSPFile {
                 case 'short': {
                     const typeByteSize = 2;
                     const bytes = byteArray.slice(byteIndex, byteIndex + typeByteSize)
-                    data = bytesToShort(bytes);
+                    data = new Int16Array(bytes)[0];
                     byteIndex += typeByteSize;
                     break;
                 }
                 case 'unsigned short': {
                     const typeByteSize = 2;
                     const bytes = byteArray.slice(byteIndex, byteIndex + typeByteSize)
-                    data = bytesToShort(bytes);
+                    data = new Uint16Array(bytes)[0];
                     byteIndex += typeByteSize;
                     break;
                 }
@@ -417,16 +386,17 @@ export default class BSPFile {
         };
     }
 
-    static parseLump(lumpByteArray, struct) {
+    static parseLump(lumpBuffer, struct) {
         const structs = [];
 
-        const lumpByteSize = lumpByteArray.length;
+        const lumpByteSize = lumpBuffer.byteLength;
 
         let lastByteOffset = 0;
         let guessByteSize = 255;
 
-        while(lastByteOffset < lumpByteArray.length) {
-            const byteArray = lumpByteArray.slice(lastByteOffset, lastByteOffset + guessByteSize);
+        while(lastByteOffset < lumpByteSize) {
+            const byteArray = lumpBuffer.slice(lastByteOffset, lastByteOffset + guessByteSize);
+
             const structData = this.parseStruct(byteArray, struct);
 
             guessByteSize = structData.byteSize;
