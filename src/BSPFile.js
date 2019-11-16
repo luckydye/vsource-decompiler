@@ -6,8 +6,218 @@ function Uint32ToBytes(int) {
     bytes[2] = (int >> 8) & 0xFF;
     bytes[3] = int & 0xFF;
 
-    return bytes.reverse();
+    return bytes;
 }
+
+function BytesToString(bytes) {
+    return String.fromCharCode(...bytes).replace(/\W+$/g, '');
+}
+
+const LumpTypes = {
+    ENTITIES: 0,
+    PLANES: 1,
+    TEXDATA: 2,
+    VERTEXES: 3,
+    VISIBILITY: 4,
+    NODES: 5,
+    TEXINFO: 6,
+    FACES: 7,
+    LIGHTING: 8,
+    OCCLUSION: 9,
+    LEAFS: 10,
+    FACEIDS: 11,
+    EDGES: 12,
+    SURFEDGES: 13,
+    MODELS: 14,
+    WORLDLIGHTS: 15,
+    LEAFFACES: 16,
+    LEAFBRUSHES: 17,
+    BRUSHES: 18,
+    BRUSHSIDES: 19,
+    AREAS: 20,
+    AREAPORTALS: 21,
+    PORTALS: 22,
+    UNUSED0: 22,
+    PROPCOLLISION: 22,
+    CLUSTERS: 23,
+    UNUSED26: 23,
+    PROPHULLS: 23,
+    PORTALVERTS: 24,
+    UNUSED2: 24,
+    PROPHULLVERTS: 24,
+    CLUSTERPORTALS: 25,
+    UNUSED3: 25,
+    PROPTRIS: 25,
+    DISPINFO: 26,
+    ORIGINALFACES: 27,
+    PHYSDISP: 28,
+    PHYSCOLLIDE: 29,
+    VERTNORMALS: 30,
+    VERTNORMALINDICES: 31,
+    DISP_LIGHTMAP_ALPHAS: 32,
+    DISP_VERTS: 33,
+    DISP_LIGHTMAP_SAMPLE_POSITIONS: 34,
+    GAME_LUMP: 35,
+    LEAFWATERDATA: 36,
+    PRIMITIVES: 37,
+    PRIMVERTS: 38,
+    PRIMINDICES: 39,
+    PAKFILE: 40,
+    CLIPPORTALVERTS: 41,
+    CUBEMAPS: 42,
+    TEXDATA_STRING_DATA: 43,
+    TEXDATA_STRING_TABLE: 44,
+    OVERLAYS: 45,
+    LEAFMINDISTTOWATER: 46,
+    FACE_MACRO_TEXTURE_INFO: 47,
+    DISP_TRIS: 48,
+    PHYSCOLLIDESURFACE: 49,
+    PROP_BLOB: 49,
+    WATEROVERLAYS: 50,
+    LIGHTMAPPAGES: 51,
+    LEAF_AMBIENT_INDEX_HDR: 51,
+    LIGHTMAPPAGEINFOS: 52,
+    LEAF_AMBIENT_INDEX: 52,
+    LIGHTING_HDR: 53,
+    WORLDLIGHTS_HDR: 54,
+    LEAF_AMBIENT_LIGHTING_HDR: 55,
+    LEAF_AMBIENT_LIGHTING: 56,
+    XZIPPAKFILE: 57,
+    FACES_HDR: 58,
+    MAP_FLAGS: 59,
+    OVERLAY_FADES: 60,
+    OVERLAY_SYSTEM_LEVELS: 61,
+    PHYSLEVEL: 62,
+    DISP_MULTIBLEND: 63,
+};
+
+const Structs = {
+    dplane_t: {
+        normal: 'vector',
+        dist: 'float',
+        type: 'int'
+    },
+    dface_t: {
+        planenum: 'unsigned short',
+        side: 'byte',
+        onNode: 'byte',
+        firstedge: 'int',
+        numedges: 'short',
+        texinfo: 'short',
+        dispinfo: 'short',
+        surfaceFogVolumeID: 'short',
+        styles: 'byte[4]',
+        lightofs: 'int',
+        area: 'float',
+        LightmapTextureMinsInLuxels: 'int[2]',
+        LightmapTextureSizeInLuxels: 'int[2]',
+        origFace: 'int',
+        numPrims: 'unsigned short',
+        firstPrimID: 'unsigned short',
+        smoothingGroups: 'unsigned int',
+    },
+    vertex: {
+        x: 'float',
+        y: 'float',
+        z: 'float',
+    },
+    dedge_t: {
+        v: 'unsigned short[2]'
+    },
+    surfedge: {
+        v: 'int'
+    },
+    dbrush_t: {
+        firstside: 'int',
+        numsides: 'int',
+        contents: 'int',
+    },
+    dbrushside_t: {
+        planenum:'unsigned short',
+        texinfo: 'short',
+        dispinfo: 'short',
+        bevel: 'short',
+    },
+    dnode_t: {
+        planenum: 'int',
+        children: 'int',
+        mins: 'short',
+        maxs: 'short',
+        firstface: 'unsigned short',
+        numfaces: 'unsigned short',
+        area: 'short',
+        paddding: 'short',
+    },
+    dleaf_t: {
+        contents: 'int',
+        cluster: 'short',
+        area: 'short:9',
+        flags: 'short:7',
+        mins: 'int[3]',
+        maxs: 'int[3]',
+        firstleafface: 'unsigned short',
+        numleaffaces: 'unsigned short',
+        firstleafbrush: 'unsigned short',
+        numleafbrushes: 'unsigned short',
+        leafWaterDataID: 'short',
+    },
+    texinfo_t: {
+        textureVecs: 'float[2][4]',
+        lightmapVecs: 'float[2][4]',
+        flags: 'int',
+        texdata: 'int',
+    },
+    dtexdata_t: {
+        reflectivity: 'vector',
+        nameStringTableID: 'int',
+        width_height: 'int, int',
+        view_width_view_height: 'int, int'
+    },
+    dmodel_t: {
+        mins_maxs: 'vector, vector',
+        origin: 'vector',
+        headnode: 'int',
+        firstface_numfaces: 'int, int'
+    },
+    ddispinfo_t: {
+        startPosition: 'vector',
+        DispVertStart: 'int',
+        DispTriStart: 'int',
+        power: 'int',
+        minTess: 'int',
+        smoothingAngle: 'float',
+        contents: 'int',
+        MapFace: 'unsigned short',
+        LightmapAlphaStart: 'int',
+        LightmapSamplePositionStart: 'int',
+        EdgeNeighbors: 'CDispNeighbor[4]',
+        CornerNeighbors: 'CDispCornerNeighbors[4]',
+        AllowedVerts: 'unsigned int[10]',
+    },
+    dDispVert: {
+        vec: 'vector',
+        dist: 'float',
+        alpha: 'float',
+    },
+    dDispTri: {
+        Tags: 'unsigned short'
+    },
+    dgamelumpheader_t: {
+        lumpCount: 'int',
+        gamelump: 'dgamelump_t[lumpCount]',
+    },
+    dgamelump_t: {
+        id: 'int',
+        flags: 'unsigned short',
+        version: 'unsigned short',
+        fileofs: 'int',
+        filelen: 'int',
+    },
+    StaticPropDictLump_t: {
+        dictEntries: 'int',
+        name: 'char[dictEntries]'
+    }
+};
 
 export default class BSPFile {
 
@@ -20,198 +230,11 @@ export default class BSPFile {
     }
 
     static get STRUCT() {
-        return {
-            dplane_t: {
-                normal: 'vector',
-                dist: 'float',
-                type: 'int'
-            },
-            dface_t: {
-                planenum: 'unsigned short',
-                side: 'byte',
-                onNode: 'byte',
-                firstedge: 'int',
-                numedges: 'short',
-                texinfo: 'short',
-                dispinfo: 'short',
-                surfaceFogVolumeID: 'short',
-                styles: 'byte[4]',
-                lightofs: 'int',
-                area: 'float',
-                LightmapTextureMinsInLuxels: 'int[2]',
-                LightmapTextureSizeInLuxels: 'int[2]',
-                origFace: 'int',
-                numPrims: 'unsigned short',
-                firstPrimID: 'unsigned short',
-                smoothingGroups: 'unsigned int',
-            },
-            vertex: {
-                x: 'float',
-                y: 'float',
-                z: 'float',
-            },
-            dedge_t: {
-                v: 'unsigned short[2]'
-            },
-            surfedge: {
-                v: 'int'
-            },
-            dbrush_t: {
-                firstside: 'int',
-                numsides: 'int',
-                contents: 'int',
-            },
-            dbrushside_t: {
-                planenum:'unsigned short',
-                texinfo: 'short',
-                dispinfo: 'short',
-                bevel: 'short',
-            },
-            dnode_t: {
-                planenum: 'int',
-                children: 'int',
-                mins: 'short',
-                maxs: 'short',
-                firstface: 'unsigned short',
-                numfaces: 'unsigned short',
-                area: 'short',
-                paddding: 'short',
-            },
-            dleaf_t: {
-                contents: 'int',
-                cluster: 'short',
-                area: 'short:9',
-                flags: 'short:7',
-                mins: 'int[3]',
-                maxs: 'int[3]',
-                firstleafface: 'unsigned short',
-                numleaffaces: 'unsigned short',
-                firstleafbrush: 'unsigned short',
-                numleafbrushes: 'unsigned short',
-                leafWaterDataID: 'short',
-            },
-            texinfo_t: {
-                textureVecs: 'float[2][4]',
-                lightmapVecs: 'float[2][4]',
-                flags: 'int',
-                texdata: 'int',
-            },
-            dtexdata_t: {
-                reflectivity: 'vector',
-                nameStringTableID: 'int',
-                width_height: 'int, int',
-                view_width_view_height: 'int, int'
-            },
-            dmodel_t: {
-                mins_maxs: 'vector, vector',
-                origin: 'vector',
-                headnode: 'int',
-                firstface_numfaces: 'int, int'
-            },
-            ddispinfo_t: {
-                startPosition: 'vector',
-                DispVertStart: 'int',
-                DispTriStart: 'int',
-                power: 'int',
-                minTess: 'int',
-                smoothingAngle: 'float',
-                contents: 'int',
-                MapFace: 'unsigned short',
-                LightmapAlphaStart: 'int',
-                LightmapSamplePositionStart: 'int',
-                EdgeNeighbors: 'CDispNeighbor[4]',
-                DispVertStart: 'CDispCornerNeighbors[4]',
-                AllowedVerts: 'unsigned int[10]',
-            },
-            dDispVert: {
-                vec: 'vector',
-                dist: 'float',
-                alpha: 'float',
-            },
-            dDispTri: {
-                Tags: 'unsigned short'
-            }
-        }
+        return Structs;
     }
 
     static get LUMP() {
-        return {
-            ENTITIES: 0,
-            PLANES: 1,
-            TEXDATA: 2,
-            VERTEXES: 3,
-            VISIBILITY: 4,
-            NODES: 5,
-            TEXINFO: 6,
-            FACES: 7,
-            LIGHTING: 8,
-            OCCLUSION: 9,
-            LEAFS: 10,
-            FACEIDS: 11,
-            EDGES: 12,
-            SURFEDGES: 13,
-            MODELS: 14,
-            WORLDLIGHTS: 15,
-            LEAFFACES: 16,
-            LEAFBRUSHES: 17,
-            BRUSHES: 18,
-            BRUSHSIDES: 19,
-            AREAS: 20,
-            AREAPORTALS: 21,
-            PORTALS: 22,
-            UNUSED0: 22,
-            PROPCOLLISION: 22,
-            CLUSTERS: 23,
-            UNUSED26: 23,
-            PROPHULLS: 23,
-            PORTALVERTS: 24,
-            UNUSED2: 24,
-            PROPHULLVERTS: 24,
-            CLUSTERPORTALS: 25,
-            UNUSED3: 25,
-            PROPTRIS: 25,
-            DISPINFO: 26,
-            ORIGINALFACES: 27,
-            PHYSDISP: 28,
-            PHYSCOLLIDE: 29,
-            VERTNORMALS: 30,
-            VERTNORMALINDICES: 31,
-            DISP_LIGHTMAP_ALPHAS: 32,
-            DISP_VERTS: 33,
-            DISP_LIGHTMAP_SAMPLE_POSITIONS: 34,
-            GAME_LUMP: 35,
-            LEAFWATERDATA: 36,
-            PRIMITIVES: 37,
-            PRIMVERTS: 38,
-            PRIMINDICES: 39,
-            PAKFILE: 40,
-            CLIPPORTALVERTS: 41,
-            CUBEMAPS: 42,
-            TEXDATA_STRING_DATA: 43,
-            TEXDATA_STRING_TABLE: 44,
-            OVERLAYS: 45,
-            LEAFMINDISTTOWATER: 46,
-            FACE_MACRO_TEXTURE_INFO: 47,
-            DISP_TRIS: 48,
-            PHYSCOLLIDESURFACE: 49,
-            PROP_BLOB: 49,
-            WATEROVERLAYS: 50,
-            LIGHTMAPPAGES: 51,
-            LEAF_AMBIENT_INDEX_HDR: 51,
-            LIGHTMAPPAGEINFOS: 52,
-            LEAF_AMBIENT_INDEX: 52,
-            LIGHTING_HDR: 53,
-            WORLDLIGHTS_HDR: 54,
-            LEAF_AMBIENT_LIGHTING_HDR: 55,
-            LEAF_AMBIENT_LIGHTING: 56,
-            XZIPPAKFILE: 57,
-            FACES_HDR: 58,
-            MAP_FLAGS: 59,
-            OVERLAY_FADES: 60,
-            OVERLAY_SYSTEM_LEVELS: 61,
-            PHYSLEVEL: 62,
-            DISP_MULTIBLEND: 63,
-        }
+        return LumpTypes;
     }
 
     static get FILE_HEADER_BYTE_LENGTH() {
@@ -231,7 +254,7 @@ export default class BSPFile {
             mapRevision: null,
         }
 
-        const indentBytes = Uint32ToBytes(headerView[0]);
+        const indentBytes = Uint32ToBytes(headerView[0]).reverse();
         const indentString = String.fromCharCode(...indentBytes);
 
         dheader_t.indent = indentString;
@@ -308,6 +331,20 @@ export default class BSPFile {
             }
 
             switch (type) {
+
+                case 'cdispneighbor': {
+                    // skip to return buffer
+                    byteIndex += 16;
+                    data = byteArray.slice(byteIndex, byteIndex + 16);
+                    break;
+                }
+                case 'cdispcornerneighbors': {
+                    // skip to return buffer
+                    byteIndex += 16;
+                    data = byteArray.slice(byteIndex, byteIndex + 16);
+                    break;
+                }
+
                 case 'vector': {
                     data = [];
                     for(let i = 0; i < 3; i++) {
@@ -315,9 +352,24 @@ export default class BSPFile {
                     }
                     break;
                 }
+                case 'char': {
+                    data = [];
+                    for(let i = 0; i < 128; i++) {
+                        data[i] = parseBytes('byte');
+                    }
+                    data = BytesToString(data);
+                    break;
+                }
                 default: {
                     if(type in typeMapping) {
                         typeBufferType = typeMapping[type];
+
+                    } else if(type in BSPFile.STRUCT) {
+                        const bytes = byteArray.slice(byteIndex);
+                        const structData = this.parseStruct(bytes, BSPFile.STRUCT[type]);
+                        byteIndex += structData.byteSize;
+                        data = structData.data;
+
                     } else {
                         throw new Error('Unknown data type "' + type + '"');
                     }
@@ -338,9 +390,20 @@ export default class BSPFile {
             const isArray = type[type.length-1] == "]";
             if(isArray) {
                 const arrayData = [];
-                const arrayIdentifier = type.match(/\[[0-9]+\]/g)[0];
-                const arrayLength = parseInt(arrayIdentifier.replace(/(\[|\]])/g, ''));
+                const arrayIdentifier = type.match(/\[[0-9a-zA-Z]+\]/g)[0];
                 const arrayDataType = type.replace(arrayIdentifier, '');
+
+                let arrayLength = arrayIdentifier.replace(/(\[|\])/g, '');
+
+                if(isNaN(arrayLength)) {
+                    if(arrayLength in structData) {
+                        arrayLength = structData[arrayLength];
+                    } else {
+                        throw new Error('Invalid type array length');
+                    }
+                } else {
+                    arrayLength = parseInt(arrayLength);
+                }
 
                 for(let i = 0; i < arrayLength; i++) {
                     arrayData[i] = parseType(arrayDataType);
@@ -353,7 +416,19 @@ export default class BSPFile {
         }
 
         for(let key in struct) {
-            structData[key] = parseType(struct[key]);
+            let type = struct[key];
+
+            const typeCount = type.split(',').length;
+
+            type = type.split(',')[0];
+
+            for(let i = 0; i < typeCount; i++) {
+                if(typeCount > 1) {
+                    structData[key + '_' + i] = parseType(type);
+                } else {
+                    structData[key] = parseType(type);
+                }
+            }
         }
 
         return {
@@ -362,7 +437,7 @@ export default class BSPFile {
         };
     }
 
-    static parseLump(lumpBuffer, struct) {
+    static parseStructArray(lumpBuffer, struct) {
         const structs = [];
 
         const lumpByteSize = lumpBuffer.byteLength;
@@ -384,6 +459,111 @@ export default class BSPFile {
         return structs;
     }
 
+    static parseTextureDataLump(lumpBuffer, texdatastringtable) {
+        const textures = [];
+
+        const lumpByteSize = lumpBuffer.byteLength;
+
+        let byteOffset = 0;
+
+        for(let i = 0; i < texdatastringtable.length; i++) {
+            const index = texdatastringtable[i].tex;
+            const nextIndex = texdatastringtable[i + 1] ? texdatastringtable[i + 1].tex -1 : lumpByteSize - 1;
+            const byteLength = nextIndex - index;
+
+            const byteData = lumpBuffer.slice(index, index + byteLength);
+            const string = BytesToString(new Uint8Array(byteData));
+
+            textures.push(string);
+        }
+
+        return textures;
+    }
+
+    static parseGameLumps(lumpBuffer, fileBuffer) {
+        const structData = this.parseStruct(lumpBuffer, BSPFile.STRUCT.dgamelumpheader_t);
+        const headerBytesize = structData.byteSize;
+        const header = structData.data;
+
+        const gamelumps = [];
+
+        for(let l = 0; l < header.lumpCount; l++) {
+            const gamelumpHeader = header.gamelump[l];
+            const fileLen = gamelumpHeader.filelen;
+            const fileOfs = gamelumpHeader.fileofs;
+
+            gamelumps.push({
+                id: BytesToString(Uint32ToBytes(gamelumpHeader.id)),
+                flags: gamelumpHeader.flags,
+                buffer: fileBuffer.slice(fileOfs, fileOfs + fileLen)
+            });
+        }
+
+        return gamelumps;
+    }
+
+    static parseStaticPropLump(lump) {
+        const struct = this.parseStruct(lump.buffer, BSPFile.STRUCT.StaticPropDictLump_t);
+        const models = struct.data.name;
+
+        return models;
+    }
+
+    static parseASCILump(lumpBuffer) {
+        return BytesToString(new Uint8Array(lumpBuffer));
+    }
+
+    static parseVMFString(vmfString) {
+
+        const lines = vmfString.split('\n');
+        const blocks = [];
+
+        let blockIndex = 0;
+        let currentClass = null;
+
+        for(let line of lines) {
+            if(line.match("{")) {
+                // block closed
+            } else if(line.match("}")) {
+                // new block start
+                blockIndex++;
+            } else {
+                // line in current block
+                blocks[blockIndex] = blocks[blockIndex] || {};
+
+                let parts = line.match(/("[^"]+")+/g);
+
+                if(parts) {
+                    parts = [...parts].map(p => p.replace(/"/g, ''));
+
+                    const key = parts[0];
+                    let value = parts[1];
+
+                    if(value) {
+                        value = value.split(" ");
+
+                        value = value.map(v => {
+                            if(!isNaN(v)) {
+                                return parseFloat(v);
+                            }
+                            return v;
+                        })
+        
+                        if(value.length > 1) {
+                            blocks[blockIndex][key] = value;
+                        } else {
+                            blocks[blockIndex][key] = value[0];
+                        }
+                    } else {
+                        currentClass = key;
+                    }
+                }
+            }
+        }
+
+        return blocks;
+    }
+
     static fromDataArray(dataArray) {
         const bsp = new BSPFile();
 
@@ -399,16 +579,97 @@ export default class BSPFile {
 
         const lumps = BSPFile.readLumpData(bsp.header.lumps, dataArray);
 
-        bsp.faces = BSPFile.parseLump(lumps[BSPFile.LUMP.FACES], BSPFile.STRUCT.dface_t);
-        bsp.planes = BSPFile.parseLump(lumps[BSPFile.LUMP.PLANES], BSPFile.STRUCT.dplane_t);
-        bsp.edges = BSPFile.parseLump(lumps[BSPFile.LUMP.EDGES], BSPFile.STRUCT.dedge_t);
-        bsp.surfedges = BSPFile.parseLump(lumps[BSPFile.LUMP.SURFEDGES], { edge: 'int' });
-        bsp.vertecies = BSPFile.parseLump(lumps[BSPFile.LUMP.VERTEXES], BSPFile.STRUCT.vertex);
+        bsp.faces = BSPFile.parseStructArray(lumps[BSPFile.LUMP.FACES], BSPFile.STRUCT.dface_t);
+        bsp.planes = BSPFile.parseStructArray(lumps[BSPFile.LUMP.PLANES], BSPFile.STRUCT.dplane_t);
+        bsp.edges = BSPFile.parseStructArray(lumps[BSPFile.LUMP.EDGES], BSPFile.STRUCT.dedge_t);
+        bsp.surfedges = BSPFile.parseStructArray(lumps[BSPFile.LUMP.SURFEDGES], { edge: 'int' });
+        bsp.vertecies = BSPFile.parseStructArray(lumps[BSPFile.LUMP.VERTEXES], BSPFile.STRUCT.vertex);
+        bsp.texinfo = BSPFile.parseStructArray(lumps[BSPFile.LUMP.TEXINFO], BSPFile.STRUCT.texinfo_t);
+        bsp.texdata = BSPFile.parseStructArray(lumps[BSPFile.LUMP.TEXDATA], BSPFile.STRUCT.dtexdata_t);
+        bsp.texdatastringtable = BSPFile.parseStructArray(lumps[BSPFile.LUMP.TEXDATA_STRING_TABLE], { tex: 'int' });
+        bsp.textures = BSPFile.parseTextureDataLump(lumps[BSPFile.LUMP.TEXDATA_STRING_DATA], bsp.texdatastringtable);
+        bsp.displacements = BSPFile.parseStructArray(lumps[BSPFile.LUMP.DISPINFO], BSPFile.STRUCT.ddispinfo_t);
+        bsp.displacementverts = BSPFile.parseStructArray(lumps[BSPFile.LUMP.DISP_VERTS], BSPFile.STRUCT.dDispVert);
+        bsp.displacementtris = BSPFile.parseStructArray(lumps[BSPFile.LUMP.DISP_TRIS], BSPFile.STRUCT.dDispTri);
+        bsp.models = BSPFile.parseStructArray(lumps[BSPFile.LUMP.MODELS], BSPFile.STRUCT.dmodel_t);
 
-        // requires 2d array parsing
-        // bsp.texinfo = BSPFile.parseLump(lumps[BSPFile.LUMP.TEXINFO], BSPFile.STRUCT.texinfo_t);
+        const entitiesString = BSPFile.parseASCILump(lumps[BSPFile.LUMP.ENTITIES]);
+        bsp.entities = BSPFile.parseVMFString(entitiesString);
+
+        bsp.pakfile = lumps[BSPFile.LUMP.PAKFILE];
+
+        const gamelumps = BSPFile.parseGameLumps(lumps[BSPFile.LUMP.GAME_LUMP], dataArray);
+
+        for(let lump of gamelumps) {
+            if(lump.id == "sprp") {
+                const staticProops = BSPFile.parseStaticPropLump(lump);
+                console.log(staticProops);
+            }
+        }
 
         return bsp;
+    }
+
+    convertToMesh() {
+        const planes = this.planes;
+        const edges = this.edges;
+        const surfedges = this.surfedges;
+        const vertecies = this.vertecies;
+        const faces = this.faces;
+
+        const vertexResultArray = [];
+        const indexResultArray = [];
+
+        let currentVertexIndex = 0;
+
+        for(let face of faces) {
+            const plane = planes[face.planenum];
+
+            const faces = face.side;
+            const normal = plane.normal;
+
+            const faceSurfedges = surfedges.slice(face.firstedge, face.firstedge + face.numedges);
+
+            const faceEdges = faceSurfedges.map(surfEdge => {
+                let edge = edges[Math.abs(surfEdge.edge)].v;
+                if(surfEdge.edge < 0) {
+                    edge = edge.reverse();
+                }
+                return edge;
+            });
+
+            const verts = [];
+            const indexes = [];
+
+            for(let edge of faceEdges) {
+                let vertIndecies = edge;
+                verts.push(vertecies[vertIndecies[0]]);
+            }
+
+            const numberOfIndecies = (verts.length - 2) * 3;
+
+            for(let i = 0; i < numberOfIndecies / 3; i++) {
+                indexes.push(currentVertexIndex + 0);
+                indexes.push(currentVertexIndex + 1 + i);
+                indexes.push(currentVertexIndex + 2 + i);
+            }
+
+            currentVertexIndex += verts.length;
+
+            const parsedVertecies = verts.map(v => ({
+                vertex: [v.x, v.z, v.y], 
+                uv: [0, 1, 0],
+                normal: [normal[0], normal[2], normal[1]],
+            }));
+
+            vertexResultArray.push(...parsedVertecies);
+            indexResultArray.push(...indexes);
+        }
+
+        return {
+            indecies: indexResultArray,
+            vertecies: vertexResultArray
+        };
     }
 
 }
