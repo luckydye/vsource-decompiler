@@ -92,6 +92,18 @@ const LumpTypes = {
 };
 
 const Structs = {
+    dheader_t: {
+        ident: 'byte[4]',
+        version: 'int',
+        lumps: 'lump_t[HEADER_LUMPS]',
+        mapRevision: 'int',
+    },
+    lump_t: {
+        fileofs: 'int',
+        filelen: 'int',
+        version: 'int',
+        fourCC: 'byte[4]',
+    },
     dplane_t: {
         normal: 'vector',
         dist: 'float',
@@ -245,50 +257,15 @@ export default class BSPFile {
         return 64;
     }
 
-    static readHeader(headerView) {
-
-        const dheader_t = {
-            indent: null,
-            version: null,
-            lumps: null,
-            mapRevision: null,
-        }
-
-        const indentBytes = Uint32ToBytes(headerView[0]).reverse();
-        const indentString = String.fromCharCode(...indentBytes);
-
-        dheader_t.indent = indentString;
-        dheader_t.version = headerView[1];
-        dheader_t.lumps = [];
-
-        const lumpsStartIndex = 2;
-        const lumpByteSize = 16;
-
-        for(let i = 0; i < BSPFile.HEADER_LUMPS; i++) {
-
-            const sliceOffset = lumpsStartIndex + (i * (lumpByteSize / 4));
-
-            const lump = headerView.slice(sliceOffset, sliceOffset + 4);
-
-            const lump_t = {
-                fileofs: lump[0],
-                filelen: lump[1],
-                version : lump[2],
-                fourCC: Uint32ToBytes(lump[3]),
-            }
-
-            dheader_t.lumps.push(lump_t);
-        }
-
-        const revisionStartIndex = lumpsStartIndex + BSPFile.HEADER_LUMPS * (lumpByteSize / 4);
-
-        dheader_t.mapRevision = headerView[revisionStartIndex];
-
-        return dheader_t;
+    static readHeader(headerView, headerBuffer) {
+        const headerStruct = this.parseStruct(headerBuffer, BSPFile.STRUCT.dheader_t);
+        const headerData = headerStruct.data;
+        headerData.ident = String.fromCharCode(...headerData.ident);
+        return headerData;
     }
 
     static verifyHeader(header) {
-        if(this.known_types.indexOf(header.indent) == -1) {
+        if(this.known_types.indexOf(header.ident) == -1) {
             throw new Error('Uknown bsp type');
         }
         if(header.version > this.supported_version) {
@@ -390,7 +367,7 @@ export default class BSPFile {
             const isArray = type[type.length-1] == "]";
             if(isArray) {
                 const arrayData = [];
-                const arrayIdentifier = type.match(/\[[0-9a-zA-Z]+\]/g)[0];
+                const arrayIdentifier = type.match(/\[[0-9a-zA-Z_]+\]/g)[0];
                 const arrayDataType = type.replace(arrayIdentifier, '');
 
                 let arrayLength = arrayIdentifier.replace(/(\[|\])/g, '');
@@ -398,6 +375,8 @@ export default class BSPFile {
                 if(isNaN(arrayLength)) {
                     if(arrayLength in structData) {
                         arrayLength = structData[arrayLength];
+                    } else if(arrayLength in BSPFile) {
+                        arrayLength = BSPFile[arrayLength];
                     } else {
                         throw new Error('Invalid type array length');
                     }
@@ -567,9 +546,10 @@ export default class BSPFile {
     static fromDataArray(dataArray) {
         const bsp = new BSPFile();
 
-        const headerView = new Uint32Array(dataArray.slice(0, BSPFile.FILE_HEADER_BYTE_LENGTH));
+        const headerBuffer = dataArray.slice(0, BSPFile.FILE_HEADER_BYTE_LENGTH);
+        const headerView = new Uint32Array(headerBuffer);
 
-        bsp.header = BSPFile.readHeader(headerView);
+        bsp.header = BSPFile.readHeader(headerView, headerBuffer);
 
         try {
             BSPFile.verifyHeader(bsp.header);
