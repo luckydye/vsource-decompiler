@@ -9,89 +9,12 @@ function Uint32ToBytes(int) {
     return bytes;
 }
 
-function BytesToString(bytes) {
-    return String.fromCharCode(...bytes).replace(/\W+$/g, '');
-}
-
-const LumpTypes = {
-    ENTITIES: 0,
-    PLANES: 1,
-    TEXDATA: 2,
-    VERTEXES: 3,
-    VISIBILITY: 4,
-    NODES: 5,
-    TEXINFO: 6,
-    FACES: 7,
-    LIGHTING: 8,
-    OCCLUSION: 9,
-    LEAFS: 10,
-    FACEIDS: 11,
-    EDGES: 12,
-    SURFEDGES: 13,
-    MODELS: 14,
-    WORLDLIGHTS: 15,
-    LEAFFACES: 16,
-    LEAFBRUSHES: 17,
-    BRUSHES: 18,
-    BRUSHSIDES: 19,
-    AREAS: 20,
-    AREAPORTALS: 21,
-    PORTALS: 22,
-    UNUSED0: 22,
-    PROPCOLLISION: 22,
-    CLUSTERS: 23,
-    UNUSED26: 23,
-    PROPHULLS: 23,
-    PORTALVERTS: 24,
-    UNUSED2: 24,
-    PROPHULLVERTS: 24,
-    CLUSTERPORTALS: 25,
-    UNUSED3: 25,
-    PROPTRIS: 25,
-    DISPINFO: 26,
-    ORIGINALFACES: 27,
-    PHYSDISP: 28,
-    PHYSCOLLIDE: 29,
-    VERTNORMALS: 30,
-    VERTNORMALINDICES: 31,
-    DISP_LIGHTMAP_ALPHAS: 32,
-    DISP_VERTS: 33,
-    DISP_LIGHTMAP_SAMPLE_POSITIONS: 34,
-    GAME_LUMP: 35,
-    LEAFWATERDATA: 36,
-    PRIMITIVES: 37,
-    PRIMVERTS: 38,
-    PRIMINDICES: 39,
-    PAKFILE: 40,
-    CLIPPORTALVERTS: 41,
-    CUBEMAPS: 42,
-    TEXDATA_STRING_DATA: 43,
-    TEXDATA_STRING_TABLE: 44,
-    OVERLAYS: 45,
-    LEAFMINDISTTOWATER: 46,
-    FACE_MACRO_TEXTURE_INFO: 47,
-    DISP_TRIS: 48,
-    PHYSCOLLIDESURFACE: 49,
-    PROP_BLOB: 49,
-    WATEROVERLAYS: 50,
-    LIGHTMAPPAGES: 51,
-    LEAF_AMBIENT_INDEX_HDR: 51,
-    LIGHTMAPPAGEINFOS: 52,
-    LEAF_AMBIENT_INDEX: 52,
-    LIGHTING_HDR: 53,
-    WORLDLIGHTS_HDR: 54,
-    LEAF_AMBIENT_LIGHTING_HDR: 55,
-    LEAF_AMBIENT_LIGHTING: 56,
-    XZIPPAKFILE: 57,
-    FACES_HDR: 58,
-    MAP_FLAGS: 59,
-    OVERLAY_FADES: 60,
-    OVERLAY_SYSTEM_LEVELS: 61,
-    PHYSLEVEL: 62,
-    DISP_MULTIBLEND: 63,
-};
-
 const Structs = {
+    vector: {
+        0: 'float',
+        1: 'float',
+        2: 'float',
+    },
     dheader_t: {
         ident: 'byte[4]',
         version: 'int',
@@ -228,7 +151,122 @@ const Structs = {
     StaticPropDictLump_t: {
         dictEntries: 'int',
         name: 'char[dictEntries]'
-    }
+    },
+    StaticPropLeafLump_t: {
+        leafEntries: 'int',
+        leaf: 'unsigned short[leafEntries]'
+    },
+    color32: {
+        0: 'byte',
+        1: 'byte',
+        2: 'byte',
+        3: 'byte',
+    },
+    qangle: {
+        0: 'float',
+        1: 'float',
+        2: 'float',
+    },
+    StaticPropLumpV10_t: {
+        Origin: 'vector',
+        Angles: 'qangle',
+        PropType: 'unsigned short',
+        FirstLeaf: 'unsigned short',
+        LeafCount: 'unsigned short',
+        Solid: 'unsigned char',
+        Flags: 'unsigned char',
+        Skin: 'int',
+        FadeMinDist: 'float',
+        FadeMaxDist: 'float',
+        LightingOrigin: 'vector',
+        ForcedFadeScale: 'float',
+        MinCPULevel: 'unsigned char',
+        MaxCPULevel: 'unsigned char',
+        MinGPULevel: 'unsigned char',
+        MaxGPULevel: 'unsigned char',
+        DiffuseModulation: 'color32',
+        DisableX360: 'int',
+        FlagsEx: 'unsigned int',
+        // UniformScale: 'float',
+    },
+};
+
+const LumpTypes = {
+    ENTITIES: 0,
+    PLANES: 1,
+    TEXDATA: 2,
+    VERTEXES: 3,
+    VISIBILITY: 4,
+    NODES: 5,
+    TEXINFO: 6,
+    FACES: 7,
+    LIGHTING: 8,
+    OCCLUSION: 9,
+    LEAFS: 10,
+    FACEIDS: 11,
+    EDGES: 12,
+    SURFEDGES: 13,
+    MODELS: 14,
+    WORLDLIGHTS: 15,
+    LEAFFACES: 16,
+    LEAFBRUSHES: 17,
+    BRUSHES: 18,
+    BRUSHSIDES: 19,
+    AREAS: 20,
+    AREAPORTALS: 21,
+    PORTALS: 22,
+    UNUSED0: 22,
+    PROPCOLLISION: 22,
+    CLUSTERS: 23,
+    UNUSED26: 23,
+    PROPHULLS: 23,
+    PORTALVERTS: 24,
+    UNUSED2: 24,
+    PROPHULLVERTS: 24,
+    CLUSTERPORTALS: 25,
+    UNUSED3: 25,
+    PROPTRIS: 25,
+    DISPINFO: 26,
+    ORIGINALFACES: 27,
+    PHYSDISP: 28,
+    PHYSCOLLIDE: 29,
+    VERTNORMALS: 30,
+    VERTNORMALINDICES: 31,
+    DISP_LIGHTMAP_ALPHAS: 32,
+    DISP_VERTS: 33,
+    DISP_LIGHTMAP_SAMPLE_POSITIONS: 34,
+    GAME_LUMP: 35,
+    LEAFWATERDATA: 36,
+    PRIMITIVES: 37,
+    PRIMVERTS: 38,
+    PRIMINDICES: 39,
+    PAKFILE: 40,
+    CLIPPORTALVERTS: 41,
+    CUBEMAPS: 42,
+    TEXDATA_STRING_DATA: 43,
+    TEXDATA_STRING_TABLE: 44,
+    OVERLAYS: 45,
+    LEAFMINDISTTOWATER: 46,
+    FACE_MACRO_TEXTURE_INFO: 47,
+    DISP_TRIS: 48,
+    PHYSCOLLIDESURFACE: 49,
+    PROP_BLOB: 49,
+    WATEROVERLAYS: 50,
+    LIGHTMAPPAGES: 51,
+    LEAF_AMBIENT_INDEX_HDR: 51,
+    LIGHTMAPPAGEINFOS: 52,
+    LEAF_AMBIENT_INDEX: 52,
+    LIGHTING_HDR: 53,
+    WORLDLIGHTS_HDR: 54,
+    LEAF_AMBIENT_LIGHTING_HDR: 55,
+    LEAF_AMBIENT_LIGHTING: 56,
+    XZIPPAKFILE: 57,
+    FACES_HDR: 58,
+    MAP_FLAGS: 59,
+    OVERLAY_FADES: 60,
+    OVERLAY_SYSTEM_LEVELS: 61,
+    PHYSLEVEL: 62,
+    DISP_MULTIBLEND: 63,
 };
 
 export default class BSPFile {
@@ -258,7 +296,7 @@ export default class BSPFile {
     }
 
     static readHeader(headerView, headerBuffer) {
-        const headerStruct = this.parseStruct(headerBuffer, BSPFile.STRUCT.dheader_t);
+        const headerStruct = this.unserializeStruct(headerBuffer, BSPFile.STRUCT.dheader_t);
         const headerData = headerStruct.data;
         headerData.ident = String.fromCharCode(...headerData.ident);
         return headerData;
@@ -286,7 +324,7 @@ export default class BSPFile {
         return lumpsData;
     }
 
-    static parseStruct(byteArray, struct) {
+    static unserializeStruct(byteArray, struct) {
 
         let byteIndex = 0;
         let structData = {};
@@ -305,10 +343,10 @@ export default class BSPFile {
                 'short': Int16Array,
                 'unsigned short': Uint16Array,
                 'byte': Uint8Array,
+                'bool': Uint8Array,
             }
 
             switch (type) {
-
                 case 'cdispneighbor': {
                     // skip to return buffer
                     byteIndex += 16;
@@ -322,28 +360,28 @@ export default class BSPFile {
                     break;
                 }
 
-                case 'vector': {
-                    data = [];
-                    for(let i = 0; i < 3; i++) {
-                        data[i] = parseBytes('float');
-                    }
-                    break;
-                }
                 case 'char': {
                     data = [];
                     for(let i = 0; i < 128; i++) {
-                        data[i] = parseBytes('byte');
+                        const byte = parseBytes('byte');
+                        data[i] = byte;
                     }
-                    data = BytesToString(data);
+                    data = String.fromCharCode(...data);
                     break;
                 }
+
+                case 'unsigned char': {
+                    data = parseBytes('byte');
+                    break;
+                }
+                
                 default: {
                     if(type in typeMapping) {
                         typeBufferType = typeMapping[type];
 
                     } else if(type in BSPFile.STRUCT) {
                         const bytes = byteArray.slice(byteIndex);
-                        const structData = this.parseStruct(bytes, BSPFile.STRUCT[type]);
+                        const structData = this.unserializeStruct(bytes, BSPFile.STRUCT[type]);
                         byteIndex += structData.byteSize;
                         data = structData.data;
 
@@ -416,7 +454,7 @@ export default class BSPFile {
         };
     }
 
-    static parseStructArray(lumpBuffer, struct) {
+    static unserializeStructArray(lumpBuffer, struct) {
         const structs = [];
 
         const lumpByteSize = lumpBuffer.byteLength;
@@ -427,7 +465,7 @@ export default class BSPFile {
         while(lastByteOffset < lumpByteSize) {
             const byteArray = lumpBuffer.slice(lastByteOffset, lastByteOffset + guessByteSize);
 
-            const structData = this.parseStruct(byteArray, struct);
+            const structData = this.unserializeStruct(byteArray, struct);
 
             guessByteSize = structData.byteSize;
             lastByteOffset += structData.byteSize;
@@ -438,7 +476,7 @@ export default class BSPFile {
         return structs;
     }
 
-    static parseTextureDataLump(lumpBuffer, texdatastringtable) {
+    static unserializeTextureDataLump(lumpBuffer, texdatastringtable) {
         const textures = [];
 
         const lumpByteSize = lumpBuffer.byteLength;
@@ -451,7 +489,7 @@ export default class BSPFile {
             const byteLength = nextIndex - index;
 
             const byteData = lumpBuffer.slice(index, index + byteLength);
-            const string = BytesToString(new Uint8Array(byteData));
+            const string = String.fromCharCode(...(new Uint8Array(byteData)));
 
             textures.push(string);
         }
@@ -459,8 +497,8 @@ export default class BSPFile {
         return textures;
     }
 
-    static parseGameLumps(lumpBuffer, fileBuffer) {
-        const structData = this.parseStruct(lumpBuffer, BSPFile.STRUCT.dgamelumpheader_t);
+    static unserializeGameLumps(lumpBuffer, fileBuffer) {
+        const structData = this.unserializeStruct(lumpBuffer, BSPFile.STRUCT.dgamelumpheader_t);
         const headerBytesize = structData.byteSize;
         const header = structData.data;
 
@@ -468,11 +506,13 @@ export default class BSPFile {
 
         for(let l = 0; l < header.lumpCount; l++) {
             const gamelumpHeader = header.gamelump[l];
+
             const fileLen = gamelumpHeader.filelen;
             const fileOfs = gamelumpHeader.fileofs;
 
             gamelumps.push({
-                id: BytesToString(Uint32ToBytes(gamelumpHeader.id)),
+                id: String.fromCharCode(...Uint32ToBytes(gamelumpHeader.id)),
+                version: gamelumpHeader.version,
                 flags: gamelumpHeader.flags,
                 buffer: fileBuffer.slice(fileOfs, fileOfs + fileLen)
             });
@@ -481,18 +521,11 @@ export default class BSPFile {
         return gamelumps;
     }
 
-    static parseStaticPropLump(lump) {
-        const struct = this.parseStruct(lump.buffer, BSPFile.STRUCT.StaticPropDictLump_t);
-        const models = struct.data.name;
-
-        return models;
+    static unserializeASCILump(lumpBuffer) {
+        return String.fromCharCode(...new Uint8Array(lumpBuffer));
     }
 
-    static parseASCILump(lumpBuffer) {
-        return BytesToString(new Uint8Array(lumpBuffer));
-    }
-
-    static parseVMFString(vmfString) {
+    static unserializeVMFString(vmfString) {
 
         const lines = vmfString.split('\n');
         const blocks = [];
@@ -543,6 +576,30 @@ export default class BSPFile {
         return blocks;
     }
 
+    static unserializeStaticProps(gamelump) {
+        // static props
+        let byteOffset = 0;
+
+        const buffer = gamelump.buffer;
+
+        const dict = this.unserializeStruct(buffer.slice(byteOffset), BSPFile.STRUCT.StaticPropDictLump_t);
+        const propLeafs = this.unserializeStruct(buffer.slice(byteOffset += dict.byteSize), BSPFile.STRUCT.StaticPropLeafLump_t);
+        
+        const entries = new Int32Array(buffer.slice(byteOffset += propLeafs.byteSize, byteOffset += 4))[0];
+        const models = dict.data.name.map(str => str.replace(/\W+$/g, ""));
+
+        const props = [];
+
+        for(let p = 0; p < entries; p++) {
+            const prop = this.unserializeStruct(buffer.slice(byteOffset), BSPFile.STRUCT.StaticPropLumpV10_t);
+            byteOffset +=  prop.byteSize;
+            prop.data.PropType = models[prop.data.PropType];
+            props.push(prop.data);
+        }
+
+        return props;
+    }
+
     static fromDataArray(dataArray) {
         const bsp = new BSPFile();
 
@@ -559,31 +616,32 @@ export default class BSPFile {
 
         const lumps = BSPFile.readLumpData(bsp.header.lumps, dataArray);
 
-        bsp.faces = BSPFile.parseStructArray(lumps[BSPFile.LUMP.FACES], BSPFile.STRUCT.dface_t);
-        bsp.planes = BSPFile.parseStructArray(lumps[BSPFile.LUMP.PLANES], BSPFile.STRUCT.dplane_t);
-        bsp.edges = BSPFile.parseStructArray(lumps[BSPFile.LUMP.EDGES], BSPFile.STRUCT.dedge_t);
-        bsp.surfedges = BSPFile.parseStructArray(lumps[BSPFile.LUMP.SURFEDGES], { edge: 'int' });
-        bsp.vertecies = BSPFile.parseStructArray(lumps[BSPFile.LUMP.VERTEXES], BSPFile.STRUCT.vertex);
-        bsp.texinfo = BSPFile.parseStructArray(lumps[BSPFile.LUMP.TEXINFO], BSPFile.STRUCT.texinfo_t);
-        bsp.texdata = BSPFile.parseStructArray(lumps[BSPFile.LUMP.TEXDATA], BSPFile.STRUCT.dtexdata_t);
-        bsp.texdatastringtable = BSPFile.parseStructArray(lumps[BSPFile.LUMP.TEXDATA_STRING_TABLE], { tex: 'int' });
-        bsp.textures = BSPFile.parseTextureDataLump(lumps[BSPFile.LUMP.TEXDATA_STRING_DATA], bsp.texdatastringtable);
-        bsp.displacements = BSPFile.parseStructArray(lumps[BSPFile.LUMP.DISPINFO], BSPFile.STRUCT.ddispinfo_t);
-        bsp.displacementverts = BSPFile.parseStructArray(lumps[BSPFile.LUMP.DISP_VERTS], BSPFile.STRUCT.dDispVert);
-        bsp.displacementtris = BSPFile.parseStructArray(lumps[BSPFile.LUMP.DISP_TRIS], BSPFile.STRUCT.dDispTri);
-        bsp.models = BSPFile.parseStructArray(lumps[BSPFile.LUMP.MODELS], BSPFile.STRUCT.dmodel_t);
+        bsp.faces = BSPFile.unserializeStructArray(lumps[BSPFile.LUMP.FACES], BSPFile.STRUCT.dface_t);
+        bsp.planes = BSPFile.unserializeStructArray(lumps[BSPFile.LUMP.PLANES], BSPFile.STRUCT.dplane_t);
+        bsp.edges = BSPFile.unserializeStructArray(lumps[BSPFile.LUMP.EDGES], BSPFile.STRUCT.dedge_t);
+        bsp.surfedges = BSPFile.unserializeStructArray(lumps[BSPFile.LUMP.SURFEDGES], { edge: 'int' });
+        bsp.vertecies = BSPFile.unserializeStructArray(lumps[BSPFile.LUMP.VERTEXES], BSPFile.STRUCT.vertex);
+        bsp.texinfo = BSPFile.unserializeStructArray(lumps[BSPFile.LUMP.TEXINFO], BSPFile.STRUCT.texinfo_t);
+        bsp.texdata = BSPFile.unserializeStructArray(lumps[BSPFile.LUMP.TEXDATA], BSPFile.STRUCT.dtexdata_t);
+        bsp.texdatastringtable = BSPFile.unserializeStructArray(lumps[BSPFile.LUMP.TEXDATA_STRING_TABLE], { tex: 'int' });
+        bsp.textures = BSPFile.unserializeTextureDataLump(lumps[BSPFile.LUMP.TEXDATA_STRING_DATA], bsp.texdatastringtable);
+        bsp.displacements = BSPFile.unserializeStructArray(lumps[BSPFile.LUMP.DISPINFO], BSPFile.STRUCT.ddispinfo_t);
+        bsp.displacementverts = BSPFile.unserializeStructArray(lumps[BSPFile.LUMP.DISP_VERTS], BSPFile.STRUCT.dDispVert);
+        bsp.displacementtris = BSPFile.unserializeStructArray(lumps[BSPFile.LUMP.DISP_TRIS], BSPFile.STRUCT.dDispTri);
+        bsp.models = BSPFile.unserializeStructArray(lumps[BSPFile.LUMP.MODELS], BSPFile.STRUCT.dmodel_t);
 
-        const entitiesString = BSPFile.parseASCILump(lumps[BSPFile.LUMP.ENTITIES]);
-        bsp.entities = BSPFile.parseVMFString(entitiesString);
+        const entitiesString = BSPFile.unserializeASCILump(lumps[BSPFile.LUMP.ENTITIES]);
+        bsp.entities = BSPFile.unserializeVMFString(entitiesString);
 
         bsp.pakfile = lumps[BSPFile.LUMP.PAKFILE];
 
-        const gamelumps = BSPFile.parseGameLumps(lumps[BSPFile.LUMP.GAME_LUMP], dataArray);
+        const gamelumps = BSPFile.unserializeGameLumps(lumps[BSPFile.LUMP.GAME_LUMP], dataArray);
+
+        bsp.gamelumps = {};
 
         for(let lump of gamelumps) {
             if(lump.id == "sprp") {
-                const staticProops = BSPFile.parseStaticPropLump(lump);
-                console.log(staticProops);
+                bsp.gamelumps[lump.id] = BSPFile.unserializeStaticProps(lump);
             }
         }
 
