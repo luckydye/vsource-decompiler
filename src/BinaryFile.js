@@ -14,7 +14,19 @@ const nativeStructs = {
         0: 'float',
         1: 'float',
     },
+    color32: {
+        0: 'byte',
+        1: 'byte',
+        2: 'byte',
+        3: 'byte',
+    },
 }
+
+// Resolving data types chain:
+// -> typeMapping (int, float ... to TypedArray)
+// -> nativeStructs (vector, color32 ..)
+// -> File Structs
+// -> throw Error "type not found"
 
 export class BinaryFile {
 

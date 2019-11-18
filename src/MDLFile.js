@@ -3,13 +3,16 @@ import { Structs } from './MDLFileTypes';
 
 export default class MDLFile extends BinaryFile {
 
+    static get STRUCT() {
+        return Structs;
+    }
+
     static fromDataArray(dataArray) {
         const mdl = new MDLFile();
 
         mdl.byteSize = dataArray.byteLength;
 
         mdl.header = this.unserializeStruct(dataArray, Structs.studiohdr_t).data;
-        mdl.id = String.fromCharCode(...this.Uint32ToBytes(mdl.header.id).reverse());
 
         // body parts
         mdl.bodyparts = [];
@@ -19,8 +22,6 @@ export default class MDLFile extends BinaryFile {
             const part = this.unserializeStruct(buffer, Structs.mstudiobodyparts_t);
             mdl.bodyparts.push(part.data);
         }
-
-        console.log(mdl);
 
         return mdl;
     }

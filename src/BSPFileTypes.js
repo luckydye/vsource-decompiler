@@ -140,12 +140,6 @@ export const Structs = {
         leafEntries: 'int',
         leaf: 'unsigned short[leafEntries]'
     },
-    color32: {
-        0: 'byte',
-        1: 'byte',
-        2: 'byte',
-        3: 'byte',
-    },
     qangle: {
         0: 'float',
         1: 'float',

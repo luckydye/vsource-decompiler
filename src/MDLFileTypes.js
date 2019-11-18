@@ -1,6 +1,9 @@
+// helped alot:
+// https://github.com/ZeqMacaw/Crowbar/blob/master/Crowbar/Core/SourceModel/SourceCommon/SourceMdlFileData/SourceMdlBodyPart.vb
+
 export const Structs = {
     studiohdr_t: {
-        id: 'int',
+        id: 'char[4]',
         version: 'int',
 
         checksum: 'int',
@@ -38,6 +41,9 @@ export const Structs = {
         texture_count: 'int',
         texture_offset: 'int',
 
+        texturePathCount: 'int',
+        texturePathOffset: 'int',
+
         skinreference_count: 'int',
         skinfamily_count: 'int',
         skin_index: 'int',
@@ -52,8 +58,6 @@ export const Structs = {
         localnode_index: 'int',
         localnode_name_index: 'int',
 
-        /// ??????????
-        // https://github.com/pmrowla/hl2sdk-csgo/blob/master/public/studio.h
         flexdesc_count: 'int',
         flexdesc_index: 'int',
 
@@ -115,42 +119,78 @@ export const Structs = {
         unused3: 'int',
     },
     mstudiobodyparts_t: {
-        sznameindex: 'int',
-        nummodels: 'int',
+        name_offset: 'int',
+        model_count: 'int',
         base: 'int',
-        modelindex: 'int',
+        model_offset: 'int',
+        // name: 'unsigned char',
+        models: 'mstudiomodel_t[model_count]',
+
+        ModelCommandIsUsed: 'bool',
+        EyeballOptionIsUsed : 'bool',
+        // theFlexFrames : 'flexframe_t?',
     },
     mstudiomodel_t: {
         name: 'char[64]',
         type: 'int',
         boundingradius: 'float',
 
-        nummeshes: 'int',
-        meshindex: 'int',
+        mesh_count: 'int',
+        mesh_offset: 'int',
 
-        numvertices: 'int',
-        vertexindex: 'int',
-        tangentsindex: 'int',
+        vertex_count: 'int',
+        vertex_offset: 'int',
 
-        numattachments: 'int',
-        attachmentindex: 'int',
-        numeyeballs: 'int',
-        eyeballindex: 'int',
+        tangents_offset: 'int',
+
+        attachment_count: 'int',
+        attachment_offset: 'int',
+
+        eyeballs_count: 'int',
+        eyeball_offset: 'int',
 
         vertexdata: 'mstudio_modelvertexdata_t',
 
         unused: 'int[8]',
     },
+
+    mstudiomesh_t: {
+        materialIndex: 'int',
+        modelOffset: 'int',
+        vertexCount: 'int',
+        vertexIndexStart: 'int',
+        flexCount: 'int',
+        flexOffset: 'int',
+        materialType: 'int',
+        materialParam: 'int',
+        id: 'int',
+        origin: 'vector',
+        vertexData: 'mstudio_meshvertexdata_t',
+        unused: 'int[8]',
+        flexes: 'mstudioflex_t',
+    },
+    mstudioflex_t: {
+        flexDescIndex: 'int',
+        target0: 'float',
+        target1: 'float',
+        target2: 'float',
+        target3: 'float',
+        numverts: 'int',
+        vertindex: 'int',
+        flexDescPartnerIndex: 'int',
+        vertAnimType: 'byte',
+        unusedChar: 'char[2]',
+        unused: 'int[5]',
+        // ...
+    },
+    mstudio_meshvertexdata_t: {
+        modelVertexDataP: 'int',
+        lodVertexCount: 'int',
+        unused: 'int[8]',
+    },
     mstudio_modelvertexdata_t: {
-        position: 'vector',
-        normal: 'vector',
-        tangentS: 'vector4d',
-        texcoords: 'vector2d',
-        BoneWeights: 'mstudioboneweight_t',
-        vertex: 'mstudiovertex_t',
-        HasTangentData: 'bool',
-        GlobalVertexIndex: 'int',
-        GlobalTangentIndex: 'int',
+        vertexDataP: 'int',
+        tangentDataP: 'int',
     },
     mstudioboneweight_t: {
         weight: 'float[3]', // MAX_NUM_BONES_PER_VERT
