@@ -23,6 +23,27 @@ export default class MDLFile extends BinaryFile {
             mdl.bodyparts.push(part.data);
         }
 
+        mdl.models = [];
+
+        for(let part of mdl.bodyparts) {
+
+            const model = part.models[0];
+
+            let byteOffset = part.model_offset + model.mesh_offset;
+
+            for(let b = 0; b < model.mesh_count; b++) {
+
+                const buffer = dataArray.slice(byteOffset);
+                const part = this.unserializeStruct(buffer, Structs.mstudiomesh_t);
+
+                byteOffset += part.byteSize;
+
+                mdl.models.push(part.data);
+
+            }
+        }
+
+
         return mdl;
     }
 

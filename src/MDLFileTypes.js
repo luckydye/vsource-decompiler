@@ -152,6 +152,8 @@ export const Structs = {
         vertexdata: 'mstudio_modelvertexdata_t',
 
         unused: 'int[8]',
+
+        smd_files_array: 'unsigned char',
     },
 
     mstudiomesh_t: {
@@ -167,7 +169,6 @@ export const Structs = {
         origin: 'vector',
         vertexData: 'mstudio_meshvertexdata_t',
         unused: 'int[8]',
-        flexes: 'mstudioflex_t',
     },
     mstudioflex_t: {
         flexDescIndex: 'int',
@@ -186,7 +187,6 @@ export const Structs = {
     mstudio_meshvertexdata_t: {
         modelVertexDataP: 'int',
         lodVertexCount: 'int',
-        unused: 'int[8]',
     },
     mstudio_modelvertexdata_t: {
         vertexDataP: 'int',
