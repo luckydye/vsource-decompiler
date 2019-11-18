@@ -39,6 +39,7 @@ export default class BSPFile extends BinaryFile {
             throw new Error('Uknown bsp type');
         }
         if(header.version > this.supported_version) {
+            console.log(header);
             throw new Error('Unknown bsp version');
         }
     }
@@ -203,10 +204,10 @@ export default class BSPFile extends BinaryFile {
         bsp.vertecies = BSPFile.unserializeStructArray(lumps[BSPFile.LUMP.VERTEXES], BSPFile.STRUCT.vertex);
         
         // textures
-        bsp.texinfo = BSPFile.unserializeStructArray(lumps[BSPFile.LUMP.TEXINFO], BSPFile.STRUCT.texinfo_t);
-        bsp.texdata = BSPFile.unserializeStructArray(lumps[BSPFile.LUMP.TEXDATA], BSPFile.STRUCT.dtexdata_t);
-        bsp.texdatastringtable = BSPFile.unserializeStructArray(lumps[BSPFile.LUMP.TEXDATA_STRING_TABLE], { tex: 'int' });
-        bsp.textures = BSPFile.unserializeTextureDataLump(lumps[BSPFile.LUMP.TEXDATA_STRING_DATA], bsp.texdatastringtable);
+        // bsp.texinfo = BSPFile.unserializeStructArray(lumps[BSPFile.LUMP.TEXINFO], BSPFile.STRUCT.texinfo_t);
+        // bsp.texdata = BSPFile.unserializeStructArray(lumps[BSPFile.LUMP.TEXDATA], BSPFile.STRUCT.dtexdata_t);
+        // bsp.texdatastringtable = BSPFile.unserializeStructArray(lumps[BSPFile.LUMP.TEXDATA_STRING_TABLE], { tex: 'int' });
+        // bsp.textures = BSPFile.unserializeTextureDataLump(lumps[BSPFile.LUMP.TEXDATA_STRING_DATA], bsp.texdatastringtable);
         
         // displacements
         // bsp.displacements = BSPFile.unserializeStructArray(lumps[BSPFile.LUMP.DISPINFO], BSPFile.STRUCT.ddispinfo_t);

@@ -22,18 +22,18 @@ export const Structs = {
         m_BoneWeights: 'mstudioboneweight_t',
         m_vecPosition: 'vector',
         m_vecNormal: 'vector',
-        m_vecTexCoord: 'vector2D',
+        m_vecTexCoord: 'vector2d',
     },
     mstudioboneweight_t: {
         weight: `float[${MAX_NUM_BONES_PER_VERT}]`,
-        bone: `char[${MAX_NUM_BONES_PER_VERT}]`,
+        bone: `byte[${MAX_NUM_BONES_PER_VERT}]`,
         numbones: 'byte',
     },
     mstudiovertex_t: {
         m_BoneWeights: 'mstudioboneweight_t',
         m_vecPosition: 'vector',
         m_vecNormal: 'vector',
-        m_vecTexCoord: 'vector2D',
+        m_vecTexCoord: 'vector2d',
     },
     mstudiotangent_t: {
         tangent: 'vector4d'

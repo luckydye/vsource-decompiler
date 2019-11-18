@@ -12,10 +12,23 @@ export default class VVDFile extends BinaryFile {
     static decompileVertexData(vvd, dataArray) {
         let byteOffset = vvd.header.vertexDataStart;
 
+        const view = new DataView(dataArray);
+
         for(let v = 0; v < vvd.vertexCount; v++) {
-            const vert = this.unserializeStruct(dataArray.slice(byteOffset), Structs.mstudiovertex_t);
-            byteOffset += vert.byteSize;
-            vvd.vertecies.push(vert.data);
+            byteOffset += 16;
+            const vert = {
+                pos_x: view.getFloat32(byteOffset, true),
+                pos_y: view.getFloat32(byteOffset += 4, true),
+                pos_z: view.getFloat32(byteOffset += 4, true),
+
+                norm_x: view.getFloat32(byteOffset += 4, true),
+                norm_y: view.getFloat32(byteOffset += 4, true),
+                norm_z: view.getFloat32(byteOffset += 4, true),
+
+                tex_u: view.getFloat32(byteOffset += 4, true),
+                tex_v: view.getFloat32(byteOffset += 4, true),
+            };
+            vvd.vertecies.push(vert);
         }
 
         // byteOffset = vvd.header.tangentDataStart;
@@ -39,9 +52,8 @@ export default class VVDFile extends BinaryFile {
         vvd.vertecies = [];
         vvd.tangents = [];
 
-        if(vvd.vertexCount < 3000) {
+        // if(vvd.vertexCount < 3000)
             this.decompileVertexData(vvd, dataArray);
-        }
 
         return vvd;
     }
@@ -59,17 +71,17 @@ export default class VVDFile extends BinaryFile {
         }
 
         const parsedVertecies = verts.map(vert => ([
-            vert.m_vecPosition[0],
-            vert.m_vecPosition[2],
-            vert.m_vecPosition[1],
+            vert.pos_x,
+            vert.pos_z,
+            vert.pos_y,
 
-            vert.m_vecTexCoord[0],
-            vert.m_vecTexCoord[1],
+            vert.tex_u,
+            vert.tex_v,
             0,
 
-            vert.m_vecNormal[0],
-            vert.m_vecNormal[2],
-            vert.m_vecNormal[1],
+            vert.norm_x,
+            vert.norm_z,
+            vert.norm_y,
         ]));
 
         return {

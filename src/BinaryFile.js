@@ -28,6 +28,41 @@ const nativeStructs = {
 // -> File Structs
 // -> throw Error "type not found"
 
+const typeMapping = {
+    'int': {
+        type: 'Int32',
+        BYTES_PER_ELEMENT: Int32Array.BYTES_PER_ELEMENT,
+    },
+    'long': {
+        type: 'BigInt64',
+        BYTES_PER_ELEMENT: BigInt64Array.BYTES_PER_ELEMENT,
+    },
+    'unsigned int': {
+        type: 'Uint32',
+        BYTES_PER_ELEMENT: Uint32Array.BYTES_PER_ELEMENT,
+    },
+    'float': {
+        type: 'Float32',
+        BYTES_PER_ELEMENT: Float32Array.BYTES_PER_ELEMENT,
+    },
+    'short': {
+        type: 'Int16',
+        BYTES_PER_ELEMENT: Int16Array.BYTES_PER_ELEMENT,
+    },
+    'unsigned short': {
+        type: 'Uint16',
+        BYTES_PER_ELEMENT: Uint16Array.BYTES_PER_ELEMENT,
+    },
+    'byte': {
+        type: 'Int8',
+        BYTES_PER_ELEMENT: Int8Array.BYTES_PER_ELEMENT,
+    },
+    'bool': {
+        type: 'Int8',
+        BYTES_PER_ELEMENT: Int8Array.BYTES_PER_ELEMENT,
+    },
+}
+
 export class BinaryFile {
 
     static Uint32ToBytes(int) {
@@ -43,28 +78,13 @@ export class BinaryFile {
 
     static unserializeStruct(byteArray, struct) {
 
+        const dataView = new DataView(byteArray);
+
         let byteIndex = 0;
         let structData = {};
 
         const parseBytes = type => {
-            type = type.toLocaleLowerCase();
-
             let data = null;
-            let typeByteSize = 0;
-            let typeBufferType = null;
-
-            const structs = Object.assign(nativeStructs, this.STRUCT);
-
-            const typeMapping = {
-                'int': Int32Array,
-                'long': BigInt64Array,
-                'unsigned int': Uint32Array,
-                'float': Float32Array,
-                'short': Int16Array,
-                'unsigned short': Uint16Array,
-                'byte': Uint8Array,
-                'bool': Uint8Array,
-            }
 
             switch (type) {
 
@@ -88,12 +108,17 @@ export class BinaryFile {
                 }
                 
                 default: {
-                    if(type in typeMapping) {
-                        typeBufferType = typeMapping[type];
+                    if(typeMapping[type]) {
+                        data = dataView['get' + typeMapping[type].type](byteIndex, true);
+                        byteIndex += typeMapping[type].BYTES_PER_ELEMENT;
 
-                    } else if(type in structs) {
-                        const bytes = byteArray.slice(byteIndex);
-                        const structData = this.unserializeStruct(bytes, structs[type]);
+                    } else if(this.STRUCT[type]) {
+                        const structData = this.unserializeStruct(byteArray.slice(byteIndex), this.STRUCT[type]);
+                        byteIndex += structData.byteSize;
+                        data = structData.data;
+
+                    } else if(nativeStructs[type]) {
+                        const structData = this.unserializeStruct(byteArray.slice(byteIndex), nativeStructs[type]);
                         byteIndex += structData.byteSize;
                         data = structData.data;
 
@@ -102,13 +127,6 @@ export class BinaryFile {
                     }
                 }
             }
-
-            if(typeBufferType) {
-                typeByteSize = typeBufferType.BYTES_PER_ELEMENT;
-                data = new typeBufferType(byteArray.slice(byteIndex, byteIndex + typeByteSize))[0];
-            }
-
-            byteIndex += typeByteSize;
 
             return data;
         }
@@ -150,18 +168,16 @@ export class BinaryFile {
         }
 
         for(let key in struct) {
-            let type = struct[key];
+            const typeArray = struct[key].split(',');
+            const typeCount = typeArray.length;
+            const type = typeArray[0];
 
-            const typeCount = type.split(',').length;
-
-            type = type.split(',')[0];
-
-            for(let i = 0; i < typeCount; i++) {
-                if(typeCount > 1) {
+            if(typeCount > 1) {
+                for(let i = 0; i < typeCount; i++) {
                     structData[key + '_' + i] = parseType(type);
-                } else {
-                    structData[key] = parseType(type);
                 }
+            } else {
+                structData[key] = parseType(type);
             }
         }
 
