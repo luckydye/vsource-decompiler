@@ -215,8 +215,8 @@ export default class BSPFile extends BinaryFile {
         // bsp.displacementtris = BSPFile.unserializeStructArray(lumps[BSPFile.LUMP.DISP_TRIS], BSPFile.STRUCT.dDispTri);
 
         // entities
-        const entitiesString = BSPFile.unserializeASCILump(lumps[BSPFile.LUMP.ENTITIES]);
-        bsp.entities = BSPFile.unserializeVMFString(entitiesString);
+        // const entitiesString = BSPFile.unserializeASCILump(lumps[BSPFile.LUMP.ENTITIES]);
+        // bsp.entities = BSPFile.unserializeVMFString(entitiesString);
 
         // pakfile
         // bsp.pakfile = lumps[BSPFile.LUMP.PAKFILE];
