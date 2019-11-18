@@ -12,32 +12,14 @@ export default class VVDFile extends BinaryFile {
     static decompileVertexData(vvd, dataArray) {
         let byteOffset = vvd.header.vertexDataStart;
 
-        const view = new DataView(dataArray);
+        console.log('decompileing', vvd.vertexCount, 'vertecies.');
 
         for(let v = 0; v < vvd.vertexCount; v++) {
             byteOffset += 16;
-            const vert = {
-                pos_x: view.getFloat32(byteOffset, true),
-                pos_y: view.getFloat32(byteOffset += 4, true),
-                pos_z: view.getFloat32(byteOffset += 4, true),
-
-                norm_x: view.getFloat32(byteOffset += 4, true),
-                norm_y: view.getFloat32(byteOffset += 4, true),
-                norm_z: view.getFloat32(byteOffset += 4, true),
-
-                tex_u: view.getFloat32(byteOffset += 4, true),
-                tex_v: view.getFloat32(byteOffset += 4, true),
-            };
-            vvd.vertecies.push(vert);
+            const vert = this.unserializeStruct(dataArray.slice(byteOffset), Structs.mstudiovertex_t);
+            byteOffset += vert.byteSize;
+            vvd.vertecies.push(vert.data);
         }
-
-        // byteOffset = vvd.header.tangentDataStart;
-
-        // for(let v = 0; v < vvd.vertexCount; v++) {
-        //     const vert = this.unserializeStruct(dataArray.slice(byteOffset), Structs.mstudiotangent_t);
-        //     byteOffset += vert.byteSize;
-        //     vvd.tangents.push(vert.data);
-        // }
     }
 
     static fromDataArray(dataArray) {
@@ -52,8 +34,7 @@ export default class VVDFile extends BinaryFile {
         vvd.vertecies = [];
         vvd.tangents = [];
 
-        // if(vvd.vertexCount < 3000)
-            this.decompileVertexData(vvd, dataArray);
+        this.decompileVertexData(vvd, dataArray);
 
         return vvd;
     }
@@ -74,7 +55,7 @@ export default class VVDFile extends BinaryFile {
             vert.pos_x,
             vert.pos_z,
             vert.pos_y,
-
+            
             vert.tex_u,
             vert.tex_v,
             0,
