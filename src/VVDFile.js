@@ -9,32 +9,30 @@ export default class VVDFile extends BinaryFile {
         return Structs;
     }
 
-    static decompileVertexData(vvd, dataArray) {
-        let byteOffset = vvd.header.vertexDataStart;
+    static decompileVertexData(vvd) {
+        let byteOffset = vvd.header.vertexDataStart.data;
 
         console.log('decompileing', vvd.vertexCount, 'vertecies.');
 
         for(let v = 0; v < vvd.vertexCount; v++) {
             byteOffset += 16;
-            const vert = this.unserializeStruct(dataArray.slice(byteOffset), Structs.mstudiovertex_t);
-            byteOffset += vert.byteSize;
+            const vert = this.unserialize(vvd.view, byteOffset, Structs.mstudiovertex_t);
+            byteOffset = vert.byteOffset;
             vvd.vertecies.push(vert.data);
         }
     }
 
     static fromDataArray(dataArray) {
-        const vvd = new VVDFile();
+        const vvd = this.createFile(dataArray);
 
-        vvd.byteSize = dataArray.byteLength;
+        vvd.header = this.unserialize(vvd.view, 0, Structs.vertexFileHeader_t).data;
 
-        vvd.header = this.unserializeStruct(dataArray, Structs.vertexFileHeader_t).data;
-
-        vvd.vertexCount = vvd.header.numLODVertexes[0];
+        vvd.vertexCount = vvd.header.numLODVertexes.data[0];
 
         vvd.vertecies = [];
         vvd.tangents = [];
 
-        this.decompileVertexData(vvd, dataArray);
+        this.decompileVertexData(vvd);
 
         return vvd;
     }
@@ -52,17 +50,17 @@ export default class VVDFile extends BinaryFile {
         }
 
         const parsedVertecies = verts.map(vert => ([
-            vert.pos_x,
-            vert.pos_z,
-            vert.pos_y,
+            vert.pos_x.data,
+            vert.pos_z.data,
+            vert.pos_y.data,
             
-            vert.tex_u,
-            vert.tex_v,
+            vert.tex_u.data,
+            vert.tex_v.data,
             0,
 
-            vert.norm_x,
-            vert.norm_z,
-            vert.norm_y,
+            vert.norm_x.data,
+            vert.norm_z.data,
+            vert.norm_y.data,
         ]));
 
         return {

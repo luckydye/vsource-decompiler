@@ -27,13 +27,6 @@ export default class BSPFile extends BinaryFile {
         return 64;
     }
 
-    static readHeader(headerView, headerBuffer) {
-        const headerStruct = this.unserializeStruct(headerBuffer, BSPFile.STRUCT.dheader_t);
-        const headerData = headerStruct.data;
-        headerData.ident = String.fromCharCode(...headerData.ident);
-        return headerData;
-    }
-
     static verifyHeader(header) {
         if(this.known_types.indexOf(header.ident) == -1) {
             throw new Error('Uknown bsp type');
@@ -47,11 +40,11 @@ export default class BSPFile extends BinaryFile {
     static readLumpData(lumps, dataArray) {
         const lumpsData = [];
 
-        for(let lump of lumps) {
-            const lumpLength = lump.filelen;
-            const lumpOffset = lump.fileofs;
-            
-            lumpsData.push(dataArray.slice(lumpOffset, lumpOffset + lumpLength));
+        for(let lump of lumps.data) {
+            const lumpLength = lump.filelen.data;
+            const lumpOffset = lump.fileofs.data;
+            const view = new DataView(dataArray.slice(lumpOffset, lumpOffset + lumpLength));
+            lumpsData.push(view);
         }
 
         return lumpsData;
@@ -78,24 +71,24 @@ export default class BSPFile extends BinaryFile {
         return textures;
     }
 
-    static unserializeGameLumps(lumpBuffer, fileBuffer) {
-        const structData = this.unserializeStruct(lumpBuffer, BSPFile.STRUCT.dgamelumpheader_t);
+    static unserializeGameLumps(lumpBuffer, file) {
+        const structData = this.unserialize(lumpBuffer, 0, BSPFile.STRUCT.dgamelumpheader_t);
         const headerBytesize = structData.byteSize;
         const header = structData.data;
 
         const gamelumps = [];
 
-        for(let l = 0; l < header.lumpCount; l++) {
-            const gamelumpHeader = header.gamelump[l];
+        for(let l = 0; l < header.lumpCount.data; l++) {
+            const gamelumpHeader = header.gamelump.data[l];
 
-            const fileLen = gamelumpHeader.filelen;
-            const fileOfs = gamelumpHeader.fileofs;
+            const fileLen = gamelumpHeader.filelen.data;
+            const fileOfs = gamelumpHeader.fileofs.data;
 
             gamelumps.push({
-                id: String.fromCharCode(...this.Uint32ToBytes(gamelumpHeader.id)),
-                version: gamelumpHeader.version,
-                flags: gamelumpHeader.flags,
-                buffer: fileBuffer.slice(fileOfs, fileOfs + fileLen)
+                id: String.fromCharCode(...this.Uint32ToBytes(gamelumpHeader.id.data)),
+                version: gamelumpHeader.version.data,
+                flags: gamelumpHeader.flags.data,
+                buffer: new DataView(file.buffer.slice(fileOfs, fileOfs + fileLen))
             });
         }
 
@@ -159,18 +152,23 @@ export default class BSPFile extends BinaryFile {
 
         const buffer = gamelump.buffer;
 
-        const dict = this.unserializeStruct(buffer.slice(byteOffset), BSPFile.STRUCT.StaticPropDictLump_t);
-        const propLeafs = this.unserializeStruct(buffer.slice(byteOffset += dict.byteSize), BSPFile.STRUCT.StaticPropLeafLump_t);
+        const dict = this.unserialize(buffer, byteOffset, BSPFile.STRUCT.StaticPropDictLump_t);
+        byteOffset = dict.byteOffset;
+
+        const propLeafs = this.unserialize(buffer, byteOffset, BSPFile.STRUCT.StaticPropLeafLump_t);
+        byteOffset = propLeafs.byteOffset;
         
-        const entries = new Int32Array(buffer.slice(byteOffset += propLeafs.byteSize, byteOffset += 4))[0];
-        const models = dict.data.name.map(str => str.replace(/\W+$/g, ""));
+        const entries = this.parseBytes(buffer, byteOffset, 'int');
+        byteOffset = entries.byteOffset;
+
+        const models = dict.data.name.data.map(str => str.replace(/\W+$/g, ""));
 
         const props = [];
 
-        for(let p = 0; p < entries; p++) {
-            const prop = this.unserializeStruct(buffer.slice(byteOffset), BSPFile.STRUCT.StaticPropLumpV10_t);
-            byteOffset +=  prop.byteSize;
-            prop.data.PropType = models[prop.data.PropType];
+        for(let p = 0; p < entries.data; p++) {
+            const prop = this.unserialize(buffer, byteOffset, BSPFile.STRUCT.StaticPropLumpV10_t);
+            byteOffset = prop.byteOffset;
+            prop.data.PropType = models[prop.data.PropType.data];
             props.push(prop.data);
         }
 
@@ -178,12 +176,11 @@ export default class BSPFile extends BinaryFile {
     }
 
     static fromDataArray(dataArray) {
-        const bsp = new BSPFile();
+        const bsp = this.createFile(dataArray);
 
-        const headerBuffer = dataArray.slice(0, BSPFile.FILE_HEADER_BYTE_LENGTH);
-        const headerView = new Uint32Array(headerBuffer);
-
-        bsp.header = BSPFile.readHeader(headerView, headerBuffer);
+        const headerStruct = this.unserialize(bsp.view, 0, BSPFile.STRUCT.dheader_t);
+        headerStruct.data.ident = String.fromCharCode(...headerStruct.data.ident.data);
+        bsp.header = headerStruct.data;
 
         try {
             BSPFile.verifyHeader(bsp.header);
@@ -191,17 +188,17 @@ export default class BSPFile extends BinaryFile {
             throw err;
         }
 
-        const lumps = BSPFile.readLumpData(bsp.header.lumps, dataArray);
+        const lumps = this.readLumpData(bsp.header.lumps, dataArray);
 
         // models
-        bsp.models = BSPFile.unserializeStructArray(lumps[BSPFile.LUMP.MODELS], BSPFile.STRUCT.dmodel_t);
+        bsp.models = this.unserializeArray(lumps[this.LUMP.MODELS], 0, this.STRUCT.dmodel_t);
 
         // world geometry
-        bsp.faces = BSPFile.unserializeStructArray(lumps[BSPFile.LUMP.FACES], BSPFile.STRUCT.dface_t);
-        bsp.planes = BSPFile.unserializeStructArray(lumps[BSPFile.LUMP.PLANES], BSPFile.STRUCT.dplane_t);
-        bsp.edges = BSPFile.unserializeStructArray(lumps[BSPFile.LUMP.EDGES], BSPFile.STRUCT.dedge_t);
-        bsp.surfedges = BSPFile.unserializeStructArray(lumps[BSPFile.LUMP.SURFEDGES], { edge: 'int' });
-        bsp.vertecies = BSPFile.unserializeStructArray(lumps[BSPFile.LUMP.VERTEXES], BSPFile.STRUCT.vertex);
+        bsp.faces = this.unserializeArray(lumps[this.LUMP.FACES], 0, this.STRUCT.dface_t);
+        bsp.planes = this.unserializeArray(lumps[this.LUMP.PLANES], 0, this.STRUCT.dplane_t);
+        bsp.edges = this.unserializeArray(lumps[this.LUMP.EDGES], 0, this.STRUCT.dedge_t);
+        bsp.surfedges = this.unserializeArray(lumps[this.LUMP.SURFEDGES], 0, { edge: 'int' });
+        bsp.vertecies = this.unserializeArray(lumps[this.LUMP.VERTEXES], 0, this.STRUCT.vertex);
         
         // textures
         // bsp.texinfo = BSPFile.unserializeStructArray(lumps[BSPFile.LUMP.TEXINFO], BSPFile.STRUCT.texinfo_t);
@@ -215,14 +212,14 @@ export default class BSPFile extends BinaryFile {
         // bsp.displacementtris = BSPFile.unserializeStructArray(lumps[BSPFile.LUMP.DISP_TRIS], BSPFile.STRUCT.dDispTri);
 
         // entities
-        // const entitiesString = BSPFile.unserializeASCILump(lumps[BSPFile.LUMP.ENTITIES]);
-        // bsp.entities = BSPFile.unserializeVMFString(entitiesString);
+        const entitiesString = BSPFile.unserializeASCILump(lumps[BSPFile.LUMP.ENTITIES]);
+        bsp.entities = BSPFile.unserializeVMFString(entitiesString);
 
         // pakfile
         // bsp.pakfile = lumps[BSPFile.LUMP.PAKFILE];
 
         // gamelumps
-        const gamelumps = BSPFile.unserializeGameLumps(lumps[BSPFile.LUMP.GAME_LUMP], dataArray);
+        const gamelumps = BSPFile.unserializeGameLumps(lumps[BSPFile.LUMP.GAME_LUMP], bsp.view);
 
         bsp.gamelumps = {};
 
@@ -248,16 +245,16 @@ export default class BSPFile extends BinaryFile {
         let currentVertexIndex = 0;
 
         for(let face of faces) {
-            const plane = planes[face.planenum];
+            const plane = planes[face.planenum.data];
 
-            const faces = face.side;
-            const normal = plane.normal;
+            const faces = face.side.data;
+            const normal = plane.normal.data;
 
-            const faceSurfedges = surfedges.slice(face.firstedge, face.firstedge + face.numedges);
+            const faceSurfedges = surfedges.slice(face.firstedge.data, face.firstedge.data + face.numedges.data);
 
             const faceEdges = faceSurfedges.map(surfEdge => {
-                let edge = edges[Math.abs(surfEdge.edge)].v;
-                if(surfEdge.edge < 0) {
+                let edge = edges[Math.abs(surfEdge.edge.data)].v.data;
+                if(surfEdge.edge.data < 0) {
                     edge = edge.reverse();
                 }
                 return edge;
@@ -282,7 +279,7 @@ export default class BSPFile extends BinaryFile {
             currentVertexIndex += verts.length;
 
             const parsedVertecies = verts.map(v => ({
-                vertex: [v.x, v.z, v.y], 
+                vertex: [v.x.data, v.z.data, v.y.data], 
                 uv: [0, 1, 0],
                 normal: [normal[0], normal[2], normal[1]],
             }));
