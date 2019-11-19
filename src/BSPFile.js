@@ -3,6 +3,27 @@ import { BinaryFile } from './BinaryFile';
 
 export default class BSPFile extends BinaryFile {
 
+    static get decode_lumps() {
+        return [
+            BSPFile.LUMP.MODELS,
+            BSPFile.LUMP.FACES,
+            BSPFile.LUMP.PLANES,
+            BSPFile.LUMP.EDGES,
+            BSPFile.LUMP.SURFEDGES,
+            BSPFile.LUMP.VERTEXES,
+            // BSPFile.LUMP.TEXINFO,
+            // BSPFile.LUMP.TEXDATA,
+            // BSPFile.LUMP.TEXDATA_STRING_TABLE,
+            // BSPFile.LUMP.TEXDATA_STRING_DATA,
+            // BSPFile.LUMP.DISPINFO,
+            // BSPFile.LUMP.DISP_VERTS,
+            // BSPFile.LUMP.DISP_TRIS,
+            BSPFile.LUMP.ENTITIES,
+            // BSPFile.LUMP.PAKFILE,
+            BSPFile.LUMP.GAME_LUMP,
+        ];
+    }
+
     static get known_types() {
         return ["VBSP"];
     }
@@ -41,10 +62,13 @@ export default class BSPFile extends BinaryFile {
         const lumpsData = [];
 
         for(let lump of lumps.data) {
-            const lumpLength = lump.filelen.data;
-            const lumpOffset = lump.fileofs.data;
-            const view = new DataView(dataArray.slice(lumpOffset, lumpOffset + lumpLength));
-            lumpsData.push(view);
+            const index = lumps.data.indexOf(lump);
+            if(this.decode_lumps.indexOf(index) != -1) {
+                const lumpLength = lump.filelen.data;
+                const lumpOffset = lump.fileofs.data;
+                const view = new DataView(dataArray.slice(lumpOffset, lumpOffset + lumpLength));
+                lumpsData[index] = view;
+            }
         }
 
         return lumpsData;
@@ -190,6 +214,8 @@ export default class BSPFile extends BinaryFile {
 
         const lumps = this.readLumpData(bsp.header.lumps, dataArray);
 
+        console.log('decode lumps...');
+
         // models
         bsp.models = this.unserializeArray(lumps[this.LUMP.MODELS], 0, this.STRUCT.dmodel_t);
 
@@ -218,10 +244,14 @@ export default class BSPFile extends BinaryFile {
         // pakfile
         // bsp.pakfile = lumps[BSPFile.LUMP.PAKFILE];
 
+        console.log('read gamelumps...');
+
         // gamelumps
         const gamelumps = BSPFile.unserializeGameLumps(lumps[BSPFile.LUMP.GAME_LUMP], bsp.view);
 
         bsp.gamelumps = {};
+
+        console.log('decode gamelumps...');
 
         for(let lump of gamelumps) {
             if(lump.id == "sprp") {
@@ -280,7 +310,7 @@ export default class BSPFile extends BinaryFile {
 
             const parsedVertecies = verts.map(v => ({
                 vertex: [v.x.data, v.z.data, v.y.data], 
-                uv: [0, 1, 0],
+                uv: [1, 1, 0],
                 normal: [normal[0], normal[2], normal[1]],
             }));
 

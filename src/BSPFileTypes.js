@@ -158,13 +158,17 @@ export const Structs = {
         FadeMaxDist: 'float',
         LightingOrigin: 'vector',
         ForcedFadeScale: 'float',
-        MinCPULevel: 'byte',
-        MaxCPULevel: 'byte',
-        MinGPULevel: 'byte',
-        MaxGPULevel: 'byte',
-        DiffuseModulation: 'color32',
-        DisableX360: 'int',
-        FlagsEx: 'unsigned int',
+        
+        not_used: 'byte[16]',
+        // match:
+
+        // MinCPULevel: 'byte',
+        // MaxCPULevel: 'byte',
+        // MinGPULevel: 'byte',
+        // MaxGPULevel: 'byte',
+        // DiffuseModulation: 'color32',
+        // DisableX360: 'int',
+        // FlagsEx: 'unsigned int',
         // UniformScale: 'float',
     },
     cdispneighbor: {
