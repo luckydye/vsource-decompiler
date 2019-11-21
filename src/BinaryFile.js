@@ -213,7 +213,14 @@ export class BinaryFile {
     }
 
     static unserializeASCILump(lumpBuffer) {
-        return String.fromCharCode(...new Uint8Array(lumpBuffer));
+        let string = "";
+        const buff = new Uint8Array(lumpBuffer.buffer);
+
+        for(let b of buff) {
+            string += String.fromCharCode(b);
+        }
+        
+        return string;
     }
 
     static createFile(dataArray) {

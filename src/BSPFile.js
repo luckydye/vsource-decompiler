@@ -1,4 +1,4 @@
-import { Structs, LumpTypes } from './BSPFileTypes';
+import { Structs, LumpTypes, TextureFlags } from './BSPFileTypes';
 import { BinaryFile } from './BinaryFile';
 
 export default class BSPFile extends BinaryFile {
@@ -11,10 +11,10 @@ export default class BSPFile extends BinaryFile {
             BSPFile.LUMP.EDGES,
             BSPFile.LUMP.SURFEDGES,
             BSPFile.LUMP.VERTEXES,
-            // BSPFile.LUMP.TEXINFO,
-            // BSPFile.LUMP.TEXDATA,
-            // BSPFile.LUMP.TEXDATA_STRING_TABLE,
-            // BSPFile.LUMP.TEXDATA_STRING_DATA,
+            BSPFile.LUMP.TEXINFO,
+            BSPFile.LUMP.TEXDATA,
+            BSPFile.LUMP.TEXDATA_STRING_TABLE,
+            BSPFile.LUMP.TEXDATA_STRING_DATA,
             // BSPFile.LUMP.DISPINFO,
             // BSPFile.LUMP.DISP_VERTS,
             // BSPFile.LUMP.DISP_TRIS,
@@ -82,12 +82,11 @@ export default class BSPFile extends BinaryFile {
         let byteOffset = 0;
 
         for(let i = 0; i < texdatastringtable.length; i++) {
-            const index = texdatastringtable[i].tex;
-            const nextIndex = texdatastringtable[i + 1] ? texdatastringtable[i + 1].tex -1 : lumpByteSize - 1;
+            const index = texdatastringtable[i].tex.data;
+            const nextIndex = texdatastringtable[i + 1] ? texdatastringtable[i + 1].tex.data -1 : lumpByteSize - 1;
             const byteLength = nextIndex - index;
 
-            const byteData = lumpBuffer.slice(index, index + byteLength);
-            const string = String.fromCharCode(...(new Uint8Array(byteData)));
+            const string = String.fromCharCode(...(new Uint8Array(lumpBuffer.buffer.slice(index, index + byteLength))));
 
             textures.push(string);
         }
@@ -227,10 +226,10 @@ export default class BSPFile extends BinaryFile {
         bsp.vertecies = this.unserializeArray(lumps[this.LUMP.VERTEXES], 0, this.STRUCT.vertex);
         
         // textures
-        // bsp.texinfo = this.unserializeArray(lumps[this.LUMP.TEXINFO], 0, this.STRUCT.texinfo_t);
-        // bsp.texdata = this.unserializeArray(lumps[this.LUMP.TEXDATA], 0, this.STRUCT.dtexdata_t);
-        // bsp.texdatastringtable = this.unserializeArray(lumps[this.LUMP.TEXDATA_STRING_TABLE], 0, { tex: 'int' });
-        // bsp.textures = this.unserializeTextureDataLump(lumps[this.LUMP.TEXDATA_STRING_DATA], 0, bsp.texdatastringtable);
+        bsp.texinfo = this.unserializeArray(lumps[this.LUMP.TEXINFO], 0, this.STRUCT.texinfo_t);
+        bsp.texdata = this.unserializeArray(lumps[this.LUMP.TEXDATA], 0, this.STRUCT.dtexdata_t);
+        bsp.texdatastringtable = this.unserializeArray(lumps[this.LUMP.TEXDATA_STRING_TABLE], 0, { tex: 'int' });
+        bsp.textures = this.unserializeTextureDataLump(lumps[this.LUMP.TEXDATA_STRING_DATA], bsp.texdatastringtable);
         
         // displacements
         // bsp.displacements = this.unserializeArray(lumps[this.LUMP.DISPINFO], 0, this.STRUCT.ddispinfo_t);
@@ -268,18 +267,30 @@ export default class BSPFile extends BinaryFile {
         const surfedges = this.surfedges;
         const vertecies = this.vertecies;
         const faces = this.faces;
+        const texInfos = this.texInfo;
 
         const vertexResultArray = [];
         const indexResultArray = [];
+        const textureArray = this.textures;
 
         let currentVertexIndex = 0;
-
+        
         for(let face of faces) {
             const plane = planes[face.planenum.data];
+            
+            const textureInfo = this.texinfo[face.texinfo.data];
+            const textureData = this.texdata[textureInfo.texdata.data];
+            const textureIndex = textureData.nameStringTableID.data;
+            const textureFlag = textureInfo.flags.data;
 
+            switch(textureFlag) {
+                case 0: break;
+                case TextureFlags.SURF_BUMPLIGHT: break;
+                default: continue;
+            }
+            
             const faces = face.side.data;
             const normal = plane.normal.data;
-
             const faceSurfedges = surfedges.slice(face.firstedge.data, face.firstedge.data + face.numedges.data);
 
             const faceEdges = faceSurfedges.map(surfEdge => {
@@ -308,9 +319,15 @@ export default class BSPFile extends BinaryFile {
 
             currentVertexIndex += verts.length;
 
+            const tv = textureInfo.textureVecs.data;
+
             const parsedVertecies = verts.map(v => ({
                 vertex: [v.x.data, v.z.data, v.y.data], 
-                uv: [1, 1, 0],
+                uv: [
+                    (tv[0][0] * v.x.data + tv[0][1] * v.y.data + tv[0][2] * v.z.data + tv[0][3]) / textureData.width_height_0,
+                    (tv[1][0] * v.x.data + tv[1][1] * v.y.data + tv[1][2] * v.z.data + tv[1][3]) / textureData.width_height_1,
+                    textureIndex
+                ],
                 normal: [normal[0], normal[2], normal[1]],
             }));
 
@@ -320,7 +337,8 @@ export default class BSPFile extends BinaryFile {
 
         return {
             indecies: indexResultArray,
-            vertecies: vertexResultArray
+            textures: textureArray,
+            vertecies: vertexResultArray,
         };
     }
 

@@ -43,15 +43,11 @@ export default class VVDFile extends BinaryFile {
 
         const numberOfIndecies = (verts.length - 2) * 5;
 
-        for(let i = 0; i < verts.length; i++) {
-            indexes.push(0 + i);
-            indexes.push(1 + i);
-            indexes.push(2 + i);
-            
-            indexes.push(0 + i);
-            indexes.push(1 + i);
-            indexes.push(2 + i);
-        }
+        // for(let i = 0; i < numberOfIndecies; i++) {
+        //     indexes.push(0 + i);
+        //     indexes.push(1 + i);
+        //     indexes.push(2 + i);
+        // }
 
         const parsedVertecies = verts.map(vert => ([
             vert.pos_x.data,
