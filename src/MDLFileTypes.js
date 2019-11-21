@@ -168,7 +168,6 @@ export const Structs = {
         id: 'int',
         origin: 'vector',
         vertexData: 'mstudio_meshvertexdata_t',
-        unused: 'int[8]',
     },
     mstudioflex_t: {
         flexDescIndex: 'int',

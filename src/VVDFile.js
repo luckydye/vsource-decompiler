@@ -41,10 +41,14 @@ export default class VVDFile extends BinaryFile {
         const verts = this.vertecies;
         const indexes = [];
 
-        const numberOfIndecies = (verts.length - 2) * 3;
+        const numberOfIndecies = (verts.length - 2) * 5;
 
-        for(let i = 0; i < numberOfIndecies / 3; i++) {
-            indexes.push(i);
+        for(let i = 0; i < verts.length; i++) {
+            indexes.push(0 + i);
+            indexes.push(1 + i);
+            indexes.push(2 + i);
+            
+            indexes.push(0 + i);
             indexes.push(1 + i);
             indexes.push(2 + i);
         }

@@ -55,7 +55,7 @@ export default class VPKFile extends BinaryFile {
         let header;
 
         for(let i = 0; i < 100000; i++) {
-            header = this.unserializeStruct(dataArray, Structs.VPKHeader_v2);
+            header = this.unserialize(dataArray, 0, Structs.VPKHeader_v2);
         }
 
         const time1 = performance.now() - readTime;
