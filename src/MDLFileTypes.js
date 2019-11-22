@@ -1,7 +1,7 @@
 // helped alot:
 // https://github.com/ZeqMacaw/Crowbar/blob/master/Crowbar/Core/SourceModel/SourceCommon/SourceMdlFileData/SourceMdlBodyPart.vb
 
-export const Structs = {
+export const MDL = {
     studiohdr_t: {
         id: 'char[4]',
         version: 'int',
@@ -201,9 +201,15 @@ export const Structs = {
         m_vecPosition: 'vector',
         m_vecNormal: 'vector',
         m_vecTexCoord: 'vector2d',
-    }
-};
+    },
 
-export const LumpTypes = {
-    
+    mstudiotexture_t: {
+        name_offset: 'int',
+        flags: 'int',
+        used: 'int',
+        unused: 'int',
+        material: 'int',
+        client_material: 'int',
+        unused2: 'int[10]',
+    }
 };

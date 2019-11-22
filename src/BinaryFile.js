@@ -157,6 +157,10 @@ export class BinaryFile {
             };
 
         } else {
+            if(typeMapping[type] && binary.byteLength < byteOffset + typeMapping[type].BYTES_PER_ELEMENT) {
+                throw new Error(`${type} to ${byteOffset + typeMapping[type].BYTES_PER_ELEMENT} offset out of bounds of ${binary.byteLength-1}`);
+            }
+
             return this.parseBytes(binary, byteOffset, type);
         }
     }
