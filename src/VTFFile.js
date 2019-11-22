@@ -37,10 +37,7 @@ export default class VTFFile extends BinaryFile {
         vtf.format.height = header.height.data;
 
         if(vtf.format) {
-            const byteLength = vtf.format.width * vtf.format.height * (vtf.format.bits / 8);
-            
-            console.log(vtf.format);
-            
+            const byteLength = header.width.data * header.height.data * (vtf.format.bits / 8);
             const imageDataBuffer = dataArray.slice(dataArray.byteLength - byteLength);
             vtf.imageData = imageDataBuffer;
         }

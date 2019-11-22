@@ -212,7 +212,7 @@ export class BinaryFile {
         return structs;
     }
 
-    static unserializeASCILump(lumpBuffer) {
+    static unserializeASCI(lumpBuffer) {
         let string = "";
         const buff = new Uint8Array(lumpBuffer.buffer);
 
@@ -232,6 +232,16 @@ export class BinaryFile {
 
     static fromDataArray(dataArray) {
         return this.createFile(dataArray);
+    }
+
+    static async fetch(path) {
+        return fetch(path).then(async res => {
+            if(res.status == 200) {
+                const dataArray = await res.arrayBuffer();
+                const file = this.fromDataArray(dataArray);
+                return file;
+            }
+        });
     }
 
 }
