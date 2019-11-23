@@ -3,6 +3,7 @@
   "version": "1.0.0",
   "description": "A BSP library to read Source .bsp map files.",
   "main": "index.js",
+  "module": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
   },
