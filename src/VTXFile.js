@@ -32,7 +32,7 @@ const ModelLODHeader_t = {
 const MeshHeader_t = {
     numStripGroups: 'int',
     stripGroupHeaderOffset: 'int',
-    flags: 'unsigned char',
+    flags: 'char',
 }
 
 const StripGroupHeader_t = {
@@ -43,6 +43,7 @@ const StripGroupHeader_t = {
     numStrips: 'int',
     stripOffset: 'int',
     flags: 'unsigned char',
+    skip: 'byte[8]',
 }
 
 const StripHeader_t = {
@@ -76,59 +77,50 @@ export default class VTXFile extends BinaryFile {
         const parts = this.unserializeArray(vtx.view, bodyPartOffset, BodyPartHeader_t, bodyPartCount);
 
         vtx.bodyparts = parts;
-        vtx.stripGroups = [];
+        vtx.indecies = [];
+        vtx.vertexIndecies = [];
+
+        let meshVertexOffset = 0;
 
         for(let part of vtx.bodyparts) {
             const modelOffset = bodyPartOffset + part.modelOffset.data;
-            const modelCount = part.modelCount.data;
-
-            const models = this.unserializeArray(vtx.view, modelOffset, ModelHeader_t, modelCount);
+            const models = this.unserializeArray(vtx.view, modelOffset, ModelHeader_t, part.modelCount.data);
 
             for(let mdl of models) {
                 const lodOffset = modelOffset + mdl.lodOffset.data;
-                const lodCount = mdl.lodCount.data;
-
-                const lods = this.unserializeArray(vtx.view, lodOffset, ModelLODHeader_t, lodCount);
+                const lods = this.unserializeArray(vtx.view, lodOffset, ModelLODHeader_t, mdl.lodCount.data);
 
                 for(let lod of lods) {
                     const meshOffset = lodOffset + lod.meshOffset.data;
-                    const meshCount = mdl.lodCount.data;
-
-                    const meshes = this.unserializeArray(vtx.view, meshOffset, MeshHeader_t, meshCount);
+                    const meshes = this.unserializeArray(vtx.view, meshOffset, MeshHeader_t, lod.numMeshes.data);
 
                     for(let mesh of meshes) {
-                        const stripsOffset = meshOffset + mesh.stripGroupHeaderOffset.data;
-                        const stripsCount = mesh.numStripGroups.data;
-    
-                        const stripGroups = this.unserializeArray(vtx.view, stripsOffset, StripGroupHeader_t, stripsCount);
-    
-                        vtx.stripGroups.push(...stripGroups);
+                        const stripsOffset = mesh.byteOffset + mesh.stripGroupHeaderOffset.data;
+                        const stripGroups = this.unserializeArray(vtx.view, stripsOffset, StripGroupHeader_t, mesh.numStripGroups.data);
 
                         for(let stripGroup of stripGroups) {
-                            const stripOffset = stripsOffset + stripGroup.stripOffset.data;
-                            const stripCount = stripGroup.numStrips.data;
+                            const indexOffset = stripGroup.byteOffset + stripGroup.indexOffset.data;
+                            const indexCount = stripGroup.numIndices.data;
+
+                            const vertOffset = stripGroup.byteOffset + stripGroup.vertOffset.data;
+                            const vertCount = stripGroup.numVerts.data;
         
-                            const strips = this.unserializeArray(vtx.view, stripOffset, StripHeader_t, stripCount);
+                            const indecies = this.unserializeArray(vtx.view, indexOffset, { index: 'unsigned short' }, indexCount);
+                            const vertecies = this.unserializeArray(vtx.view, vertOffset, Vertex_t, vertCount);
 
-                            for(let strip of strips) {
-                                const indexOffset = stripsOffset + stripGroup.indexOffset.data + strip.indexOffset.data;
-                                const indexCount = strip.numIndices.data;
+                            // collect indecies
+                            vtx.indecies.push(indecies.map(i => i.index.data + meshVertexOffset));
+                            vtx.vertexIndecies.push(vertecies.map(v => v.origMeshVertID.data + meshVertexOffset));
 
-                                const vertOffset = stripsOffset + stripGroup.vertOffset.data + strip.vertOffset.data;
-                                const vertCount = strip.numVerts.data;
-            
-                                const indecies = this.unserializeArray(vtx.view, indexOffset, { index: 'unsigned short' }, indexCount);
-                                const vertecies = this.unserializeArray(vtx.view, vertOffset, Vertex_t, vertCount);
-    
-                                // collect indecies
-                                vtx.indecies = indecies.map(i => i.index.data);
-                                vtx.vertexIndecies = vertecies.map(v => v.origMeshVertID.data);
-                            }
+                            meshVertexOffset += vertCount;
                         }
                     }
                 }
             }
         }
+
+        vtx.indecies = vtx.indecies.flat();
+        vtx.vertexIndecies = vtx.vertexIndecies.flat();
 
         return vtx;
     }

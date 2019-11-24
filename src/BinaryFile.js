@@ -204,12 +204,14 @@ export class BinaryFile {
             bytesPerElement = structData.byteOffset;
             structs.push(structData.data);
 
-            count = binary.byteLength / bytesPerElement;
+            count = (binary.byteLength / bytesPerElement) - 1;
         }
         
         for(let i = 0; i < count; i++) {
+            const byteStartOffset = byteOffset;
             const structData = this.unserialize(binary, byteOffset, struct);
             byteOffset = structData.byteOffset;
+            structData.data.byteOffset = byteStartOffset;
             structs.push(structData.data);
         }
 
