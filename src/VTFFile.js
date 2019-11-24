@@ -57,6 +57,18 @@ export const IMAGE_FORMAT = {
 	26: { type: "UVLX8888", bits: 32, compressed: false }
 }
 
+// VTF Header
+// Resource entries
+//     VTF Low Resolution Image Data
+//     Other resource data
+//         For Each Mipmap (Smallest to Largest)
+//             For Each Frame (First to Last)
+//                 For Each Face (First to Last)
+//                     For Each Z Slice (Min to Max; Varies with Mipmap)
+//                         VTF High Resolution Image Data
+
+// imageIndex = numResources * 
+
 export default class VTFFile extends BinaryFile {
 
     static get STRUCT() {
@@ -86,12 +98,16 @@ export default class VTFFile extends BinaryFile {
         vtf.version = header.version;
         vtf.header = header;
 
-        vtf.format = IMAGE_FORMAT[header.highResImageFormat.data] || { type: "NONE" };
-        vtf.format.width = header.width.data;
-        vtf.format.height = header.height.data;
+        vtf.mipmapCount = header.mipmapCount.data;
+
+        vtf.format = IMAGE_FORMAT[header.lowResImageFormat.data] || { type: "NONE" };
+        vtf.format.width = header.lowResImageWidth.data;
+        vtf.format.height = header.lowResImageHeight.data;
+
+        console.log(vtf.format);
 
         if(vtf.format) {
-            const byteLength = header.width.data * header.height.data * (vtf.format.bits / 8);
+            const byteLength = 16 * 8;
             const imageDataBuffer = dataArray.slice(dataArray.byteLength - byteLength);
             vtf.imageData = imageDataBuffer;
         }
