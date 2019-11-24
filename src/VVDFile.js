@@ -82,17 +82,6 @@ export default class VVDFile extends BinaryFile {
 
     convertToMesh() {
         const verts = this.vertecies;
-        const indexes = [];
-
-        for(let i = 0; i < verts.length; i++) {
-            indexes.push(i + 3);
-            indexes.push(i + 2);
-            indexes.push(i + 1);
-
-            indexes.push(i + 3);
-            indexes.push(i + 1);
-            indexes.push(i + 0);
-        }
 
         const parsedVertecies = verts.map((vert, i) => ([
             vert.pos_x.data,
@@ -108,10 +97,7 @@ export default class VVDFile extends BinaryFile {
             vert.norm_y.data,
         ]));
 
-        return {
-            vertecies: parsedVertecies,
-            indecies: indexes,
-        };
+        return parsedVertecies;
     }
 
 }

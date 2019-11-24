@@ -4,6 +4,7 @@ import VPKFile from './src/VPKFile.js';
 import MDLFile from './src/MDLFile.js';
 import VMTFile from './src/VMTFile.js';
 import VTFFile from './src/VTFFile.js';
+import VTXFile from './src/VTXFile.js';
 
 export {
     VVDFile,
@@ -12,4 +13,5 @@ export {
     MDLFile,
     VMTFile,
     VTFFile,
+    VTXFile,
 }
