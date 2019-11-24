@@ -1,7 +1,50 @@
 import { BinaryFile } from './BinaryFile';
-import { Structs } from './VVDFileTypes';
 
 // https://developer.valvesoftware.com/wiki/VVD
+
+const MAX_NUM_LODS = 8;
+const MAX_NUM_BONES_PER_VERT = 3;
+
+const Structs = {
+    vertexFileHeader_t: {
+        id: 'char[4]',
+        version: 'int',
+        checksum: 'int',
+        numLODs: 'int',
+        numLODVertexes: `int[${MAX_NUM_LODS}]`,
+        numFixups: 'int',
+        fixupTableStart: 'int',
+        vertexDataStart: 'int',
+        tangentDataStart: 'int',
+    },
+    vertexFileFixup_t: {
+        lod: 'int',			
+        sourceVertexID: 'int',
+        numVertexes: 'int',
+    },
+    mstudiovertex_t: {
+        // m_BoneWeights: 'byte[16]',
+
+        pos_x: 'float',
+        pos_y: 'float',
+        pos_z: 'float',
+
+        norm_x: 'float',
+        norm_y: 'float',
+        norm_z: 'float',
+
+        tex_u: 'float',
+        tex_v: 'float',
+    },
+    mstudioboneweight_t: {
+        weight: `float[${MAX_NUM_BONES_PER_VERT}]`,
+        bone: `byte[${MAX_NUM_BONES_PER_VERT}]`,
+        numbones: 'byte',
+    },
+    mstudiotangent_t: {
+        tangent: 'vector4d'
+    },
+}
 
 export default class VVDFile extends BinaryFile {
 
@@ -41,15 +84,17 @@ export default class VVDFile extends BinaryFile {
         const verts = this.vertecies;
         const indexes = [];
 
-        const numberOfIndecies = (verts.length - 2) * 5;
+        for(let i = 0; i < verts.length; i++) {
+            indexes.push(i + 3);
+            indexes.push(i + 2);
+            indexes.push(i + 1);
 
-        // for(let i = 0; i < numberOfIndecies; i++) {
-        //     indexes.push(0 + i);
-        //     indexes.push(1 + i);
-        //     indexes.push(2 + i);
-        // }
+            indexes.push(i + 3);
+            indexes.push(i + 1);
+            indexes.push(i + 0);
+        }
 
-        const parsedVertecies = verts.map(vert => ([
+        const parsedVertecies = verts.map((vert, i) => ([
             vert.pos_x.data,
             vert.pos_z.data,
             vert.pos_y.data,

@@ -1,5 +1,4 @@
 import { BinaryFile } from './BinaryFile';
-import { VMT } from './VMTFileTypes';
 
 // https://developer.valvesoftware.com/wiki/Valve_Texture_Format
 
