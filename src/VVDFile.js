@@ -55,7 +55,7 @@ export default class VVDFile extends BinaryFile {
     static decompileVertexData(vvd) {
         let byteOffset = vvd.header.vertexDataStart.data;
 
-        console.log('decompileing', vvd.vertexCount, 'vertecies.');
+        // console.log('decompileing', vvd.vertexCount, 'vertecies.');
 
         for(let v = 0; v < vvd.vertexCount; v++) {
             byteOffset += 16;

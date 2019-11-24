@@ -100,14 +100,17 @@ export default class VTFFile extends BinaryFile {
 
         vtf.mipmapCount = header.mipmapCount.data;
 
-        vtf.format = IMAGE_FORMAT[header.lowResImageFormat.data] || { type: "NONE" };
-        vtf.format.width = header.lowResImageWidth.data;
-        vtf.format.height = header.lowResImageHeight.data;
+        const format = IMAGE_FORMAT[header.highResImageFormat.data];
 
-        console.log(vtf.format);
+        vtf.format = {
+            type: format ? format.type : "NONE",
+            width: header.width.data,
+            height: header.height.data,
+            bits: format ? format.bits : 8,
+        }
 
-        if(vtf.format) {
-            const byteLength = 16 * 8;
+        if(vtf.format.type != "NONE") {
+            const byteLength = vtf.format.width * vtf.format.height * (vtf.format.bits / 8);
             const imageDataBuffer = dataArray.slice(dataArray.byteLength - byteLength);
             vtf.imageData = imageDataBuffer;
         }
