@@ -1,7 +1,7 @@
 {
-  "name": "source-bsp-lib",
+  "name": "@uncut/binary-file-lib",
   "version": "1.0.0",
-  "description": "A BSP library to read Source .bsp map files.",
+  "description": "A binary file library to read various binary files.",
   "main": "index.js",
   "module": "index.js",
   "scripts": {

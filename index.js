@@ -1,10 +1,10 @@
-import VVDFile from './src/VVDFile.js';
-import BSPFile from './src/BSPFile.js';
-import VPKFile from './src/VPKFile.js';
-import MDLFile from './src/MDLFile.js';
-import VMTFile from './src/VMTFile.js';
-import VTFFile from './src/VTFFile.js';
-import VTXFile from './src/VTXFile.js';
+import VVDFile from './files/VVDFile.js';
+import BSPFile from './files/BSPFile.js';
+import VPKFile from './files/VPKFile.js';
+import MDLFile from './files/MDLFile.js';
+import VMTFile from './files/VMTFile.js';
+import VTFFile from './files/VTFFile.js';
+import VTXFile from './files/VTXFile.js';
 
 export {
     VVDFile,
