@@ -1,5 +1,5 @@
 {
-  "name": "@uncut/binary-file-lib",
+  "name": "@uncut/file-format-lib",
   "version": "1.0.0",
   "description": "A binary file library to read various binary files.",
   "main": "index.js",
