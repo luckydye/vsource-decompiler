@@ -1,4 +1,4 @@
-import { BinaryFile } from './BinaryFile';
+import { BinaryFile } from './BinaryFile.mjs';
 
 // helped alot:
 // https://github.com/ZeqMacaw/Crowbar/blob/master/Crowbar/Core/SourceModel/SourceCommon/SourceMdlFileData/SourceMdlBodyPart.vb

@@ -1,4 +1,4 @@
-import { BinaryFile } from './BinaryFile';
+import { BinaryFile } from './BinaryFile.mjs';
 
 const FileHeader_t = {
     version: 'int',

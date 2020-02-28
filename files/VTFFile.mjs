@@ -1,4 +1,4 @@
-import { BinaryFile } from './BinaryFile';
+import { BinaryFile } from './BinaryFile.mjs';
 
 // https://developer.valvesoftware.com/wiki/Valve_Texture_Format
 
@@ -79,7 +79,7 @@ export default class VTFFile extends BinaryFile {
         const fileHeader = this.unserialize(vtf.view, 0, VTF.vtfheader).data;
         const sig = fileHeader.signature.data.split("").slice(0, 3).join("");
 
-        let header;
+        let header = {};
 
         if(sig == "VTF") {
             const version = parseInt(fileHeader.version.data.join(""));
@@ -94,6 +94,10 @@ export default class VTFFile extends BinaryFile {
         const vtf = this.createFile(dataArray);
 
         const header = this.readHeader(vtf);
+
+        if(!header.version) {
+            throw new Error('File not recognised');
+        }
 
         vtf.version = header.version;
         vtf.header = header;
