@@ -605,7 +605,7 @@ export default class BSPFile extends BinaryFile {
                     (tv[1][0] * v.x.data + tv[1][1] * v.y.data + tv[1][2] * v.z.data + tv[1][3]) / textureData.width_height_1,
                     textureIndex
                 ],
-                normal: [normal[0], normal[2], normal[1]],
+                normal: [normal[0], -normal[2], -normal[1]],
             }));
 
             vertexResultArray.push(...parsedVertecies);

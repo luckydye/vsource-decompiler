@@ -93,8 +93,8 @@ export default class VVDFile extends BinaryFile {
             0,
 
             vert.norm_x.data,
-            vert.norm_z.data,
-            vert.norm_y.data,
+            -vert.norm_z.data,
+            -vert.norm_y.data,
         ]));
 
         return parsedVertecies;

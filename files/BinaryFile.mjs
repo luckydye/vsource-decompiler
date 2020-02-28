@@ -117,7 +117,11 @@ export class BinaryFile {
             }
         }
 
-        return { data, byteOffset };
+        return { 
+            byteOffset,
+            data, 
+            toString() { return this.data; },
+        };
     }
 
     static parseType(binary, byteOffset, type, inputs) {
@@ -153,7 +157,8 @@ export class BinaryFile {
 
             return {
                 byteOffset,
-                data: arrayData
+                data: arrayData,
+                toString() { return this.data; },
             };
 
         } else {
@@ -189,7 +194,8 @@ export class BinaryFile {
 
         return {
             byteOffset: byteOffset,
-            data: structData
+            data: structData,
+            toString() { return this.data; },
         };
     }
 
