@@ -1,29 +1,43 @@
-import { Model } from '../source/ModelLoader.mjs';
-import OBJFile from '../files/OBJFile.mjs';
+#!/usr/bin/env node
 
 import fs from 'fs';
 
-const args = process.argv.slice(2);
+import { Model } from '../source/ModelLoader.mjs';
+import OBJFile from '../files/OBJFile.mjs';
 
 function log(...str) {
     console.log('[INFO]', ...str);
 }
 
-async function main(mapname) {
+const Commands = {
 
-    if(!mapname)
-        return log('Provide a map file.');
+    async decompile(mapName) {
+        if(!mapName)
+            return log('Provide a map file.');
 
-    const model = new Model();
-    await model.loadMap(mapname);
+        const model = new Model();
+        await model.loadMap(mapName);
 
-    const obj = OBJFile.fromGeometry(model.geometry);
+        const obj = OBJFile.fromGeometry(model.geometry);
 
-    console.log(model.name, 'loaded.');
+        log(model.name, 'decompiled.');
 
-    fs.writeFileSync(model.name + '.obj', obj);
+        fs.writeFileSync(model.name + '.obj', obj);
 
-    return model;
+        return model;
+    }
+
 }
 
-main(args[0]);
+function main(command, args) {
+    if(Commands[command]) {
+        Commands[command](...args);
+    } else {
+        log('Commands:', Object.keys(Commands).join(", "));
+    }
+}
+
+const command = process.argv.slice(2)[0];
+const args = process.argv.slice(3);
+
+main(command, args);

@@ -4,7 +4,9 @@
   "description": "A binary file library to read various binary files.",
   "main": "index.mjs",
   "module": "index.mjs",
-  "bin": {},
+  "bin": {
+    "source": "scripts/decompile.mjs"
+  },
   "scripts": {
     "decompile": "node scripts/decompile.mjs",
     "test": "echo \"Error: no test specified\" && exit 1"
