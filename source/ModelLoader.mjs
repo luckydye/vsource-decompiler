@@ -35,11 +35,24 @@ const propTypes = new Map();
 
 export class Model {
 
+    static resourceRoot = "csgo/";
+
     static directories = {
-        root: './res/',
-        maps: './res/maps/',
-        models: './res/models/',
-        materials: './res/materials/',
+        get root() { 
+            return Model.resourceRoot;
+        },
+        set root(val) { 
+            Model.resourceRoot = val;
+        },
+        get maps() {
+            return this.root + '/maps/';
+        },
+        get models() {
+            return this.root + '/models/';
+        },
+        get materials() {
+            return this.root + '/materials/';
+        },
     }
 
     static async loadMap(bspMapName) {

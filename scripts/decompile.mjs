@@ -1,6 +1,8 @@
 #!/usr/bin/env node
 
 import fs from 'fs';
+import path from 'path';
+import chalk from 'chalk';
 
 import { Model } from '../source/ModelLoader.mjs';
 import OBJFile from '../files/OBJFile.mjs';
@@ -9,31 +11,54 @@ function log(...str) {
     console.log('[INFO]', ...str);
 }
 
+function error(...str) {
+    console.log(chalk.red('[ERROR]', ...str));
+}
+
 const Commands = {
 
-    async decompile(mapName) {
-        if(!mapName)
-            return log('Provide a map file.');
+    "decompile": {
+        usage: 'decompile <map_name> [<ouput_path>] [<resource_path>]',
+        description: 'Decompile CS:GO maps from bsp format.',
 
-        const model = new Model();
-        await model.loadMap(mapName);
+        async execute(mapName, resourcePath = "res/", outputFilePath) {
+            if(!mapName) {
+                error('Provide a map file.');
+                return;
+            }
 
-        const obj = OBJFile.fromGeometry(model.geometry);
-
-        log(model.name, 'decompiled.');
-
-        fs.writeFileSync(model.name + '.obj', obj);
-
-        return model;
+            if(resourcePath && fs.existsSync(path.resolve(resourcePath))) {
+                Model.resourceRoot = resourcePath;
+            } else if(resourcePath) {
+                error(`Resource folder "${resourcePath}" not found.`);
+                return;
+            }
+    
+            const model = new Model();
+            await model.loadMap(mapName);
+    
+            const obj = OBJFile.fromGeometry(model.geometry);
+    
+            log(model.name, 'decompiled.');
+    
+            const objFielPath = outputFilePath ? outputFilePath : model.name + '.obj';
+            fs.writeFileSync(objFielPath, obj);
+    
+            return model;
+        }
     }
 
 }
 
-function main(command, args) {
+async function main(command, args) {
     if(Commands[command]) {
-        Commands[command](...args);
+        const result = await Commands[command].execute(...args);
+        if(!result && Commands[command].usage) {
+            log(Commands[command].description);
+            log(`Usage: ${chalk.green(Commands[command].usage)}`);
+        }
     } else {
-        log('Commands:', Object.keys(Commands).join(", "));
+        log('Commands:', chalk.green(Object.keys(Commands).join(", ")));
     }
 }
 
