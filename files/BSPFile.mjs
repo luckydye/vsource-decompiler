@@ -162,6 +162,22 @@ const Structs = {
         ForcedFadeScale: 'float',
         
         not_used: 'byte[16]',
+    },
+    StaticPropLumpV11_t: {
+        Origin: 'vector',
+        Angles: 'qangle',
+        PropType: 'unsigned short',
+        FirstLeaf: 'unsigned short',
+        LeafCount: 'unsigned short',
+        Solid: 'byte',
+        Flags: 'byte',
+        Skin: 'int',
+        FadeMinDist: 'float',
+        FadeMaxDist: 'float',
+        LightingOrigin: 'vector',
+        ForcedFadeScale: 'float',
+        
+        not_used: 'byte[16]',
         // match:
 
         // MinCPULevel: 'byte',
@@ -171,7 +187,8 @@ const Structs = {
         // DiffuseModulation: 'color32',
         // DisableX360: 'int',
         // FlagsEx: 'unsigned int',
-        // UniformScale: 'float',
+
+        UniformScale: 'float',
     },
     cdispneighbor: {
         noteused: 'byte[16]'
@@ -465,9 +482,12 @@ export default class BSPFile extends BinaryFile {
 
         const props = [];
 
+        const usedGamelumpStruct = BSPFile.STRUCT[`StaticPropLumpV${gamelump.version}_t`];
+
         for(let p = 0; p < entries.data; p++) {
-            const prop = this.unserialize(buffer, byteOffset, BSPFile.STRUCT.StaticPropLumpV10_t);
+            const prop = this.unserialize(buffer, byteOffset, usedGamelumpStruct);
             byteOffset = prop.byteOffset;
+
             prop.data.PropType = models[prop.data.PropType.data];
             props.push(prop.data);
         }
@@ -605,7 +625,7 @@ export default class BSPFile extends BinaryFile {
                     (tv[1][0] * v.x.data + tv[1][1] * v.y.data + tv[1][2] * v.z.data + tv[1][3]) / textureData.width_height_1,
                     textureIndex
                 ],
-                normal: [normal[0], -normal[2], -normal[1]],
+                normal: [normal[0], normal[2], normal[1]],
             }));
 
             vertexResultArray.push(...parsedVertecies);

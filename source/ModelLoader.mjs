@@ -140,7 +140,6 @@ export class Model {
     }
     
     registerProp(prop) {
-        if(prop.PropType)
         if(!propTypes.has(prop.PropType)) {
 
             const nameParts = prop.PropType.split("/");
@@ -222,9 +221,9 @@ export class Model {
 
         const vertexData = {
             vertecies: meshData.vertecies.map(vert => ([
-                ...vert.vertex,
-                vert.uv[0], vert.uv[1], vert.uv[2], // <-- textureIndex
-                ...vert.normal
+                vert.vertex[0], vert.vertex[1], vert.vertex[2],
+                vert.uv[0], vert.uv[1], vert.uv[2],
+                vert.normal[0], vert.normal[1], vert.normal[2]
             ])).flat(),
             indecies: meshData.indecies
         };
@@ -242,7 +241,8 @@ export class Model {
                     };
                 }
             }),
-            scale: [-0.01, 0.01, 0.01],
+            scale: [1, 1, 1],
+            origin: [0, 0, 0],
             position: [0, 0, 0],
             rotation: [0, 0, 0],
         });
@@ -254,48 +254,52 @@ export class Model {
         return new Promise((resolve, reject) => {
             for(let prop of props) {
 
+                if(!prop.PropType) {
+                    throw new Error('Error decompiling prop gamelump.');
+                    continue;
+                }
+
                 this.registerProp(prop);
 
                 const type = propTypes.get(this.getPropType(prop));
 
-                if(type) {
-                    type.listeners.push(propData => {
+                type.listeners.push(propData => {
 
-                        const mat = () => {
-                            if(propData.texture) {
-                                return {
-                                    format: propData.texture.format,
-                                    data: propData.texture.imageData
-                                }
-                            } else {
-                                return {
-                                    format: null,
-                                    data: null,
-                                };
+                    const mat = () => {
+                        if(propData.texture) {
+                            return {
+                                format: propData.texture.format,
+                                data: propData.texture.imageData
                             }
+                        } else {
+                            return {
+                                format: null,
+                                data: null,
+                            };
                         }
-    
-                        const propGeometry = {
-                            name: type.name,
-                            vertecies: propData.vertecies.flat(),
-                            indecies: propData.indecies,
-                            material: mat(),
-                            scale: [-0.01, 0.01, 0.01],
-                            position: [
-                                prop.Origin.data[0].data * -0.01,
-                                prop.Origin.data[2].data * 0.01,
-                                prop.Origin.data[1].data * 0.01,
-                            ],
-                            rotation: [
-                                prop.Angles.data[0].data * Math.PI / 180,
-                                prop.Angles.data[1].data * Math.PI / 180,
-                                prop.Angles.data[2].data * Math.PI / 180,
-                            ],
-                        };
-                        
-                        this.geometry.add(propGeometry);
-                    });
-                }
+                    }
+
+                    const propGeometry = {
+                        name: type.name,
+                        vertecies: propData.vertecies.flat(),
+                        indecies: propData.indecies,
+                        material: mat(),
+                        scale: [1, 1, 1],
+                        origin: [0, 0, 0],
+                        position: [
+                            prop.Origin.data[0].data,
+                            prop.Origin.data[2].data,
+                            prop.Origin.data[1].data,
+                        ],
+                        rotation: [
+                            prop.Angles.data[0].data * Math.PI / 180,
+                            -prop.Angles.data[1].data * Math.PI / 180,
+                            prop.Angles.data[2].data * Math.PI / 180,
+                        ],
+                    };
+                    
+                    this.geometry.add(propGeometry);
+                });
             }
 
             let propCounter = 0;

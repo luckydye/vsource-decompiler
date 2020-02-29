@@ -55,8 +55,6 @@ export default class VVDFile extends BinaryFile {
     static decompileVertexData(vvd) {
         let byteOffset = vvd.header.vertexDataStart.data;
 
-        // console.log('decompileing', vvd.vertexCount, 'vertecies.');
-
         for(let v = 0; v < vvd.vertexCount; v++) {
             byteOffset += 16;
             const vert = this.unserialize(vvd.view, byteOffset, Structs.mstudiovertex_t);
@@ -93,8 +91,8 @@ export default class VVDFile extends BinaryFile {
             0,
 
             vert.norm_x.data,
-            -vert.norm_z.data,
-            -vert.norm_y.data,
+            vert.norm_z.data,
+            vert.norm_y.data,
         ]));
 
         return parsedVertecies;

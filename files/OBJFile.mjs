@@ -57,25 +57,23 @@ export default class OBJFile extends TextFile {
             const normalMatrix = mat4.create();
             
             const position = [
-                geo.position[0] * 100,
-                geo.position[1] * 100,
-                geo.position[2] * 100,
-                0,
+                geo.position[0],
+                geo.position[1],
+                geo.position[2],
             ];
             const rotation = [
                 geo.rotation[0],
                 geo.rotation[1],
                 geo.rotation[2],
-                0
             ];
-            const scale = [-1, 1, 1, 1];
-            const origin = [0, 0, 0, 0];
+            const scale = geo.scale;
+            const origin = geo.origin;
 
             quat.fromEuler(rotQuat, rotation[0] * ( 180 / Math.PI ), rotation[1] * ( 180 / Math.PI ), rotation[2] * ( 180 / Math.PI ));
             mat4.fromRotationTranslationScaleOrigin(modelMatrix, rotQuat, position, scale, origin);
             mat4.translate(modelMatrix, modelMatrix, origin);
 
-            mat4.fromRotationTranslationScaleOrigin(normalMatrix, rotQuat, [0, 0, 0, 0], [1, 1, 1, 1], [0, 0, 0, 0]);
+            mat4.fromRotationTranslationScaleOrigin(normalMatrix, rotQuat, [0, 0, 0, 0], [1, 1, 1, 0], [0, 0, 0, 0]);
 
             let vertecies = [];
             let uvs = [];
