@@ -5,7 +5,7 @@ import fs from 'fs';
 
 async function fetch(resourcePath) {
     return new Promise((resolve, reject) => {
-        const file = fs.readFileSync(path.resolve('res', resourcePath));
+        const file = fs.readFileSync(path.resolve(resourcePath));
 
         resolve({ 
             file, 
@@ -19,14 +19,14 @@ async function fetch(resourcePath) {
 
 class SourceDecoder {
 
-    directories = {
+    static directories = {
         maps: ['/maps'],
         models: ['/models'],
         materials: ['/materials/models', '/materials'],
     }
     
-    target_folders = [ "materials", "models", "particles", "scenes" ];
-    file_types = [ "vmt", "vtf", "mdl", "phy", "vtx", "vvd", "pcf" ];
+    static target_folders = [ "materials", "models", "particles", "scenes" ];
+    static file_types = [ "vmt", "vtf", "mdl", "phy", "vtx", "vvd", "pcf" ];
 
     static async loadMap(bspMapPath) {
         return fetch(bspMapPath).then(async res => {
@@ -54,22 +54,20 @@ class SourceDecoder {
         const prop = {};
 
         // mdl
-        const mdl = await fetch('../res/' + propType).then(async res => {
+        const mdl = await fetch('./res/' + propType).then(async res => {
             if(res.status !== 200) return;
-            
-            const arrayBuffer = await res.arrayBuffer();
-            const mdl = MDLFile.fromDataArray(arrayBuffer);
-
-            return mdl;
+            return MDLFile.fromDataArray(await res.arrayBuffer());
         });
 
         const textures = [];
 
         const path = propType.split("/");
         path[path.length-1] = mdl.textures[0].name.data + ".vmt";
-        const texPath = path.slice(1).join("/");
+        const texPath = path.join("/");
 
-        const vmt = await fetch(`../res/materials/models/${texPath.toLocaleLowerCase()}`).then(async res => {
+        // ERROR: getting correct vmt path
+
+        const vmt = await fetch(`./res/materials/${texPath.toLocaleLowerCase()}`).then(async res => {
             if(res.status == 200) {
                 const dataArray = await res.arrayBuffer();
                 return VMTFile.fromDataArray(dataArray);
@@ -78,7 +76,7 @@ class SourceDecoder {
 
         prop.material = vmt;
 
-        const vtf = await fetch(`../res/materials/models/${texPath.toLocaleLowerCase().replace('.vmt', '.vtf')}`).then(async res => {
+        const vtf = await fetch(`./res/materials/${texPath.toLocaleLowerCase().replace('.vmt', '.vtf')}`).then(async res => {
             if(res.status == 200) {
                 const dataArray = await res.arrayBuffer();
                 return VTFFile.fromDataArray(dataArray);
@@ -87,13 +85,13 @@ class SourceDecoder {
 
         prop.texture = vtf;
         
-        const vtx = await fetch('../res/' + propType.replace('.mdl', '.dx90.vtx')).then(async res => {
+        const vtx = await fetch('./res/' + propType.replace('.mdl', '.dx90.vtx')).then(async res => {
             if(res.status !== 200) return;
             const arrayBuffer = await res.arrayBuffer();
             return VTXFile.fromDataArray(arrayBuffer);
         });
         
-        const vdd = await fetch('../res/' + propType.replace('.mdl', '.vvd')).then(async res => {
+        const vdd = await fetch('./res/' + propType.replace('.mdl', '.vvd')).then(async res => {
             if(res.status !== 200) return;
 
             const arrayBuffer = await res.arrayBuffer();
@@ -120,14 +118,6 @@ class SourceDecoder {
 const propTypes = new Map();
 
 export class Model {
-
-    static async getMap(mapName) {
-        return SourceDecoder.loadMap('../res/maps/' + mapName + '.bsp');
-    }
-
-    static async getProp(propName) {
-        return SourceDecoder.loadProp('../res/models/' + propName + '.mdl');
-    }
 
     constructor(name = "unknown") {
         this.geometry = new Set();
@@ -158,7 +148,7 @@ export class Model {
             const textures = new Map();
             
             for(let texture of textureArray) {
-                const resPath = `../res/materials/${texture.toLocaleLowerCase()}.vmt`;
+                const resPath = `./res/materials/${texture.toLocaleLowerCase()}.vmt`;
                 const vmt = await fetch(resPath).then(async res => {
                     if(res.status == 200) {
                         const dataArray = await res.arrayBuffer();
@@ -170,7 +160,7 @@ export class Model {
                     const materialTexture = vmt.data.lightmappedgeneric['$basetexture'];
 
                     if(materialTexture) {
-                        const resPath = `../res/materials/${materialTexture.toLocaleLowerCase()}.vtf`;
+                        const resPath = `./res/materials/${materialTexture.toLocaleLowerCase()}.vtf`;
                         await fetch(resPath).then(async res => {
                             if(res.status == 200) {
                                 const dataArray = await res.arrayBuffer();
@@ -185,7 +175,7 @@ export class Model {
                     const materialTexture = vmt.data.worldvertextransition['$basetexture'];
 
                     if(materialTexture) {
-                        const resPath = `../res/materials/${materialTexture.toLocaleLowerCase()}.vtf`;
+                        const resPath = `./res/materials/${materialTexture.toLocaleLowerCase()}.vtf`;
                         await fetch(resPath).then(async res => {
                             if(res.status == 200) {
                                 const dataArray = await res.arrayBuffer();
@@ -209,7 +199,7 @@ export class Model {
 
         this.name = mapName;
 
-        const bsp = await Model.getMap(mapName);
+        const bsp = await SourceDecoder.loadMap('./res/maps/' + mapName + '.bsp');
 
         const textures = await this.loadTextures(bsp.bsp.textures);
 
@@ -303,7 +293,8 @@ export class Model {
                     }
                     
                 }).catch(err => {
-                    console.error('Missing prop ' + propType.mdlPath);
+                    console.log('Missing prop ' + propType.mdlPath);
+                    console.error(err);
                     
                 }).finally(() => {
                     propCounter++;

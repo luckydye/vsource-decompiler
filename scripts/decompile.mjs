@@ -21,7 +21,7 @@ async function main(mapname) {
 
     console.log(model.name, 'loaded.');
 
-    fs.writeFileSync('test_object.obj', obj);
+    fs.writeFileSync(model.name + '.obj', obj);
 
     return model;
 }
