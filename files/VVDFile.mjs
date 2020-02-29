@@ -82,7 +82,7 @@ export default class VVDFile extends BinaryFile {
         const verts = this.vertecies;
 
         const parsedVertecies = verts.map((vert, i) => ([
-            vert.pos_x.data,
+            -vert.pos_x.data,
             vert.pos_z.data,
             vert.pos_y.data,
             
@@ -91,8 +91,8 @@ export default class VVDFile extends BinaryFile {
             0,
 
             vert.norm_x.data,
-            vert.norm_z.data,
-            vert.norm_y.data,
+            -vert.norm_z.data,
+            -vert.norm_y.data,
         ]));
 
         return parsedVertecies;

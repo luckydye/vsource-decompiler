@@ -287,13 +287,13 @@ export class Model {
                         scale: [1, 1, 1],
                         origin: [0, 0, 0],
                         position: [
-                            prop.Origin.data[0].data,
+                            -prop.Origin.data[0].data,
                             prop.Origin.data[2].data,
                             prop.Origin.data[1].data,
                         ],
                         rotation: [
                             prop.Angles.data[0].data * Math.PI / 180,
-                            -prop.Angles.data[1].data * Math.PI / 180,
+                            prop.Angles.data[1].data * Math.PI / 180,
                             prop.Angles.data[2].data * Math.PI / 180,
                         ],
                     };

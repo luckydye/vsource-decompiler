@@ -619,13 +619,13 @@ export default class BSPFile extends BinaryFile {
             const tv = textureInfo.textureVecs.data;
 
             const parsedVertecies = verts.map(v => ({
-                vertex: [v.x.data, v.z.data, v.y.data], 
+                vertex: [-v.x.data, v.z.data, v.y.data], 
                 uv: [
                     (tv[0][0] * v.x.data + tv[0][1] * v.y.data + tv[0][2] * v.z.data + tv[0][3]) / textureData.width_height_0,
                     (tv[1][0] * v.x.data + tv[1][1] * v.y.data + tv[1][2] * v.z.data + tv[1][3]) / textureData.width_height_1,
                     textureIndex
                 ],
-                normal: [normal[0], normal[2], normal[1]],
+                normal: [normal[0], -normal[2], -normal[1]],
             }));
 
             vertexResultArray.push(...parsedVertecies);
