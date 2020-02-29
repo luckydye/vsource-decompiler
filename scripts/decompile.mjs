@@ -17,7 +17,7 @@ function error(...str) {
 
 const Commands = {
 
-    "decompile": {
+    decompile: {
         usage: 'decompile <map_name> [<ouput_path>] [<resource_path>]',
         description: 'Decompile CS:GO maps from bsp format.',
 
@@ -38,11 +38,12 @@ const Commands = {
             await model.loadMap(mapName);
     
             const obj = OBJFile.fromGeometry(model.geometry);
+
+            console.log(obj.textures);
     
             log(model.name, 'decompiled.');
     
-            const objFielPath = outputFilePath ? outputFilePath : model.name + '.obj';
-            fs.writeFileSync(objFielPath, obj);
+            fs.writeFileSync(outputFilePath ? outputFilePath : model.name + '.obj', obj);
     
             return model;
         }

@@ -296,7 +296,7 @@ export class Model {
                         name: type.name,
                         vertecies: propData.vertecies.flat(),
                         indecies: propData.indecies,
-                        material: mat(),
+                        materials: [ mat() ],
                         scale: [1, 1, 1],
                         origin: [0, 0, 0],
                         position: [

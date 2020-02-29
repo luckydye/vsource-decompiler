@@ -1,5 +1,6 @@
 import { TextFile } from './TextFile.mjs';
 import glmatrix from 'gl-matrix';
+import { S3Texture } from './S3Texture.mjs';
 
 const { vec4, quat, mat4 } = glmatrix;
 
@@ -69,11 +70,17 @@ export default class OBJFile extends TextFile {
             const scale = geo.scale;
             const origin = geo.origin;
 
-            quat.fromEuler(rotQuat, rotation[0] * ( 180 / Math.PI ), rotation[1] * ( 180 / Math.PI ), rotation[2] * ( 180 / Math.PI ));
+            quat.fromEuler(
+                rotQuat, 
+                rotation[0] * ( 180 / Math.PI ), 
+                rotation[1] * ( 180 / Math.PI ), 
+                rotation[2] * ( 180 / Math.PI )
+            );
             mat4.fromRotationTranslationScaleOrigin(modelMatrix, rotQuat, position, scale, origin);
             mat4.translate(modelMatrix, modelMatrix, origin);
 
-            mat4.fromRotationTranslationScaleOrigin(normalMatrix, rotQuat, [0, 0, 0, 0], [1, 1, 1, 0], [0, 0, 0, 0]);
+            mat4.fromRotationTranslationScaleOrigin(normalMatrix, rotQuat, 
+                [0, 0, 0, 0], [1, 1, 1, 0], [0, 0, 0, 0]);
 
             let vertecies = [];
             let uvs = [];
@@ -108,9 +115,26 @@ export default class OBJFile extends TextFile {
             }
 
             indexOffset += vertecies.length;
+
+            // textures and materials
+
+            for(let { data, format } of geo.materials) {
+                if(format.type != "NONE") {
+                    const texture = S3Texture.fromDataArray(data, format.type, format.width, format.height);
+                    obj.textures.push(texture.decompress());
+                } else {
+                    // skipped unknown texture
+                }
+            }
         }
 
         return obj;
+    }
+
+    constructor() {
+        super();
+
+        this.textures = [];
     }
 
 }
