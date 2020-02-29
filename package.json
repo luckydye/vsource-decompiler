@@ -22,6 +22,7 @@
   },
   "homepage": "https://github.com/luckydye/source-bsp-lib#readme",
   "dependencies": {
+    "chalk": "^3.0.0",
     "comlink": "^4.2.0",
     "gl-matrix": "^3.2.1"
   }

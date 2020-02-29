@@ -238,7 +238,9 @@ export default class MDLFile extends BinaryFile {
         mdl.models = [];
         mdl.meshes = [];
         mdl.textures = [];
+        mdl.skins = [];
 
+        // meshes
         for(let part of mdl.bodyparts) {
             for(let model of part.models.data) {
                 mdl.models.push(model);
@@ -251,6 +253,7 @@ export default class MDLFile extends BinaryFile {
             }
         }
 
+        // textures
         let byteOffset = mdl.header.texture_offset.data;
 
         for(let t = 0; t < mdl.header.texture_count.data; t++) {
@@ -264,6 +267,31 @@ export default class MDLFile extends BinaryFile {
             tex.name = name.data.name;
 
             mdl.textures.push(tex);
+        }
+
+        for(let i = 0; i < mdl.header.texturePathCount; i++) {
+            const texPathOffset = this.unserialize(mdl.view, mdl.header.texturePathOffset, { offset: 'int' });
+            const texPathString = this.unserialize(mdl.view, texPathOffset.data.offset, {
+                path: `unsigned char`,
+            });
+
+            if(mdl.textures[i]) {
+                const texDirPath = texPathString.valueOf().path.valueOf();
+
+                if(texDirPath != "") {
+                    mdl.textures[i].path = texDirPath + mdl.textures[i].name;
+                } else {
+                    mdl.textures[i].path = mdl.textures[i].name;
+                }
+            }
+        }
+
+        // skins
+        for(let i = 0; i < mdl.header.skinfamily_count; i++) {
+            const part = this.unserialize(mdl.view, mdl.header.skin_index, {
+                replacement_table: `byte[${mdl.header.skinfamily_count * mdl.header.skinreference_count * 2}]`,
+            });
+            mdl.skins.push(part.data.replacement_table.toString());
         }
 
         return mdl;

@@ -1,35 +1,50 @@
 import { VVDFile, BSPFile, VPKFile, MDLFile, VMTFile, VTFFile, VTXFile } from '../index.mjs';
 
+import chalk from 'chalk';
 import path from 'path';
 import fs from 'fs';
 
 async function fetch(resourcePath) {
     return new Promise((resolve, reject) => {
-        const file = fs.readFileSync(path.resolve(resourcePath));
 
-        resolve({ 
-            file, 
-            status: 200,
-            arrayBuffer() {
-                return file.buffer;
-            }
-        });
+        const filePath = path.resolve(resourcePath);
+
+        if(fs.existsSync(filePath)) {
+
+            const file = fs.readFile(path.resolve(filePath), (err, data) => {
+                if(!err) {
+                    resolve({ 
+                        file: data, 
+                        status: 200,
+                        arrayBuffer() {
+                            return this.file.buffer;
+                        }
+                    });
+                } else {
+                    throw new Error('Error loading file: ' + err);
+                }
+            });
+
+        } else {
+            throw new Error('File not found: ' + filePath);
+        }
     })
 }
 
-class SourceDecoder {
+const propTypes = new Map();
+
+export class Model {
 
     static directories = {
-        maps: ['/maps'],
-        models: ['/models'],
-        materials: ['/materials/models', '/materials'],
+        root: './res/',
+        maps: './res/maps/',
+        models: './res/models/',
+        materials: './res/materials/',
     }
-    
-    static target_folders = [ "materials", "models", "particles", "scenes" ];
-    static file_types = [ "vmt", "vtf", "mdl", "phy", "vtx", "vvd", "pcf" ];
 
-    static async loadMap(bspMapPath) {
-        return fetch(bspMapPath).then(async res => {
+    static async loadMap(bspMapName) {
+        const mapPath = `${Model.directories.maps}${bspMapName}.bsp`;
+        return fetch(mapPath).then(async res => {
             const arrayBuffer = await res.arrayBuffer();
 
             const bsp = BSPFile.fromDataArray(arrayBuffer);
@@ -51,52 +66,56 @@ class SourceDecoder {
 
     static async loadProp(propType) {
 
+        const propMDLPath = propType.mdlPath;
+        const propVVDPath = propType.vvdPath;
+
         const prop = {};
 
         // mdl
-        const mdl = await fetch('./res/' + propType).then(async res => {
+        const mdl = await fetch(Model.directories.root + propMDLPath).then(async res => {
             if(res.status !== 200) return;
             return MDLFile.fromDataArray(await res.arrayBuffer());
+        }).catch(err => {
+            throw new Error('Could not load MDL file. ' + err);
         });
 
         const textures = [];
 
-        const path = propType.split("/");
-        path[path.length-1] = mdl.textures[0].name.data + ".vmt";
-        const texPath = path.join("/");
+        // only use first texture for now
 
-        // ERROR: getting correct vmt path
+        const texPath = mdl.textures[0].path;
 
-        const vmt = await fetch(`./res/materials/${texPath.toLocaleLowerCase()}`).then(async res => {
+        const vmt = await fetch(`${Model.directories.materials}${texPath}.vmt`).then(async res => {
             if(res.status == 200) {
-                const dataArray = await res.arrayBuffer();
-                return VMTFile.fromDataArray(dataArray);
+                return VMTFile.fromDataArray(await res.arrayBuffer());
             }
+        }).catch(err => {
+            throw new Error('Could not load VMT file. ' + err);
         });
 
         prop.material = vmt;
 
-        const vtf = await fetch(`./res/materials/${texPath.toLocaleLowerCase().replace('.vmt', '.vtf')}`).then(async res => {
+        const vtf = await fetch(`${Model.directories.materials}${texPath}.vtf`).then(async res => {
             if(res.status == 200) {
-                const dataArray = await res.arrayBuffer();
-                return VTFFile.fromDataArray(dataArray);
+                return VTFFile.fromDataArray(await res.arrayBuffer());
             }
+        }).catch(err => {
+            throw new Error('Could not load VTF file. ' + err);
         });
 
         prop.texture = vtf;
         
-        const vtx = await fetch('./res/' + propType.replace('.mdl', '.dx90.vtx')).then(async res => {
+        const vtx = await fetch(Model.directories.root + propVVDPath.replace('.vvd', '.dx90.vtx')).then(async res => {
             if(res.status !== 200) return;
-            const arrayBuffer = await res.arrayBuffer();
-            return VTXFile.fromDataArray(arrayBuffer);
+            return VTXFile.fromDataArray(await res.arrayBuffer());
+        }).catch(err => {
+            throw new Error('Could not load VTX file. ' + err);
         });
         
-        const vdd = await fetch('./res/' + propType.replace('.mdl', '.vvd')).then(async res => {
+        const vdd = await fetch(Model.directories.root + propVVDPath).then(async res => {
             if(res.status !== 200) return;
 
-            const arrayBuffer = await res.arrayBuffer();
-
-            const vvd = VVDFile.fromDataArray(arrayBuffer);
+            const vvd = VVDFile.fromDataArray(await res.arrayBuffer());
             const vertecies = vvd.convertToMesh();
 
             const realVertecies = vtx.vertexIndecies;
@@ -108,16 +127,12 @@ class SourceDecoder {
             prop.indecies = realIndecies;
 
             return prop;
+        }).catch(err => {
+            throw new Error('Could not load VVD file. ' + err);
         });
 
         return vdd;
     }
-
-}
-
-const propTypes = new Map();
-
-export class Model {
 
     constructor(name = "unknown") {
         this.geometry = new Set();
@@ -143,24 +158,25 @@ export class Model {
         return prop.PropType;
     }
 
-    loadTextures(textureArray) {
+    loadMapTextures(textureArray) {
         return new Promise(async (resolve, reject) => {
             const textures = new Map();
             
             for(let texture of textureArray) {
-                const resPath = `./res/materials/${texture.toLocaleLowerCase()}.vmt`;
+
+                const resPath = `${Model.directories.materials}${texture.toLocaleLowerCase()}.vmt`;
                 const vmt = await fetch(resPath).then(async res => {
                     if(res.status == 200) {
                         const dataArray = await res.arrayBuffer();
                         return VMTFile.fromDataArray(dataArray);
                     }
-                }).catch(err => console.error('Missing file ' + resPath));
+                }).catch(err => console.error('Missing map texture ' + texture.toLocaleLowerCase() + ".vmt"));
 
                 if(vmt && vmt.data.lightmappedgeneric) {
                     const materialTexture = vmt.data.lightmappedgeneric['$basetexture'];
 
                     if(materialTexture) {
-                        const resPath = `./res/materials/${materialTexture.toLocaleLowerCase()}.vtf`;
+                        const resPath = `${Model.directories.materials}${materialTexture.toLocaleLowerCase()}.vtf`;
                         await fetch(resPath).then(async res => {
                             if(res.status == 200) {
                                 const dataArray = await res.arrayBuffer();
@@ -168,14 +184,14 @@ export class Model {
                                 
                                 textures.set(texture, vtf);
                             }
-                        }).catch(err => console.error('Missing file ' + resPath));
+                        }).catch(err => console.error('Missing map texture ' + resPath));
                     }
                 }
                 if(vmt && vmt.data.worldvertextransition) {
                     const materialTexture = vmt.data.worldvertextransition['$basetexture'];
 
                     if(materialTexture) {
-                        const resPath = `./res/materials/${materialTexture.toLocaleLowerCase()}.vtf`;
+                        const resPath = `${Model.directories.materials}${materialTexture.toLocaleLowerCase()}.vtf`;
                         await fetch(resPath).then(async res => {
                             if(res.status == 200) {
                                 const dataArray = await res.arrayBuffer();
@@ -183,13 +199,11 @@ export class Model {
                                 
                                 textures.set(texture, vtf);
                             }
-                        }).catch(err => console.error('Missing file ' + resPath));
+                        }).catch(err => console.error('Missing map texture ' + resPath));
                     }
                 }
 
-                if(!textures.has(texture)) {
-                    console.warn('Missing texture', texture);
-                }
+                // want to check if texture loaded correctly? check with "!textures.has(texture)"
             }
             resolve(textures);
         })
@@ -199,9 +213,9 @@ export class Model {
 
         this.name = mapName;
 
-        const bsp = await SourceDecoder.loadMap('./res/maps/' + mapName + '.bsp');
+        const bsp = await Model.loadMap(mapName);
 
-        const textures = await this.loadTextures(bsp.bsp.textures);
+        const textures = await this.loadMapTextures(bsp.bsp.textures);
 
         // world
         const meshData = bsp.meshData;
@@ -214,8 +228,6 @@ export class Model {
             ])).flat(),
             indecies: meshData.indecies
         };
-
-        await this.loadMapProps(bsp.bsp.gamelumps.sprp);
 
         this.geometry.add({
             name: mapName,
@@ -234,6 +246,8 @@ export class Model {
             position: [0, 0, 0],
             rotation: [0, 0, 0],
         });
+
+        await this.loadMapProps(bsp.bsp.gamelumps.sprp);
     }
 
     async loadMapProps(props) {
@@ -287,14 +301,15 @@ export class Model {
             let propCounter = 0;
 
             for(let [_, propType] of propTypes) {
-                SourceDecoder.loadProp(propType.mdlPath).then(p => {
+
+                Model.loadProp(propType).then(p => {
                     for(let listener of propType.listeners) {
                         listener(p);
                     }
                     
                 }).catch(err => {
-                    console.log('Missing prop ' + propType.mdlPath);
-                    console.error(err);
+                    console.error(chalk.red('Failed to load prop: ' + propType.mdlPath));
+                    console.log(err);
                     
                 }).finally(() => {
                     propCounter++;

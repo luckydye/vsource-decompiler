@@ -121,6 +121,7 @@ export class BinaryFile {
             byteOffset,
             data, 
             toString() { return this.data; },
+            valueOf() { return this.data; },
         };
     }
 
@@ -159,6 +160,7 @@ export class BinaryFile {
                 byteOffset,
                 data: arrayData,
                 toString() { return this.data; },
+                valueOf() { return this.data; },
             };
 
         } else {
@@ -196,6 +198,7 @@ export class BinaryFile {
             byteOffset: byteOffset,
             data: structData,
             toString() { return this.data; },
+            valueOf() { return this.data; },
         };
     }
 
