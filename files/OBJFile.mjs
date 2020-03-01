@@ -49,7 +49,7 @@ export default class OBJFile extends TextFile {
 
         let indexOffset = 1;
 
-        for(let geo of geometry) {
+        geoloop: for(let geo of geometry) {
 
             obj.appendLine(`\no ${geo.name}`);
 
@@ -80,7 +80,7 @@ export default class OBJFile extends TextFile {
             mat4.translate(modelMatrix, modelMatrix, origin);
 
             mat4.fromRotationTranslationScaleOrigin(normalMatrix, rotQuat, 
-                [0, 0, 0, 0], [1, 1, 1, 0], [0, 0, 0, 0]);
+                [0, 0, 0, 0], [1, 1, 1, 1], [0, 0, 0, 0]);
 
             let vertecies = [];
             let uvs = [];
@@ -92,18 +92,30 @@ export default class OBJFile extends TextFile {
                 vertex[3] = 1;
                 vertex = vec4.transformMat4(vertex, vertex, modelMatrix);
 
+                let uv = geo.vertecies.slice(i + 3, i + 6);
+
                 let normal = geo.vertecies.slice(i + 6, i + 9);
                 normal[3] = 1;
                 normal = vec4.transformMat4(normal, normal, normalMatrix);
 
+                if(vertex[0].toString() == "NaN") {
+                    console.warn('Error loading Prop: ' + geo.name);
+                    continue geoloop;
+                }
+
                 vertecies.push([vertex[0], vertex[1], vertex[2]]);
-                uvs.push(geo.vertecies.slice(i + 3, i + 6));
-                normals.push([normal[0], normal[1], normal[2]]);
+                uvs.push([uv[0] || 0, uv[1] || 0, uv[2] || 0]);
+                normals.push([normal[0] || 0, normal[1] || 0, normal[2] || 0]);
             }
 
-            obj.append(vertecies.map(v => "v " + v.join(" ")).join("\n") + "\n");
-            obj.append(uvs.map(v => "vt " + v.join(" ")).join("\n") + "\n");
-            obj.append(normals.map(v => "vn " + v.join(" ")).join("\n") + "\n");
+            obj.append(vertecies.map(v => `v ${v[0]} ${v[1]} ${v[2]}`)
+                .join("\n") + "\n");
+                
+            obj.append(uvs.map(v => `vt ${v[0]} ${v[1]} ${v[2]}`)
+                .join("\n") + "\n");
+
+            obj.append(normals.map(v => `vn ${v[0]} ${v[1]} ${v[2]}`)
+                .join("\n") + "\n");
             
             obj.appendLine(`usemtl ${geo.name}_mat`);
             obj.appendLine(`s off`);

@@ -232,24 +232,20 @@ export class Model {
         pakfile = new Zip(Buffer.from(bsp.bsp.pakfile.buffer));
 
         console.log('Load map textures.');
-        const textures = await this.loadMapTextures(bsp.bsp.textures);
+        // const textures = await this.loadMapTextures(bsp.bsp.textures);
+        const textures = new Map();
 
         // world
         const meshData = bsp.meshData;
 
-        const vertexData = {
+        this.geometry.add({
+            name: mapName,
             vertecies: meshData.vertecies.map(vert => ([
                 vert.vertex[0], vert.vertex[1], vert.vertex[2],
                 vert.uv[0], vert.uv[1], vert.uv[2],
                 vert.normal[0], vert.normal[1], vert.normal[2]
             ])).flat(),
-            indecies: meshData.indecies
-        };
-
-        this.geometry.add({
-            name: mapName,
-            vertecies: vertexData.vertecies,
-            indecies: vertexData.indecies,
+            indecies: meshData.indecies,
             materials: meshData.textures.map(tex => {
                 const vtf = textures.get(tex);
                 if(vtf) {
@@ -257,6 +253,8 @@ export class Model {
                         format: vtf.format, 
                         data: vtf.imageData
                     };
+                } else {
+                    return {};
                 }
             }),
             scale: [1, 1, 1],
@@ -337,7 +335,7 @@ export class Model {
                 }).finally(() => {
                     propCounter++;
 
-                    console.log('Loaded prop ', propCounter, 'von', propTypes.size);
+                    console.log('Loaded prop', propCounter.toString(), '/', propTypes.size.toString());
                     
                     if(propCounter == propTypes.size) resolve();
                 })

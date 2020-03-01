@@ -115,6 +115,9 @@ export default class VTXFile extends BinaryFile {
                             meshVertexOffset += vertCount;
                         }
                     }
+
+                    // only read the first lod of every prop
+                    break;
                 }
             }
         }

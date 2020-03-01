@@ -39,8 +39,6 @@ const Commands = {
     
             const obj = OBJFile.fromGeometry(model.geometry);
 
-            console.log(obj.textures);
-    
             log(model.name, 'decompiled.');
     
             fs.writeFileSync(outputFilePath ? outputFilePath : model.name + '.obj', obj);
