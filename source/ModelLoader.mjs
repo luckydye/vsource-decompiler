@@ -90,6 +90,11 @@ export class Model {
         resourceRoot = val;
     }
 
+    constructor(name = "unknown") {
+        this.geometry = new Set();
+        this.name = name;
+    }
+
     static async loadMap(bspMapName) {
         const mapPath = `maps/${bspMapName}.bsp`;
         console.log('Loading map', mapPath);
@@ -101,113 +106,6 @@ export class Model {
             const meshData = bsp.convertToMesh();
 
             return { meshData, bsp };
-        })
-    }
-
-    static loadVPK(vpkPath) {
-        const load = async () => {
-            const vpkFetch = await fetchResource(vpkPath);
-            const vpkData = await vpkFetch.arrayBuffer();
-            const vpk = VPKFile.fromDataArray(vpkData);
-            return vpk;
-        }
-        return load();
-    }
-
-    static async loadProp(propType) {
-
-        const propMDLPath = propType.mdlPath;
-        const propVVDPath = propType.vvdPath;
-
-        const prop = {};
-
-        // mdl
-        const mdlFile = await fetchResource(propMDLPath);
-        const mdl = MDLFile.fromDataArray(await mdlFile.arrayBuffer());
-
-        // only use first texture for now
-        // const texPath = mdl.textures[0].path;
-
-        // const vmtFile = await fetchResource(`${texPath}.vmt`);
-        // const vmt = VMTFile.fromDataArray(await vmtFile.arrayBuffer());
-        // prop.material = vmt;
-
-        // const vtfFile = await fetchResource(`${texPath}.vtf`);
-        // const vtf = VTFFile.fromDataArray(await vtfFile.arrayBuffer());
-        // prop.texture = vtf;
-
-        const vvdFile = await fetchResource(propVVDPath);
-        const vvd = VVDFile.fromDataArray(await vvdFile.arrayBuffer());
-        const vertecies = vvd.convertToMesh();
-
-        const vtxFile = await fetchResource(propVVDPath.replace('.vvd', '.dx90.vtx'));
-        const vtx = VTXFile.fromDataArray(await vtxFile.arrayBuffer());
-
-        const realVertecies = vtx.vertexIndecies;
-        const realIndecies = vtx.indecies;
-
-        prop.vertecies = realVertecies.map(rv => {
-            return vertecies[rv];
-        });
-        prop.indecies = realIndecies;
-
-        return prop;
-    }
-
-    constructor(name = "unknown") {
-        this.geometry = new Set();
-        this.name = name;
-    }
-    
-    registerProp(prop) {
-        if(!propTypes.has(prop.PropType)) {
-
-            propTypes.set(prop.PropType, {
-                name: prop.PropType,
-                mdlPath: prop.PropType,
-                vvdPath: prop.PropType.replace('.mdl', '.vvd'),
-                listeners: [],
-            });
-        }
-    }
-
-    loadMapTextures(textureArray) {
-        return new Promise(async (resolve, reject) => {
-            const textures = new Map();
-            
-            for(let texture of textureArray) {
-
-                const resPath = `${texture.toLocaleLowerCase()}.vmt`;
-                const vmtFile = await fetchResource(resPath);
-                const vmt = VMTFile.fromDataArray(await vmtFile.arrayBuffer());
-
-                if(vmt && vmt.data.lightmappedgeneric) {
-                    const materialTexture = vmt.data.lightmappedgeneric['$basetexture'];
-
-                    if(materialTexture) {
-                        const resPath = `${materialTexture.toLocaleLowerCase()}.vtf`;
-                        await fetchResource(resPath).then(async res => {
-                            const vtf = VTFFile.fromDataArray(await res.arrayBuffer());
-                            textures.set(texture, vtf);
-                        }).catch(err => console.error('Missing map texture ' + resPath));
-                    }
-                }
-                if(vmt && vmt.data.worldvertextransition) {
-                    const materialTexture = vmt.data.worldvertextransition['$basetexture'];
-
-                    if(materialTexture) {
-                        const resPath = `${materialTexture.toLocaleLowerCase()}.vtf`;
-                        await fetchResource(resPath).then(async res => {
-                            const vtf = VTFFile.fromDataArray(await res.arrayBuffer());
-                            textures.set(texture, vtf);
-                        }).catch(err => console.error('Missing map texture ' + resPath));
-                    }
-                }
-
-                // want to check if texture loaded correctly? check with "!textures.has(texture)"
-            }
-
-            resolve(textures);
         })
     }
 
@@ -257,6 +155,58 @@ export class Model {
         await this.loadMapProps(bsp.bsp.gamelumps.sprp);
 
         console.log('Done loading map props.');
+    }
+
+    loadMapTextures(textureArray) {
+        return new Promise(async (resolve, reject) => {
+            const textures = new Map();
+            
+            for(let texture of textureArray) {
+
+                const resPath = `${texture.toLocaleLowerCase()}.vmt`;
+                const vmtFile = await fetchResource(resPath);
+                const vmt = VMTFile.fromDataArray(await vmtFile.arrayBuffer());
+
+                if(vmt && vmt.data.lightmappedgeneric) {
+                    const materialTexture = vmt.data.lightmappedgeneric['$basetexture'];
+
+                    if(materialTexture) {
+                        const resPath = `${materialTexture.toLocaleLowerCase()}.vtf`;
+                        await fetchResource(resPath).then(async res => {
+                            const vtf = VTFFile.fromDataArray(await res.arrayBuffer());
+                            textures.set(texture, vtf);
+                        }).catch(err => console.error('Missing map texture ' + resPath));
+                    }
+                }
+                if(vmt && vmt.data.worldvertextransition) {
+                    const materialTexture = vmt.data.worldvertextransition['$basetexture'];
+
+                    if(materialTexture) {
+                        const resPath = `${materialTexture.toLocaleLowerCase()}.vtf`;
+                        await fetchResource(resPath).then(async res => {
+                            const vtf = VTFFile.fromDataArray(await res.arrayBuffer());
+                            textures.set(texture, vtf);
+                        }).catch(err => console.error('Missing map texture ' + resPath));
+                    }
+                }
+
+                // want to check if texture loaded correctly? check with "!textures.has(texture)"
+            }
+
+            resolve(textures);
+        })
+    }
+    
+    registerProp(prop) {
+        if(!propTypes.has(prop.PropType)) {
+
+            propTypes.set(prop.PropType, {
+                name: prop.PropType,
+                mdlPath: prop.PropType,
+                vvdPath: prop.PropType.replace('.mdl', '.vvd'),
+                listeners: [],
+            });
+        }
     }
 
     async loadMapProps(props) {
@@ -342,6 +292,56 @@ export class Model {
                 })
             }
         })
+    }
+
+    static loadVPK(vpkPath) {
+        const load = async () => {
+            const vpkFetch = await fetchResource(vpkPath);
+            const vpkData = await vpkFetch.arrayBuffer();
+            const vpk = VPKFile.fromDataArray(vpkData);
+            return vpk;
+        }
+        return load();
+    }
+
+    static async loadProp(propType) {
+
+        const propMDLPath = propType.mdlPath;
+        const propVVDPath = propType.vvdPath;
+
+        const prop = {};
+
+        // mdl
+        const mdlFile = await fetchResource(propMDLPath);
+        const mdl = MDLFile.fromDataArray(await mdlFile.arrayBuffer());
+
+        // only use first texture for now
+        // const texPath = mdl.textures[0].path;
+
+        // const vmtFile = await fetchResource(`${texPath}.vmt`);
+        // const vmt = VMTFile.fromDataArray(await vmtFile.arrayBuffer());
+        // prop.material = vmt;
+
+        // const vtfFile = await fetchResource(`${texPath}.vtf`);
+        // const vtf = VTFFile.fromDataArray(await vtfFile.arrayBuffer());
+        // prop.texture = vtf;
+
+        const vvdFile = await fetchResource(propVVDPath);
+        const vvd = VVDFile.fromDataArray(await vvdFile.arrayBuffer());
+        const vertecies = vvd.convertToMesh();
+
+        const vtxFile = await fetchResource(propVVDPath.replace('.vvd', '.dx90.vtx'));
+        const vtx = VTXFile.fromDataArray(await vtxFile.arrayBuffer());
+
+        const realVertecies = vtx.vertexIndecies;
+        const realIndecies = vtx.indecies;
+
+        prop.vertecies = realVertecies.map(rv => {
+            return vertecies[rv];
+        });
+        prop.indecies = realIndecies;
+
+        return prop;
     }
 
 }
