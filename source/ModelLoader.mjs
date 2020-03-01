@@ -3,19 +3,65 @@ import { VVDFile, BSPFile, VPKFile, MDLFile, VMTFile, VTFFile, VTXFile } from '.
 import chalk from 'chalk';
 import path from 'path';
 import fs from 'fs';
+import Zip from 'node-zip';
 
-async function fetch(resourcePath) {
+class VirtualFileSystem {
+    constructor() {
+        // use this in the future   
+    }
+}
+
+let pakfile;
+let resourceRoot = "csgo/";
+let resourcePool = null;
+
+const walkSync = function(dir, filelist) {
+    const files = fs.readdirSync(dir);
+    filelist = filelist || {};
+    files.forEach(function(file) {
+        if (fs.statSync(dir + "\\" + file).isDirectory()) {
+            filelist = walkSync(dir + '\\' + file + '/', filelist);
+        } else {
+            filelist[file.toLocaleLowerCase()] = dir + "\\" + file;
+        }
+    });
+    return filelist;
+};
+
+async function fetchResource(resource) {
     return new Promise((resolve, reject) => {
 
-        const filePath = path.resolve(resourcePath);
+        if(!resourcePool) {
+            resourcePool = walkSync(path.resolve(resourceRoot));
+        }
 
-        if(fs.existsSync(filePath)) {
+        const filePathParts = resource.split(/\/|\\/g);
+        const fileName = filePathParts[filePathParts.length-1].toLocaleLowerCase();
 
-            const file = fs.readFile(path.resolve(filePath), (err, data) => {
+        // look in the pakfile
+        if(pakfile) {
+            const entries = Object.keys(pakfile.files);
+
+            for(let entry of entries) {
+                if(entry.match(fileName)) {
+                    resolve({ 
+                        file: pakfile.files[entry].asNodeBuffer(), 
+                        arrayBuffer() {
+                            return this.file.buffer;
+                        }
+                    });
+                    break;
+                }
+            }
+        }
+
+        // else look in filesystem
+        if(fileName in resourcePool) {
+
+            const file = fs.readFile(resourcePool[fileName], (err, data) => {
                 if(!err) {
                     resolve({ 
                         file: data, 
-                        status: 200,
                         arrayBuffer() {
                             return this.file.buffer;
                         }
@@ -26,7 +72,7 @@ async function fetch(resourcePath) {
             });
 
         } else {
-            throw new Error('File not found: ' + filePath);
+            throw new Error('Resource File not found: ' + fileName);
         }
     })
 }
@@ -35,29 +81,17 @@ const propTypes = new Map();
 
 export class Model {
 
-    static resourceRoot = "csgo/";
+    static get resourceRoot() {
+        return resourceRoot;
+    }
 
-    static directories = {
-        get root() { 
-            return Model.resourceRoot;
-        },
-        set root(val) { 
-            Model.resourceRoot = val;
-        },
-        get maps() {
-            return this.root + '/maps/';
-        },
-        get models() {
-            return this.root + '/models/';
-        },
-        get materials() {
-            return this.root + '/materials/';
-        },
+    static set resourceRoot(val) {
+        resourceRoot = val;
     }
 
     static async loadMap(bspMapName) {
-        const mapPath = `${Model.directories.maps}${bspMapName}.bsp`;
-        return fetch(mapPath).then(async res => {
+        const mapPath = `${bspMapName}.bsp`;
+        return fetchResource(mapPath).then(async res => {
             const arrayBuffer = await res.arrayBuffer();
 
             const bsp = BSPFile.fromDataArray(arrayBuffer);
@@ -69,7 +103,7 @@ export class Model {
 
     static loadVPK(vpkPath) {
         const load = async () => {
-            const vpkFetch = await fetch(vpkPath);
+            const vpkFetch = await fetchResource(vpkPath);
             const vpkData = await vpkFetch.arrayBuffer();
             const vpk = VPKFile.fromDataArray(vpkData);
             return vpk;
@@ -85,66 +119,36 @@ export class Model {
         const prop = {};
 
         // mdl
-        const mdl = await fetch(Model.directories.root + propMDLPath).then(async res => {
-            if(res.status !== 200) return;
-            return MDLFile.fromDataArray(await res.arrayBuffer());
-        }).catch(err => {
-            throw new Error('Could not load MDL file. ' + err);
-        });
-
-        const textures = [];
+        const mdlFile = await fetchResource(propMDLPath);
+        const mdl = MDLFile.fromDataArray(await mdlFile.arrayBuffer());
 
         // only use first texture for now
-
         const texPath = mdl.textures[0].path;
 
-        const vmt = await fetch(`${Model.directories.materials}${texPath}.vmt`).then(async res => {
-            if(res.status == 200) {
-                return VMTFile.fromDataArray(await res.arrayBuffer());
-            }
-        }).catch(err => {
-            throw new Error('Could not load VMT file. ' + err);
-        });
-
+        const vmtFile = await fetchResource(`${texPath}.vmt`);
+        const vmt = VMTFile.fromDataArray(await vmtFile.arrayBuffer());
         prop.material = vmt;
 
-        const vtf = await fetch(`${Model.directories.materials}${texPath}.vtf`).then(async res => {
-            if(res.status == 200) {
-                return VTFFile.fromDataArray(await res.arrayBuffer());
-            }
-        }).catch(err => {
-            throw new Error('Could not load VTF file. ' + err);
-        });
-
+        const vtfFile = await fetchResource(`${texPath}.vtf`);
+        const vtf = VTFFile.fromDataArray(await vtfFile.arrayBuffer());
         prop.texture = vtf;
-        
-        const vtx = await fetch(Model.directories.root + propVVDPath.replace('.vvd', '.dx90.vtx')).then(async res => {
-            if(res.status !== 200) return;
-            return VTXFile.fromDataArray(await res.arrayBuffer());
-        }).catch(err => {
-            throw new Error('Could not load VTX file. ' + err);
+
+        const vvdFile = await fetchResource(propVVDPath);
+        const vvd = VVDFile.fromDataArray(await vvdFile.arrayBuffer());
+        const vertecies = vvd.convertToMesh();
+
+        const vtxFile = await fetchResource(propVVDPath.replace('.vvd', '.dx90.vtx'));
+        const vtx = VTXFile.fromDataArray(await vtxFile.arrayBuffer());
+
+        const realVertecies = vtx.vertexIndecies;
+        const realIndecies = vtx.indecies;
+
+        prop.vertecies = realVertecies.map(rv => {
+            return vertecies[rv];
         });
-        
-        const vdd = await fetch(Model.directories.root + propVVDPath).then(async res => {
-            if(res.status !== 200) return;
+        prop.indecies = realIndecies;
 
-            const vvd = VVDFile.fromDataArray(await res.arrayBuffer());
-            const vertecies = vvd.convertToMesh();
-
-            const realVertecies = vtx.vertexIndecies;
-            const realIndecies = vtx.indecies;
-
-            prop.vertecies = realVertecies.map(rv => {
-                return vertecies[rv];
-            });
-            prop.indecies = realIndecies;
-
-            return prop;
-        }).catch(err => {
-            throw new Error('Could not load VVD file. ' + err);
-        });
-
-        return vdd;
+        return prop;
     }
 
     constructor(name = "unknown") {
@@ -176,26 +180,25 @@ export class Model {
             
             for(let texture of textureArray) {
 
-                const resPath = `${Model.directories.materials}${texture.toLocaleLowerCase()}.vmt`;
-                const vmt = await fetch(resPath).then(async res => {
-                    if(res.status == 200) {
-                        const dataArray = await res.arrayBuffer();
-                        return VMTFile.fromDataArray(dataArray);
-                    }
-                }).catch(err => console.error('Missing map texture ' + texture.toLocaleLowerCase() + ".vmt"));
+                const resPath = `${texture.toLocaleLowerCase()}.vmt`;
+                const vmt = await fetchResource(resPath).then(async res => {
+
+                    const dataArray = await res.arrayBuffer();
+                    return VMTFile.fromDataArray(dataArray);
+
+                }).catch(err => console.error('Missing VMT file ' + resPath));
 
                 if(vmt && vmt.data.lightmappedgeneric) {
                     const materialTexture = vmt.data.lightmappedgeneric['$basetexture'];
 
                     if(materialTexture) {
-                        const resPath = `${Model.directories.materials}${materialTexture.toLocaleLowerCase()}.vtf`;
-                        await fetch(resPath).then(async res => {
-                            if(res.status == 200) {
-                                const dataArray = await res.arrayBuffer();
-                                const vtf = VTFFile.fromDataArray(dataArray);
-                                
-                                textures.set(texture, vtf);
-                            }
+                        const resPath = `${materialTexture.toLocaleLowerCase()}.vtf`;
+                        await fetchResource(resPath).then(async res => {
+
+                            const dataArray = await res.arrayBuffer();
+                            const vtf = VTFFile.fromDataArray(dataArray);
+                            
+                            textures.set(texture, vtf);
                         }).catch(err => console.error('Missing map texture ' + resPath));
                     }
                 }
@@ -203,14 +206,13 @@ export class Model {
                     const materialTexture = vmt.data.worldvertextransition['$basetexture'];
 
                     if(materialTexture) {
-                        const resPath = `${Model.directories.materials}${materialTexture.toLocaleLowerCase()}.vtf`;
-                        await fetch(resPath).then(async res => {
-                            if(res.status == 200) {
-                                const dataArray = await res.arrayBuffer();
-                                const vtf = VTFFile.fromDataArray(dataArray);
-                                
-                                textures.set(texture, vtf);
-                            }
+                        const resPath = `${materialTexture.toLocaleLowerCase()}.vtf`;
+                        await fetchResource(resPath).then(async res => {
+
+                            const dataArray = await res.arrayBuffer();
+                            const vtf = VTFFile.fromDataArray(dataArray);
+                            
+                            textures.set(texture, vtf);
                         }).catch(err => console.error('Missing map texture ' + resPath));
                     }
                 }
@@ -226,6 +228,8 @@ export class Model {
         this.name = mapName;
 
         const bsp = await Model.loadMap(mapName);
+
+        pakfile = new Zip(Buffer.from(bsp.bsp.pakfile.buffer));
 
         const textures = await this.loadMapTextures(bsp.bsp.textures);
 

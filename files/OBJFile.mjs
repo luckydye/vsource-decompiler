@@ -118,7 +118,11 @@ export default class OBJFile extends TextFile {
 
             // textures and materials
 
-            for(let { data, format } of geo.materials) {
+            for(let mat of geo.materials) {
+
+                if(!mat.data) break;
+
+                const { data, format } = mat;
                 if(format.type != "NONE") {
                     const texture = S3Texture.fromDataArray(data, format.type, format.width, format.height);
                     obj.textures.push(texture.decompress());

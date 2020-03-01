@@ -190,10 +190,10 @@ const Structs = {
 
         UniformScale: 'float',
     },
-    cdispneighbor: {
+    CDispNeighbor: {
         noteused: 'byte[16]'
     },
-    cdispcornerneighbors: {
+    CDispCornerNeighbors: {
         noteused: 'byte[16]'
     }
 };
@@ -309,11 +309,11 @@ export default class BSPFile extends BinaryFile {
             BSPFile.LUMP.TEXDATA,
             BSPFile.LUMP.TEXDATA_STRING_TABLE,
             BSPFile.LUMP.TEXDATA_STRING_DATA,
-            // BSPFile.LUMP.DISPINFO,
-            // BSPFile.LUMP.DISP_VERTS,
-            // BSPFile.LUMP.DISP_TRIS,
+            BSPFile.LUMP.DISPINFO,
+            BSPFile.LUMP.DISP_VERTS,
+            BSPFile.LUMP.DISP_TRIS,
             BSPFile.LUMP.ENTITIES,
-            // BSPFile.LUMP.PAKFILE,
+            BSPFile.LUMP.PAKFILE,
             BSPFile.LUMP.GAME_LUMP,
         ];
     }
@@ -538,7 +538,7 @@ export default class BSPFile extends BinaryFile {
         bsp.entities = BSPFile.unserializeVMFString(entitiesString);
 
         // pakfile
-        // bsp.pakfile = lumps[BSPFile.LUMP.PAKFILE];
+        bsp.pakfile = lumps[BSPFile.LUMP.PAKFILE];
 
         console.log('read gamelumps...');
 

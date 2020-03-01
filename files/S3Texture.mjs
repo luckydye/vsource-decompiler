@@ -1,5 +1,7 @@
 import { BinaryFile } from "./BinaryFile.mjs";
 
+// https://www.khronos.org/opengl/wiki/S3_Texture_Compression
+
 export class S3Texture extends BinaryFile {
 
     static fromDataArray(buffer, format, width, height) {
