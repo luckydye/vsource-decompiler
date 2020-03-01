@@ -352,7 +352,7 @@ export default class BSPFile extends BinaryFile {
         }
     }
 
-    static readLumpData(lumps, dataArray) {
+    static readLumpData(lumps, dataView) {
         const lumpsData = [];
 
         for(let lump of lumps.data) {
@@ -360,7 +360,10 @@ export default class BSPFile extends BinaryFile {
             if(this.decode_lumps.indexOf(index) != -1) {
                 const lumpLength = lump.filelen.data;
                 const lumpOffset = lump.fileofs.data;
-                const view = new DataView(dataArray.slice(lumpOffset, lumpOffset + lumpLength));
+                const view = new DataView(dataView.buffer.slice(
+                    dataView.byteOffset + lumpOffset, 
+                    dataView.byteOffset + lumpOffset + lumpLength
+                ));
                 lumpsData[index] = view;
             }
         }
@@ -508,7 +511,7 @@ export default class BSPFile extends BinaryFile {
             throw err;
         }
 
-        const lumps = this.readLumpData(bsp.header.lumps, dataArray);
+        const lumps = this.readLumpData(bsp.header.lumps, bsp.view);
 
         console.log('decode lumps...');
 

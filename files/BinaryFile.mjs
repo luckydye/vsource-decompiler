@@ -239,10 +239,22 @@ export class BinaryFile {
     }
 
     static createFile(dataArray) {
-        const file = new this();
-        file.buffer = dataArray;
-        file.view = new DataView(dataArray);
-        return file;
+
+        if(dataArray instanceof ArrayBuffer) {
+            const file = new this();
+            file.buffer = dataArray;
+            file.view = new DataView(file.buffer);
+            return file;
+        }
+        
+        if(dataArray instanceof Buffer || dataArray instanceof DataView) {
+            const file = new this();
+            file.buffer = dataArray.buffer;
+            file.view = new DataView(file.buffer, dataArray.byteOffset, dataArray.byteLength);
+            return file;
+        }
+
+        throw new Error('Could not create Binary file.');
     }
 
     static fromDataArray(dataArray) {

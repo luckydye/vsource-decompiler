@@ -41,8 +41,14 @@ export default class OBJFile extends TextFile {
 
     */
 
-    static fromGeometry(geometry = []) {
-        const obj = new OBJFile();
+    constructor() {
+        super();
+
+        this.textures = [];
+    }
+
+    fromGeometry(geometry = []) {
+        const obj = this;
 
         obj.appendLine(`# Written with @uncut/file-format-lib`);
         obj.appendLine(`# https://luckydye.de/`);
@@ -99,7 +105,7 @@ export default class OBJFile extends TextFile {
                 normal = vec4.transformMat4(normal, normal, normalMatrix);
 
                 if(vertex[0].toString() == "NaN") {
-                    console.warn('Error loading Prop: ' + geo.name);
+                    console.warn('Error writing prop: ' + geo.name);
                     continue geoloop;
                 }
 
@@ -143,14 +149,6 @@ export default class OBJFile extends TextFile {
                 }
             }
         }
-
-        return obj;
-    }
-
-    constructor() {
-        super();
-
-        this.textures = [];
     }
 
 }

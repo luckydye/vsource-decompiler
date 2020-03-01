@@ -4,7 +4,11 @@ import { BinaryFile } from './BinaryFile.mjs';
 // https://github.com/ZeqMacaw/Crowbar/blob/master/Crowbar/Core/SourceModel/SourceCommon/SourceMdlFileData/SourceMdlBodyPart.vb
 
 export const MDL = {
-    studiohdr_t: {
+    studiohdr_id_version: {
+        id: 'char[4]',
+        version: 'int',
+    },
+    studiohdr_t_v49: {
         id: 'char[4]',
         version: 'int',
 
@@ -120,6 +124,57 @@ export const MDL = {
 
         unused3: 'int',
     },
+    studiohdr_t_v10: {
+        id: 'char[4]',
+        version: 'int',
+
+        name: 'char[64]',
+
+        dataLength: 'int',
+
+        eyeposition: 'vector',
+
+        hull_min: 'vector',
+        hull_max: 'vector',
+
+        view_bbmin: 'vector',
+        view_bbmax: 'vector',
+
+        flags: 'int',
+
+        bone_count: 'int',
+        bone_offset: 'int',
+
+        bonecontroller_count: 'int',
+        bonecontroller_offset: 'int',
+
+        hitbox_count: 'int',
+        hitbox_offset: 'int',
+
+        localanim_count: 'int',
+        localanim_offset: 'int',
+
+        localseq_count: 'int',
+        localseq_offset: 'int',
+
+        texture_count: 'int',
+        texture_offset: 'int',
+        texture_data_offset: 'int',
+
+        skinreference_count: 'int',
+        skinfamily_count: 'int',
+        skin_index: 'int',
+
+        bodypart_count: 'int',
+        bodypart_offset: 'int',
+
+        attachment_count: 'int',
+        attachment_offset: 'int',
+
+        localnode_count: 'int',
+        localnode_index: 'int',
+        localnode_name_index: 'int',
+    },
     mstudiobodyparts_t: {
         name_offset: 'int',
         model_count: 'int',
@@ -225,12 +280,18 @@ export default class MDLFile extends BinaryFile {
     static fromDataArray(dataArray) {
         const mdl = this.createFile(dataArray);
 
-        mdl.header = this.unserialize(mdl.view, 0, MDL.studiohdr_t).data;
+        const mdlhead = this.unserialize(mdl.view, 0, MDL.studiohdr_id_version).data;
+
+        if(mdlhead.version == 10) {
+            mdl.header = this.unserialize(mdl.view, 0, MDL.studiohdr_t_v10).data;
+        } else {
+            mdl.header = this.unserialize(mdl.view, 0, MDL.studiohdr_t_v49).data;
+        }
 
         // body parts
         mdl.bodyparts = [];
 
-        for(let b = 0; b < mdl.header.bodypart_count.data; b++) {
+        for(let b = 0; b < mdl.header.bodypart_count; b++) {
             const part = this.unserialize(mdl.view, mdl.header.bodypart_offset.data, MDL.mstudiobodyparts_t);
             mdl.bodyparts.push(part.data);
         }

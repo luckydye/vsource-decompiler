@@ -1,11 +1,33 @@
+import fs from 'fs';
+import path from 'path';
+
 export class TextFile {
 
-    constructor(string = "") {
-        this.content = string;
+    constructor(content = "") {
+        this.content = content;
+        this.writeStream = null;
+    }
+
+    openWriteStream(filename) {
+        const filepath = path.resolve(filename);
+        this.writeStream = fs.createWriteStream(filepath);
+        this.writeStream.on('error', function (err) {
+            throw new Error('Error writing file.');
+        });
+    }
+
+    closeWriteStream() {
+        if(this.writeStream) {
+            this.writeStream.destroy();
+        }
     }
 
     append(str) {
-        this.content += str;
+        if(this.writeStream) {
+            this.writeStream.write(str);
+        } else {
+            this.content += str;
+        }
     }
 
     appendLine(str) {

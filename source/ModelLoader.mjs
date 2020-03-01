@@ -45,9 +45,9 @@ async function fetchResource(resource) {
             for(let entry of entries) {
                 if(entry.match(fileName)) {
                     resolve({ 
-                        file: pakfile.files[entry].asNodeBuffer(), 
+                        file: fileName, 
                         arrayBuffer() {
-                            return this.file.buffer;
+                            return pakfile.files[entry].asNodeBuffer();
                         }
                     });
                     break;
@@ -61,9 +61,9 @@ async function fetchResource(resource) {
             const file = fs.readFile(resourcePool[fileName], (err, data) => {
                 if(!err) {
                     resolve({ 
-                        file: data, 
+                        file: fileName, 
                         arrayBuffer() {
-                            return this.file.buffer;
+                            return data;
                         }
                     });
                 } else {
@@ -125,15 +125,15 @@ export class Model {
         const mdl = MDLFile.fromDataArray(await mdlFile.arrayBuffer());
 
         // only use first texture for now
-        const texPath = mdl.textures[0].path;
+        // const texPath = mdl.textures[0].path;
 
-        const vmtFile = await fetchResource(`${texPath}.vmt`);
-        const vmt = VMTFile.fromDataArray(await vmtFile.arrayBuffer());
-        prop.material = vmt;
+        // const vmtFile = await fetchResource(`${texPath}.vmt`);
+        // const vmt = VMTFile.fromDataArray(await vmtFile.arrayBuffer());
+        // prop.material = vmt;
 
-        const vtfFile = await fetchResource(`${texPath}.vtf`);
-        const vtf = VTFFile.fromDataArray(await vtfFile.arrayBuffer());
-        prop.texture = vtf;
+        // const vtfFile = await fetchResource(`${texPath}.vtf`);
+        // const vtf = VTFFile.fromDataArray(await vtfFile.arrayBuffer());
+        // prop.texture = vtf;
 
         const vvdFile = await fetchResource(propVVDPath);
         const vvd = VVDFile.fromDataArray(await vvdFile.arrayBuffer());
@@ -225,7 +225,7 @@ export class Model {
         console.log('Reading pakfile.');
         pakfile = new Zip(Buffer.from(bsp.bsp.pakfile.buffer));
 
-        console.log('Load map textures.');
+        // console.log('Load map textures.');
         // const textures = await this.loadMapTextures(bsp.bsp.textures);
         const textures = new Map();
 
@@ -257,8 +257,11 @@ export class Model {
             rotation: [0, 0, 0],
         });
 
-        console.log('Load map props.');
+        console.log('Load map props...');
+
         await this.loadMapProps(bsp.bsp.gamelumps.sprp);
+
+        console.log('Done loading map props.');
     }
 
     async loadMapProps(props) {
@@ -323,14 +326,14 @@ export class Model {
                     }
                     
                 }).catch(err => {
-                    console.error(chalk.red('Failed to load prop: ' + propType.mdlPath));
+                    console.error(chalk.red('\nFailed to load prop: ' + propType.mdlPath));
                     console.log(err);
                     
                 }).finally(() => {
                     propCounter++;
 
                     process.stdout.cursorTo(0);
-                    process.stdout.write(`Loaded props ${propCounter.toString()} / ${propTypes.size.toString()}`);
+                    process.stdout.write(`Loading props ${propCounter.toString()} / ${propTypes.size.toString()}`);
                     
                     if(propCounter == propTypes.size) {
                         resolve();

@@ -54,48 +54,41 @@ export default class VVDFile extends BinaryFile {
 
     static decompileVertexData(vvd) {
         let byteOffset = vvd.header.vertexDataStart.data;
+        let vertecies = [];
 
         for(let v = 0; v < vvd.vertexCount; v++) {
             byteOffset += 16;
             const vert = this.unserialize(vvd.view, byteOffset, Structs.mstudiovertex_t);
             byteOffset = vert.byteOffset;
-            vvd.vertecies.push(vert.data);
+            vertecies.push([
+                -vert.data.pos_x.data,
+                vert.data.pos_z.data,
+                vert.data.pos_y.data,
+                
+                vert.data.tex_u.data,
+                vert.data.tex_v.data,
+                0,
+
+                vert.data.norm_x.data,
+                -vert.data.norm_z.data,
+                -vert.data.norm_y.data,
+            ]);
         }
+
+        return vertecies;
     }
 
     static fromDataArray(dataArray) {
         const vvd = this.createFile(dataArray);
 
         vvd.header = this.unserialize(vvd.view, 0, Structs.vertexFileHeader_t).data;
-
         vvd.vertexCount = vvd.header.numLODVertexes.data[0];
-
-        vvd.vertecies = [];
-        vvd.tangents = [];
-
-        this.decompileVertexData(vvd);
 
         return vvd;
     }
 
     convertToMesh() {
-        const verts = this.vertecies;
-
-        const parsedVertecies = verts.map((vert, i) => ([
-            -vert.pos_x.data,
-            vert.pos_z.data,
-            vert.pos_y.data,
-            
-            vert.tex_u.data,
-            vert.tex_v.data,
-            0,
-
-            vert.norm_x.data,
-            -vert.norm_z.data,
-            -vert.norm_y.data,
-        ]));
-
-        return parsedVertecies;
+        return VVDFile.decompileVertexData(this);
     }
 
 }

@@ -37,13 +37,14 @@ const Commands = {
             const model = new Model();
             await model.loadMap(mapName);
     
-            const obj = OBJFile.fromGeometry(model.geometry);
+            const objFile = new OBJFile();
+            objFile.openWriteStream(outputFilePath ? outputFilePath : model.name + '.obj');
+            objFile.fromGeometry(model.geometry);
+            // objFile.closeWriteStream();
 
             log(model.name, 'decompiled.');
     
-            fs.writeFileSync(outputFilePath ? outputFilePath : model.name + '.obj', obj);
-    
-            return model;
+            return true;
         }
     }
 
