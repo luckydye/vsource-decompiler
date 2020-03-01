@@ -22,7 +22,8 @@ const walkSync = function(dir, filelist) {
         if (fs.statSync(dir + "\\" + file).isDirectory()) {
             filelist = walkSync(dir + '\\' + file + '/', filelist);
         } else {
-            filelist[file.toLocaleLowerCase()] = dir + "\\" + file;
+            const dirPath = dir.split(/\/|\\/g);
+            filelist[dirPath[dirPath.length-2] + "/" + file.toLocaleLowerCase()] = dir + "\\" + file;
         }
     });
     return filelist;
@@ -36,7 +37,7 @@ async function fetchResource(resource) {
         }
 
         const filePathParts = resource.split(/\/|\\/g);
-        const fileName = filePathParts[filePathParts.length-1].toLocaleLowerCase();
+        const fileName = filePathParts.slice(filePathParts.length-2).join("/").toLocaleLowerCase();
 
         // look in the pakfile
         if(pakfile) {
@@ -90,7 +91,7 @@ export class Model {
     }
 
     static async loadMap(bspMapName) {
-        const mapPath = `${bspMapName}.bsp`;
+        const mapPath = `maps/${bspMapName}.bsp`;
         console.log('Loading map', mapPath);
 
         return fetchResource(mapPath).then(async res => {
@@ -161,19 +162,13 @@ export class Model {
     registerProp(prop) {
         if(!propTypes.has(prop.PropType)) {
 
-            const nameParts = prop.PropType.split("/");
-
             propTypes.set(prop.PropType, {
-                name: nameParts[nameParts.length-1].replace('.mdl', ''),
+                name: prop.PropType,
                 mdlPath: prop.PropType,
                 vvdPath: prop.PropType.replace('.mdl', '.vvd'),
                 listeners: [],
             });
         }
-    }
-
-    getPropType(prop) {
-        return prop.PropType;
     }
 
     loadMapTextures(textureArray) {
@@ -274,8 +269,28 @@ export class Model {
                 }
 
                 this.registerProp(prop);
+                const type = propTypes.get(prop.PropType);
 
-                const type = propTypes.get(this.getPropType(prop));
+                const propGeometry = {
+                    name: type.name,
+                    materials: [],
+                    scale: [
+                        prop.UniformScale, 
+                        prop.UniformScale, 
+                        prop.UniformScale
+                    ],
+                    origin: [0, 0, 0],
+                    position: [
+                        -prop.Origin.data[0].data,
+                        prop.Origin.data[2].data,
+                        prop.Origin.data[1].data,
+                    ],
+                    rotation: [
+                        -prop.Angles.data[2].data * Math.PI / 180,
+                        prop.Angles.data[1].data * Math.PI / 180,
+                        prop.Angles.data[0].data * Math.PI / 180,
+                    ],
+                };
 
                 type.listeners.push(propData => {
 
@@ -293,24 +308,9 @@ export class Model {
                         }
                     }
 
-                    const propGeometry = {
-                        name: type.name,
-                        vertecies: propData.vertecies.flat(),
-                        indecies: propData.indecies,
-                        materials: [ mat() ],
-                        scale: [1, 1, 1],
-                        origin: [0, 0, 0],
-                        position: [
-                            -prop.Origin.data[0].data,
-                            prop.Origin.data[2].data,
-                            prop.Origin.data[1].data,
-                        ],
-                        rotation: [
-                            prop.Angles.data[0].data * Math.PI / 180,
-                            prop.Angles.data[1].data * Math.PI / 180,
-                            prop.Angles.data[2].data * Math.PI / 180,
-                        ],
-                    };
+                    propGeometry.materials.push(mat());
+                    propGeometry.vertecies = propData.vertecies.flat();
+                    propGeometry.indecies = propData.indecies;
                     
                     this.geometry.add(propGeometry);
                 });
