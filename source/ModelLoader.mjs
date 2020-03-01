@@ -91,6 +91,8 @@ export class Model {
 
     static async loadMap(bspMapName) {
         const mapPath = `${bspMapName}.bsp`;
+        console.log('Loading map', mapPath);
+
         return fetchResource(mapPath).then(async res => {
             const arrayBuffer = await res.arrayBuffer();
 
@@ -181,12 +183,8 @@ export class Model {
             for(let texture of textureArray) {
 
                 const resPath = `${texture.toLocaleLowerCase()}.vmt`;
-                const vmt = await fetchResource(resPath).then(async res => {
-
-                    const dataArray = await res.arrayBuffer();
-                    return VMTFile.fromDataArray(dataArray);
-
-                }).catch(err => console.error('Missing VMT file ' + resPath));
+                const vmtFile = await fetchResource(resPath);
+                const vmt = VMTFile.fromDataArray(await vmtFile.arrayBuffer());
 
                 if(vmt && vmt.data.lightmappedgeneric) {
                     const materialTexture = vmt.data.lightmappedgeneric['$basetexture'];
@@ -219,6 +217,7 @@ export class Model {
 
                 // want to check if texture loaded correctly? check with "!textures.has(texture)"
             }
+
             resolve(textures);
         })
     }
@@ -229,8 +228,10 @@ export class Model {
 
         const bsp = await Model.loadMap(mapName);
 
+        console.log('Reading pakfile.');
         pakfile = new Zip(Buffer.from(bsp.bsp.pakfile.buffer));
 
+        console.log('Load map textures.');
         const textures = await this.loadMapTextures(bsp.bsp.textures);
 
         // world
@@ -264,6 +265,7 @@ export class Model {
             rotation: [0, 0, 0],
         });
 
+        console.log('Load map props.');
         await this.loadMapProps(bsp.bsp.gamelumps.sprp);
     }
 
@@ -334,6 +336,9 @@ export class Model {
                     
                 }).finally(() => {
                     propCounter++;
+
+                    console.log('Loaded prop ', propCounter, 'von', propTypes.size);
+                    
                     if(propCounter == propTypes.size) resolve();
                 })
             }
