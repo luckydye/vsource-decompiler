@@ -192,10 +192,7 @@ export class Model {
                     if(materialTexture) {
                         const resPath = `${materialTexture.toLocaleLowerCase()}.vtf`;
                         await fetchResource(resPath).then(async res => {
-
-                            const dataArray = await res.arrayBuffer();
-                            const vtf = VTFFile.fromDataArray(dataArray);
-                            
+                            const vtf = VTFFile.fromDataArray(await res.arrayBuffer());
                             textures.set(texture, vtf);
                         }).catch(err => console.error('Missing map texture ' + resPath));
                     }
@@ -206,10 +203,7 @@ export class Model {
                     if(materialTexture) {
                         const resPath = `${materialTexture.toLocaleLowerCase()}.vtf`;
                         await fetchResource(resPath).then(async res => {
-
-                            const dataArray = await res.arrayBuffer();
-                            const vtf = VTFFile.fromDataArray(dataArray);
-                            
+                            const vtf = VTFFile.fromDataArray(await res.arrayBuffer());
                             textures.set(texture, vtf);
                         }).catch(err => console.error('Missing map texture ' + resPath));
                     }
@@ -335,9 +329,13 @@ export class Model {
                 }).finally(() => {
                     propCounter++;
 
-                    console.log('Loaded prop', propCounter.toString(), '/', propTypes.size.toString());
+                    process.stdout.cursorTo(0);
+                    process.stdout.write(`Loaded props ${propCounter.toString()} / ${propTypes.size.toString()}`);
                     
-                    if(propCounter == propTypes.size) resolve();
+                    if(propCounter == propTypes.size) {
+                        resolve();
+                        process.stdout.write(`\n`);
+                    }
                 })
             }
         })
