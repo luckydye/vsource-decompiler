@@ -51,11 +51,10 @@ const Commands = {
             mtlFile.fromObjFile(objFile);
 
             // write texture files
-            for(let texName in objFile.materials) {
-                const tex = objFile.materials[texName];
+            for(let texName of objFile.materials.keys()) {
+                const tex = objFile.materials.get(texName);
                 const format = tex.format;
                 const data = tex.imageData;
-                let name = tex.name;
 
                 if(tex.format.type === "NONE") continue;
 
@@ -63,17 +62,12 @@ const Commands = {
                 const ddsBuffer = texture.toDDS();
 
                 // write texture
-                const dirPath = name.split("/");
-                if(!fs.existsSync('res/textures/' + dirPath[0])) {
-                    fs.mkdirSync('res/textures/' + dirPath[0]);
-                }
-
                 const fileBuffer = Buffer.from(ddsBuffer);
-                const writeStream = fs.createWriteStream(`res/textures/${name}.dds`);
+                const writeStream = fs.createWriteStream(`${resourcePath}/textures/${texName}.dds`);
                 
                 writeStream.write(fileBuffer, 'binary');
                 writeStream.on('finish', () => {
-                    console.log(`wrote: res/textures/${name}.dds`, chalk.green('OK'));
+                    console.log(`wrote: ${resourcePath}/textures/${texName}.dds`, chalk.green('OK'));
                 });
                 writeStream.end();
             }

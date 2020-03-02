@@ -221,9 +221,9 @@ export class Model {
                     name: type.name,
                     materials: [],
                     scale: [
-                        prop.UniformScale, 
-                        prop.UniformScale, 
-                        prop.UniformScale
+                        prop.UniformScale || 1, 
+                        prop.UniformScale || 1, 
+                        prop.UniformScale || 1
                     ],
                     origin: [0, 0, 0],
                     position: [

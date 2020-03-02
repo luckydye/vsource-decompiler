@@ -51,7 +51,7 @@ export default class OBJFile extends TextFile {
             this.writeMaterialLib = false;
         }
         
-        this.materials = {};
+        this.materials = new Map();
     }
 
     fromGeometry(geometry = []) {
@@ -61,6 +61,8 @@ export default class OBJFile extends TextFile {
         this.appendLine(`mtllib ${this.name}.mtl`);
 
         let indexOffset = 1;
+
+        const materialMap = this.materials;
 
         geoloop: for(let geo of geometry) {
 
@@ -74,11 +76,13 @@ export default class OBJFile extends TextFile {
                 geo.position[0],
                 geo.position[1],
                 geo.position[2],
+                0
             ];
             const rotation = [
                 geo.rotation[0],
                 geo.rotation[1],
                 geo.rotation[2],
+                0,
             ];
             const scale = geo.scale;
             const origin = geo.origin;
@@ -130,8 +134,8 @@ export default class OBJFile extends TextFile {
             this.append(normals.map(v => `vn ${v[0]} ${v[1]} ${v[2]}`)
                 .join("\n") + "\n");
 
-            let lastMaterialindex = 0;
-
+            let lastMaterialindex = null;
+            
             for(let i = 0; i < geo.indecies.length; i += 3) {
                 const [ i1, i2, i3 ] = geo.indecies.slice(i, i + 3);
 
@@ -139,8 +143,11 @@ export default class OBJFile extends TextFile {
 
                 if(materialindex != lastMaterialindex) {
                     const material = geo.materials[materialindex];
-                    const materialName = `${geo.name}_${material.name.replace(/\/|\\/g, '_')}`;
-                    this.materials[materialName] = material;
+                    const name = material.name.data || material.name;
+
+                    const materialName = `${name.replace(/(\/|\\)+/g, '_')}`;
+
+                    materialMap.set(materialName, material);
     
                     this.appendLine(`usemtl ${materialName}`);
                     this.appendLine(`s off`);
