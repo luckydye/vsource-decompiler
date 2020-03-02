@@ -2,6 +2,8 @@ import { TextFile } from './TextFile.mjs';
 import glmatrix from 'gl-matrix';
 import { S3Texture } from './S3Texture.mjs';
 
+import fs from 'fs';
+
 const { vec4, quat, mat4 } = glmatrix;
 
 export default class OBJFile extends TextFile {
@@ -136,16 +138,26 @@ export default class OBJFile extends TextFile {
 
             // textures and materials
 
-            for(let mat of geo.materials) {
+            for(let material of geo.materials) {
 
-                if(!mat.data) break;
+                if(material.format) {
 
-                const { data, format } = mat;
-                if(format.type != "NONE") {
+                    const format = material.format;
+                    const data = material.imageData;
+                    const name = material.name;
+
                     const texture = S3Texture.fromDataArray(data, format.type, format.width, format.height);
+
+                    texture.toDDS();
+
+                    const dirPath = name.split("/");
+                    if(!fs.existsSync('res/textures/' + dirPath[0])) {
+                        fs.mkdirSync('res/textures/' + dirPath[0]);
+                    }
+
+                    fs.writeFileSync(`res/textures/${name}.dds`, texture.view);
+
                     obj.textures.push(texture.decompress());
-                } else {
-                    // skipped unknown texture
                 }
             }
         }

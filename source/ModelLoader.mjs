@@ -118,9 +118,8 @@ export class Model {
         console.log('Reading pakfile.');
         pakfile = new Zip(Buffer.from(bsp.bsp.pakfile.buffer));
 
-        // console.log('Load map textures.');
-        // const textures = await this.loadMapTextures(bsp.bsp.textures);
-        const textures = new Map();
+        console.log('Load map textures.');
+        const textures = await this.loadMapTextures(bsp.bsp.textures);
 
         // world
         const meshData = bsp.meshData;
@@ -133,22 +132,15 @@ export class Model {
                 vert.normal[0], vert.normal[1], vert.normal[2]
             ])).flat(),
             indecies: meshData.indecies,
-            materials: meshData.textures.map(tex => {
-                const vtf = textures.get(tex);
-                if(vtf) {
-                    return {
-                        format: vtf.format, 
-                        data: vtf.imageData
-                    };
-                } else {
-                    return {};
-                }
-            }),
+            materials: meshData.textures.map(tex => (textures.get(tex) || {})),
             scale: [1, 1, 1],
             origin: [0, 0, 0],
             position: [0, 0, 0],
             rotation: [0, 0, 0],
         });
+
+        // skip props
+        return;
 
         console.log('Load map props...');
 
@@ -174,6 +166,7 @@ export class Model {
                         const resPath = `${materialTexture.toLocaleLowerCase()}.vtf`;
                         await fetchResource(resPath).then(async res => {
                             const vtf = VTFFile.fromDataArray(await res.arrayBuffer());
+                            vtf.name = materialTexture.toLocaleLowerCase().replace(/\\|\//g, "/");
                             textures.set(texture, vtf);
                         }).catch(err => console.error('Missing map texture ' + resPath));
                     }
@@ -185,6 +178,7 @@ export class Model {
                         const resPath = `${materialTexture.toLocaleLowerCase()}.vtf`;
                         await fetchResource(resPath).then(async res => {
                             const vtf = VTFFile.fromDataArray(await res.arrayBuffer());
+                            vtf.name = materialTexture.toLocaleLowerCase().replace(/\\|\//g, "/");
                             textures.set(texture, vtf);
                         }).catch(err => console.error('Missing map texture ' + resPath));
                     }
