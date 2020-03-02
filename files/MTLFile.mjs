@@ -66,8 +66,23 @@ export default class MTLFile extends TextFile {
     fromObjFile(objFile) {
         const materials = objFile.materials;
 
-        for(let material of Object.keys(materials)) {
-            console.log(materials[material].name);
+        this.appendLine(`# Written with @uncut/file-format-lib`);
+        this.appendLine(`# https://luckydye.de/`);
+
+        for(let materialName of Object.keys(materials)) {
+
+            const material = materials[materialName];
+            const texturePath = material.name;
+
+            this.appendLine(`\nnewmtl ${materialName}`);
+            this.appendLine(`illum 1`);
+            // diffuse
+            this.appendLine(`Kd 1.000 1.000 1.000`);
+            // specular
+            this.appendLine(`Ks ${material.reflectivity.map(v => v.toFixed(3)).join(" ")}`);
+            this.appendLine(`Ns 10.000`);
+            // diffuse texture
+            this.appendLine(`map_Kd res/textures/${texturePath}.dds`);
         }
     }
 

@@ -75,6 +75,18 @@ export default class VTFFile extends BinaryFile {
         return Structs;
     }
 
+    get reflectivity() {
+        return this.header.reflectivity.valueOf();
+    }
+
+    get width() {
+        return this.header.width.valueOf();
+    }
+
+    get height() {
+        return this.header.height.valueOf();
+    }
+
     static readHeader(vtf) {
         const fileHeader = this.unserialize(vtf.view, 0, VTF.vtfheader).data;
         const sig = fileHeader.signature.data.split("").slice(0, 3).join("");

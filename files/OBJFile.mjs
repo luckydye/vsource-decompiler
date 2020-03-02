@@ -55,18 +55,16 @@ export default class OBJFile extends TextFile {
     }
 
     fromGeometry(geometry = []) {
-        const obj = this;
+        this.appendLine(`# Written with @uncut/file-format-lib`);
+        this.appendLine(`# https://luckydye.de/`);
 
-        obj.appendLine(`# Written with @uncut/file-format-lib`);
-        obj.appendLine(`# https://luckydye.de/`);
-
-        obj.appendLine(`mtllib ${this.name}.mtl`);
+        this.appendLine(`mtllib ${this.name}.mtl`);
 
         let indexOffset = 1;
 
         geoloop: for(let geo of geometry) {
 
-            obj.appendLine(`\no ${geo.name}`);
+            this.appendLine(`\no ${geo.name}`);
 
             const rotQuat = quat.create();
             const modelMatrix = mat4.create();
@@ -123,24 +121,27 @@ export default class OBJFile extends TextFile {
                 normals.push([normal[0] || 0, normal[1] || 0, normal[2] || 0]);
             }
 
-            obj.append(vertecies.map(v => `v ${v[0]} ${v[1]} ${v[2]}`)
+            this.append(vertecies.map(v => `v ${v[0]} ${v[1]} ${v[2]}`)
                 .join("\n") + "\n");
                 
-            obj.append(uvs.map(v => `vt ${v[0]} ${v[1]} ${v[2]}`)
+            this.append(uvs.map(v => `vt ${v[0]} ${v[1]} ${v[2]}`)
                 .join("\n") + "\n");
 
-            obj.append(normals.map(v => `vn ${v[0]} ${v[1]} ${v[2]}`)
+            this.append(normals.map(v => `vn ${v[0]} ${v[1]} ${v[2]}`)
                 .join("\n") + "\n");
-            
-            this.materials[`${geo.name}_mat`] = geo.materials[0];
 
-            obj.appendLine(`usemtl ${geo.name}_mat`);
-            obj.appendLine(`s off`);
+            const material = geo.materials[uvs[0][2]];
+            const materialName = `${geo.name}_${material.name.replace(/\/|\\/g, '_')}`;
+
+            this.materials[materialName] = material;
+
+            this.appendLine(`usemtl ${materialName}`);
+            this.appendLine(`s off`);
 
             for(let i = 0; i < geo.indecies.length; i += 3) {
                 const [ i1, i2, i3 ] = geo.indecies.slice(i, i + 3);
                 
-                obj.appendLine(`f ${indexOffset + i1}/${indexOffset + i1}/${indexOffset + i1} ${indexOffset + i2}/${indexOffset + i2}/${indexOffset + i2} ${indexOffset + i3}/${indexOffset + i3}/${indexOffset + i3}`);
+                this.appendLine(`f ${indexOffset + i1}/${indexOffset + i1}/${indexOffset + i1} ${indexOffset + i2}/${indexOffset + i2}/${indexOffset + i2} ${indexOffset + i3}/${indexOffset + i3}/${indexOffset + i3}`);
             }
 
             indexOffset += vertecies.length;

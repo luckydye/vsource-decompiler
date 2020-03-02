@@ -50,10 +50,9 @@ const Commands = {
             mtlFile.openWriteStream(exportFileName + '.mtl');
             mtlFile.fromObjFile(objFile);
 
-            return true;
-
             // write texture files
-            for(let tex of objFile.textures) {
+            for(let texName in objFile.materials) {
+                const tex = objFile.materials[texName];
                 const format = tex.format;
                 const data = tex.imageData;
                 let name = tex.name;

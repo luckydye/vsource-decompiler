@@ -103,50 +103,19 @@ export class Model {
             const arrayBuffer = await res.arrayBuffer();
 
             const bsp = BSPFile.fromDataArray(arrayBuffer);
-            const meshData = bsp.convertToMesh();
+            const mesh = bsp.convertToMesh();
 
-            return { meshData, bsp };
+            console.log('Load map textures.');
+            const textures = await this.loadMapTextures(bsp.textures);
+
+            console.log('Reading pakfile.');
+            pakfile = new Zip(Buffer.from(bsp.pakfile.buffer));
+
+            return { mesh, bsp, textures };
         })
     }
 
-    async loadMap(mapName) {
-
-        this.name = mapName;
-
-        const bsp = await Model.loadMap(mapName);
-
-        console.log('Reading pakfile.');
-        pakfile = new Zip(Buffer.from(bsp.bsp.pakfile.buffer));
-
-        console.log('Load map textures.');
-        const textures = await this.loadMapTextures(bsp.bsp.textures);
-
-        // world
-        const meshData = bsp.meshData;
-
-        this.geometry.add({
-            name: mapName,
-            vertecies: meshData.vertecies.map(vert => ([
-                vert.vertex[0], vert.vertex[1], vert.vertex[2],
-                vert.uv[0], vert.uv[1], vert.uv[2],
-                vert.normal[0], vert.normal[1], vert.normal[2]
-            ])).flat(),
-            indecies: meshData.indecies,
-            materials: meshData.textures.map(tex => (textures.get(tex) || {})),
-            scale: [1, 1, 1],
-            origin: [0, 0, 0],
-            position: [0, 0, 0],
-            rotation: [0, 0, 0],
-        });
-
-        console.log('Load map props...');
-
-        await this.loadMapProps(bsp.bsp.gamelumps.sprp);
-
-        console.log('Done loading map props.');
-    }
-
-    loadMapTextures(textureArray) {
+    static loadMapTextures(textureArray) {
         return new Promise(async (resolve, reject) => {
             const textures = new Map();
             
@@ -186,6 +155,42 @@ export class Model {
 
             resolve(textures);
         })
+    }
+
+    async loadMap(mapName) {
+
+        this.name = mapName;
+
+        const map = await Model.loadMap(mapName);
+
+        // world
+        const mesh = map.mesh;
+        const textures = map.textures;
+
+        const materials = [...textures.keys()].map(key => {
+            return textures.get(key);
+        });
+
+        this.geometry.add({
+            name: mapName,
+            vertecies: mesh.vertecies.map(vert => ([
+                vert.vertex[0], vert.vertex[1], vert.vertex[2],
+                vert.uv[0], vert.uv[1], vert.uv[2],
+                vert.normal[0], vert.normal[1], vert.normal[2]
+            ])).flat(),
+            indecies: mesh.indecies,
+            materials: materials,
+            scale: [1, 1, 1],
+            origin: [0, 0, 0],
+            position: [0, 0, 0],
+            rotation: [0, 0, 0],
+        });
+
+        // console.log('Load map props...');
+
+        // await this.loadMapProps(map.bsp.gamelumps.sprp);
+
+        // console.log('Done loading map props.');
     }
     
     registerProp(prop) {
