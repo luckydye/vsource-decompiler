@@ -40,10 +40,18 @@ export default class OBJFile extends TextFile {
 
     */
 
-    constructor() {
+    constructor(name) {
         super();
-
-        this.textures = [];
+        
+        this.name = name;
+        
+        if(name) {
+            this.writeMaterialLib = true;
+        } else {
+            this.writeMaterialLib = false;
+        }
+        
+        this.materials = {};
     }
 
     fromGeometry(geometry = []) {
@@ -51,6 +59,8 @@ export default class OBJFile extends TextFile {
 
         obj.appendLine(`# Written with @uncut/file-format-lib`);
         obj.appendLine(`# https://luckydye.de/`);
+
+        obj.appendLine(`mtllib ${this.name}.mtl`);
 
         let indexOffset = 1;
 
@@ -122,6 +132,8 @@ export default class OBJFile extends TextFile {
             obj.append(normals.map(v => `vn ${v[0]} ${v[1]} ${v[2]}`)
                 .join("\n") + "\n");
             
+            this.materials[`${geo.name}_mat`] = geo.materials[0];
+
             obj.appendLine(`usemtl ${geo.name}_mat`);
             obj.appendLine(`s off`);
 
@@ -132,13 +144,6 @@ export default class OBJFile extends TextFile {
             }
 
             indexOffset += vertecies.length;
-
-            // textures and materials
-            for(let material of geo.materials) {
-                if(material.format) {
-                    obj.textures.push(material);
-                }
-            }
         }
     }
 

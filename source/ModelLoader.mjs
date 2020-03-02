@@ -139,9 +139,6 @@ export class Model {
             rotation: [0, 0, 0],
         });
 
-        // skip props
-        return;
-
         console.log('Load map props...');
 
         await this.loadMapProps(bsp.bsp.gamelumps.sprp);
@@ -310,15 +307,15 @@ export class Model {
         const mdl = MDLFile.fromDataArray(await mdlFile.arrayBuffer());
 
         // only use first texture for now
-        // const texPath = mdl.textures[0].path;
+        const texPath = mdl.textures[0].path;
 
-        // const vmtFile = await fetchResource(`${texPath}.vmt`);
-        // const vmt = VMTFile.fromDataArray(await vmtFile.arrayBuffer());
-        // prop.material = vmt;
+        const vmtFile = await fetchResource(`${texPath}.vmt`);
+        const vmt = VMTFile.fromDataArray(await vmtFile.arrayBuffer());
+        prop.material = vmt;
 
-        // const vtfFile = await fetchResource(`${texPath}.vtf`);
-        // const vtf = VTFFile.fromDataArray(await vtfFile.arrayBuffer());
-        // prop.texture = vtf;
+        const vtfFile = await fetchResource(`${texPath}.vtf`);
+        const vtf = VTFFile.fromDataArray(await vtfFile.arrayBuffer());
+        prop.texture = vtf;
 
         const vvdFile = await fetchResource(propVVDPath);
         const vvd = VVDFile.fromDataArray(await vvdFile.arrayBuffer());

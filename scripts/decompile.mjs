@@ -5,8 +5,9 @@ import path from 'path';
 import chalk from 'chalk';
 
 import { Model } from '../source/ModelLoader.mjs';
-import OBJFile from '../files/OBJFile.mjs';
 import { S3Texture } from '../files/S3Texture.mjs';
+import OBJFile from '../files/OBJFile.mjs';
+import MTLFile from '../files/MTLFile.mjs';
 
 function log(...str) {
     console.log('[INFO]', ...str);
@@ -37,11 +38,19 @@ const Commands = {
     
             const model = new Model();
             await model.loadMap(mapName);
+
+            const exportFileName = outputFilePath ? outputFilePath : model.name;
     
             // write obj file
-            const objFile = new OBJFile();
-            objFile.openWriteStream(outputFilePath ? outputFilePath : model.name + '.obj');
+            const objFile = new OBJFile(model.name);
+            objFile.openWriteStream(exportFileName + '.obj');
             objFile.fromGeometry(model.geometry);
+
+            const mtlFile = new MTLFile(model.name);
+            mtlFile.openWriteStream(exportFileName + '.mtl');
+            mtlFile.fromObjFile(objFile);
+
+            return true;
 
             // write texture files
             for(let tex of objFile.textures) {
