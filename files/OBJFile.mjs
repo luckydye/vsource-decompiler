@@ -130,16 +130,23 @@ export default class OBJFile extends TextFile {
             this.append(normals.map(v => `vn ${v[0]} ${v[1]} ${v[2]}`)
                 .join("\n") + "\n");
 
-            const material = geo.materials[uvs[0][2]];
-            const materialName = `${geo.name}_${material.name.replace(/\/|\\/g, '_')}`;
-
-            this.materials[materialName] = material;
-
-            this.appendLine(`usemtl ${materialName}`);
-            this.appendLine(`s off`);
+            let lastMaterialindex = 0;
 
             for(let i = 0; i < geo.indecies.length; i += 3) {
                 const [ i1, i2, i3 ] = geo.indecies.slice(i, i + 3);
+
+                const materialindex = uvs[i1][2];
+
+                if(materialindex != lastMaterialindex) {
+                    const material = geo.materials[materialindex];
+                    const materialName = `${geo.name}_${material.name.replace(/\/|\\/g, '_')}`;
+                    this.materials[materialName] = material;
+    
+                    this.appendLine(`usemtl ${materialName}`);
+                    this.appendLine(`s off`);
+                }
+
+                lastMaterialindex = materialindex;
                 
                 this.appendLine(`f ${indexOffset + i1}/${indexOffset + i1}/${indexOffset + i1} ${indexOffset + i2}/${indexOffset + i2}/${indexOffset + i2} ${indexOffset + i3}/${indexOffset + i3}/${indexOffset + i3}`);
             }

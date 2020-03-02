@@ -186,11 +186,11 @@ export class Model {
             rotation: [0, 0, 0],
         });
 
-        // console.log('Load map props...');
+        console.log('Load map props...');
 
-        // await this.loadMapProps(map.bsp.gamelumps.sprp);
+        await this.loadMapProps(map.bsp.gamelumps.sprp);
 
-        // console.log('Done loading map props.');
+        console.log('Done loading map props.');
     }
     
     registerProp(prop) {
