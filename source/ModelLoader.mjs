@@ -5,163 +5,150 @@ import path from 'path';
 import fs from 'fs';
 import Zip from 'node-zip';
 
-class VirtualFileSystem {
-    constructor() {
-        // use this in the future   
-    }
+if(fs.existsSync('filesystem.log')) {
+    fs.unlinkSync('filesystem.log');
 }
+const logFile = fs.createWriteStream('filesystem.log');
 
-let pakfile;
-let resourceRoot = "csgo/";
-let resourcePool = null;
+class VirtualFileSystem {
 
-const walkSync = function(dir, filelist) {
-    const files = fs.readdirSync(dir);
-    filelist = filelist || {};
-    files.forEach(function(file) {
-        if (fs.statSync(dir + "\\" + file).isDirectory()) {
-            filelist = walkSync(dir + '\\' + file + '/', filelist);
-        } else {
-            const dirPath = dir.split(/\/|\\/g);
-            filelist[dirPath[dirPath.length-2] + "/" + file.toLocaleLowerCase()] = dir + "\\" + file;
+    static indexFileTree(dir, filelist) {
+        filelist = filelist || {};
+
+        const files = fs.readdirSync(dir);
+        
+        files.forEach(file => {
+            if (fs.statSync(dir + "/" + file).isDirectory()) {
+                filelist = this.indexFileTree(dir + '/' + file, filelist);
+            } else {
+                const dirPath = dir.split(/\/|\\/g).slice(1);
+                const fileKey = dirPath.join("/") + "/" + file.toLocaleLowerCase();
+
+                logFile.write(fileKey + '\n');
+
+                filelist[fileKey] = { 
+                    file: dir + '/' + file, 
+                    async arrayBuffer() {
+                        return new Promise((resolve, reject) => {
+                            fs.readFile(dir + '/' + file, (err, data) => {
+                                if(err) {
+                                    reject(new Error('Error loading file: ' + err));
+                                } else {
+                                    resolve(data);
+                                }
+                            });
+                        })
+                    }
+                }
+            }
+        });
+
+        return filelist;
+    }
+
+    constructor(root = "csgo/") {
+        this.root = root;
+        this.pakfile = null;
+        this.indexed = false;
+        this.fileRegistry = {};
+    }
+
+    attatchPakfile(pakfileBuffer) {
+        const pakfile = new Zip(pakfileBuffer);
+        this.pakfile = pakfile;
+
+        const entries = Object.keys(pakfile.files);
+
+        for(let entry of entries) {
+            logFile.write(entry + '\n');
+
+            this.fileRegistry[entry] = { 
+                file: entry, 
+                async arrayBuffer() {
+                    return pakfile.files[entry].asNodeBuffer();
+                }
+            };
         }
-    });
-    return filelist;
-};
+    }
 
-async function fetchResource(resource) {
-    return new Promise((resolve, reject) => {
+    getFile(resource) {
+        resource = resource.replace(/\/|\\/g, "/").toLocaleLowerCase();
 
-        if(!resourcePool) {
-            resourcePool = walkSync(path.resolve(resourceRoot));
-        }
+        return new Promise(async (resolve, reject) => {
 
-        const filePathParts = resource.split(/\/|\\/g);
-        const fileName = filePathParts.slice(filePathParts.length-2).join("/").toLocaleLowerCase();
+            // index if not yet indexed
+            if(!this.indexed) {
+                this.fileRegistry = Object.assign(VirtualFileSystem.indexFileTree(this.root), this.fileRegistry);
+                this.indexed = true;
+            }
 
-        // look in the pakfile
-        if(pakfile) {
-            const entries = Object.keys(pakfile.files);
+            // look in fileregistry
+            const fileSystemEntries = Object.keys(this.fileRegistry);
 
-            for(let entry of entries) {
-                if(entry.match(fileName)) {
-                    resolve({ 
-                        file: fileName, 
-                        arrayBuffer() {
-                            return pakfile.files[entry].asNodeBuffer();
-                        }
-                    });
+            for(let entry of fileSystemEntries) {
+                if(entry.match(resource)) {
+                    resolve(this.fileRegistry[entry]);
                     break;
                 }
             }
-        }
 
-        // else look in filesystem
-        if(fileName in resourcePool) {
+            reject(new Error('Resource File not found: ' + resource));
+        })
+    }
 
-            const file = fs.readFile(resourcePool[fileName], (err, data) => {
-                if(!err) {
-                    resolve({ 
-                        file: fileName, 
-                        arrayBuffer() {
-                            return data;
-                        }
-                    });
-                } else {
-                    throw new Error('Error loading file: ' + err);
-                }
-            });
-
-        } else {
-            throw new Error('Resource File not found: ' + fileName);
-        }
-    })
 }
 
+const fileSystem = new VirtualFileSystem();
 const propTypes = new Map();
 
 export class Model {
 
     static get resourceRoot() {
-        return resourceRoot;
+        return fileSystem.root;
     }
 
     static set resourceRoot(val) {
-        resourceRoot = val;
+        fileSystem.root = val;
     }
 
-    constructor(name = "unknown") {
+    constructor() {
         this.geometry = new Set();
-        this.name = name;
     }
-
-    static async loadMap(bspMapName) {
-        const mapPath = `maps/${bspMapName}.bsp`;
-        console.log('Loading map', mapPath);
-
-        return fetchResource(mapPath).then(async res => {
-            const arrayBuffer = await res.arrayBuffer();
-
-            const bsp = BSPFile.fromDataArray(arrayBuffer);
-            const mesh = bsp.convertToMesh();
-
-            console.log('Load map textures.');
-            const textures = await this.loadMapTextures(bsp.textures);
-
-            console.log('Reading pakfile.');
-            pakfile = new Zip(Buffer.from(bsp.pakfile.buffer));
-
-            return { mesh, bsp, textures };
-        })
-    }
-
-    static loadMapTextures(textureArray) {
-        return new Promise(async (resolve, reject) => {
-            const textures = new Map();
-            
-            for(let texture of textureArray) {
-
-                const resPath = `${texture.toLocaleLowerCase()}.vmt`;
-                const vmtFile = await fetchResource(resPath);
-                const vmt = VMTFile.fromDataArray(await vmtFile.arrayBuffer());
-
-                if(vmt && vmt.data.lightmappedgeneric) {
-                    const materialTexture = vmt.data.lightmappedgeneric['$basetexture'];
-
-                    if(materialTexture) {
-                        const resPath = `${materialTexture.toLocaleLowerCase()}.vtf`;
-                        await fetchResource(resPath).then(async res => {
-                            const vtf = VTFFile.fromDataArray(await res.arrayBuffer());
-                            vtf.name = materialTexture.toLocaleLowerCase().replace(/\\|\//g, "/");
-                            textures.set(texture, vtf);
-                        }).catch(err => console.error('Missing map texture ' + resPath));
-                    }
-                }
-                if(vmt && vmt.data.worldvertextransition) {
-                    const materialTexture = vmt.data.worldvertextransition['$basetexture'];
-
-                    if(materialTexture) {
-                        const resPath = `${materialTexture.toLocaleLowerCase()}.vtf`;
-                        await fetchResource(resPath).then(async res => {
-                            const vtf = VTFFile.fromDataArray(await res.arrayBuffer());
-                            vtf.name = materialTexture.toLocaleLowerCase().replace(/\\|\//g, "/");
-                            textures.set(texture, vtf);
-                        }).catch(err => console.error('Missing map texture ' + resPath));
-                    }
-                }
-
-                // want to check if texture loaded correctly? check with "!textures.has(texture)"
-            }
-
-            resolve(textures);
-        })
+    
+    registerProp(prop) {
+        if(!propTypes.has(prop.PropType)) {
+            propTypes.set(prop.PropType, {
+                name: prop.PropType,
+                mdlPath: prop.PropType,
+                vvdPath: prop.PropType.replace('.mdl', '.vvd'),
+                listeners: [],
+            });
+        }
     }
 
     async loadMap(mapName) {
-
         this.name = mapName;
 
-        const map = await Model.loadMap(mapName);
+        const mapPath = `maps/${mapName}.bsp`;
+        log('Loading map', mapPath);
+
+        const map = await fileSystem.getFile(mapPath).then(async res => {
+
+            const bsp = BSPFile.fromDataArray(await res.arrayBuffer());
+            const mesh = bsp.convertToMesh();
+
+            log('Reading pakfile.');
+            fileSystem.attatchPakfile(Buffer.from(bsp.pakfile.buffer));
+
+            log('Load map textures.');
+            const textures = await this.loadMapTextures(bsp.textures);
+
+            return { 
+                mesh, 
+                bsp, 
+                textures
+            };
+        })
 
         // world
         const mesh = map.mesh;
@@ -186,27 +173,61 @@ export class Model {
             rotation: [0, 0, 0],
         });
 
-        console.log('Load map props...');
+        log('Load map props...');
 
         await this.loadMapProps(map.bsp.gamelumps.sprp);
 
-        console.log('Done loading map props.');
+        log('Done loading map props.');
     }
-    
-    registerProp(prop) {
-        if(!propTypes.has(prop.PropType)) {
 
-            propTypes.set(prop.PropType, {
-                name: prop.PropType,
-                mdlPath: prop.PropType,
-                vvdPath: prop.PropType.replace('.mdl', '.vvd'),
-                listeners: [],
-            });
-        }
+    async loadMapTextures(textureArray) {
+        return new Promise(async (resolve, reject) => {
+            const textures = new Map();
+            
+            for(let texture of textureArray) {
+
+                const resPath = `${texture.toLocaleLowerCase()}.vmt`;
+                await fileSystem.getFile(resPath).then(async vmtFile => {
+                    const vmt = VMTFile.fromDataArray(await vmtFile.arrayBuffer());
+
+                    if(vmt && vmt.data.lightmappedgeneric) {
+                        const materialTexture = vmt.data.lightmappedgeneric['$basetexture'];
+    
+                        if(materialTexture) {
+                            const resPath = `${materialTexture.toLocaleLowerCase()}.vtf`;
+                            await fileSystem.getFile(resPath).then(async res => {
+                                const vtf = VTFFile.fromDataArray(await res.arrayBuffer());
+                                vtf.name = materialTexture.toLocaleLowerCase().replace(/\\|\//g, "/");
+                                textures.set(texture, vtf);
+                            }).catch(err => console.error('Missing map texture ' + resPath));
+                        }
+                    }
+                    if(vmt && vmt.data.worldvertextransition) {
+                        const materialTexture = vmt.data.worldvertextransition['$basetexture'];
+    
+                        if(materialTexture) {
+                            const resPath = `${materialTexture.toLocaleLowerCase()}.vtf`;
+                            await fileSystem.getFile(resPath).then(async res => {
+                                const vtf = VTFFile.fromDataArray(await res.arrayBuffer());
+                                vtf.name = materialTexture.toLocaleLowerCase().replace(/\\|\//g, "/");
+                                textures.set(texture, vtf);
+                            }).catch(err => console.error('Missing map texture ' + resPath));
+                        }
+                    }
+
+                    // want to check if texture loaded correctly? check with "!textures.has(texture)"
+                }).catch(err => {
+                    console.error(err);
+                })
+            }
+
+            resolve(textures);
+        })
     }
 
     async loadMapProps(props) {
         return new Promise((resolve, reject) => {
+            // collect all different types of props
             for(let prop of props) {
 
                 if(!prop.PropType) {
@@ -239,33 +260,32 @@ export class Model {
                 };
 
                 type.listeners.push(propData => {
-
-                    propGeometry.materials.push(propData.texture);
+                    propGeometry.materials = propData.textures;
                     propGeometry.vertecies = propData.vertecies.flat();
                     propGeometry.indecies = propData.indecies;
-                    
                     this.geometry.add(propGeometry);
                 });
             }
 
+            // load all different types once
             let propCounter = 0;
 
             for(let [_, propType] of propTypes) {
 
-                Model.loadProp(propType).then(p => {
-                    for(let listener of propType.listeners) {
-                        listener(p);
-                    }
+                this.loadProp(propType).then(p => {
+                    for(let listener of propType.listeners) listener(p);
                     
                 }).catch(err => {
-                    console.error(chalk.red('\nFailed to load prop: ' + propType.mdlPath));
-                    console.log(err);
+                    console.log('');
+                    error(chalk.red('Failed to load prop: ' + propType.mdlPath));
+                    log(err);
+                    console.log('');
                     
                 }).finally(() => {
                     propCounter++;
 
                     process.stdout.cursorTo(0);
-                    process.stdout.write(`Loading props ${propCounter.toString()} / ${propTypes.size.toString()}`);
+                    process.stdout.write(`[INFO] Loading props ${propCounter.toString()} / ${propTypes.size.toString()}`);
                     
                     if(propCounter == propTypes.size) {
                         resolve();
@@ -276,55 +296,59 @@ export class Model {
         })
     }
 
+    async loadProp(propType) {
+        const prop = {
+            materials: [],
+            textures: []
+        };
+
+        // mdl
+        const mdlFile = await fileSystem.getFile(propType.mdlPath);
+        const mdl = MDLFile.fromDataArray(await mdlFile.arrayBuffer());
+
+        // textures and materials
+        for(let tex of mdl.textures) {
+            const texPath = tex.path;
+
+            if(texPath == undefined) {
+                continue;
+            }
+
+            const vmtFile = await fileSystem.getFile(`${texPath}.vmt`);
+            const vmt = VMTFile.fromDataArray(await vmtFile.arrayBuffer());
+            // not used right now:
+            // prop.materials.push(vmt);
+    
+            const vtfFile = await fileSystem.getFile(`${texPath}.vtf`);
+            const vtf = VTFFile.fromDataArray(await vtfFile.arrayBuffer());
+            vtf.name = texPath;
+            prop.textures.push(vtf);
+        }
+
+        // geometry info
+        const vvdFile = await fileSystem.getFile(propType.vvdPath);
+        const vvd = VVDFile.fromDataArray(await vvdFile.arrayBuffer());
+        const vertecies = vvd.convertToMesh();
+
+        const vtxFile = await fileSystem.getFile(propType.vvdPath.replace('.vvd', '.dx90.vtx'));
+        const vtx = VTXFile.fromDataArray(await vtxFile.arrayBuffer());
+
+        const realVertecies = vtx.vertexIndecies;
+        const realIndecies = vtx.indecies;
+
+        prop.vertecies = realVertecies.map(rv => vertecies[rv]);
+        prop.indecies = realIndecies;
+
+        return prop;
+    }
+
     static loadVPK(vpkPath) {
         const load = async () => {
-            const vpkFetch = await fetchResource(vpkPath);
+            const vpkFetch = await fileSystem.getFile(vpkPath);
             const vpkData = await vpkFetch.arrayBuffer();
             const vpk = VPKFile.fromDataArray(vpkData);
             return vpk;
         }
         return load();
     }
-
-    static async loadProp(propType) {
-
-        const propMDLPath = propType.mdlPath;
-        const propVVDPath = propType.vvdPath;
-
-        const prop = {};
-
-        // mdl
-        const mdlFile = await fetchResource(propMDLPath);
-        const mdl = MDLFile.fromDataArray(await mdlFile.arrayBuffer());
-
-        // only use first texture for now
-        const texPath = mdl.textures[0].path;
-
-        const vmtFile = await fetchResource(`${texPath}.vmt`);
-        const vmt = VMTFile.fromDataArray(await vmtFile.arrayBuffer());
-        prop.material = vmt;
-
-        const vtfFile = await fetchResource(`${texPath}.vtf`);
-        const vtf = VTFFile.fromDataArray(await vtfFile.arrayBuffer());
-        vtf.name = texPath;
-        prop.texture = vtf;
-
-        const vvdFile = await fetchResource(propVVDPath);
-        const vvd = VVDFile.fromDataArray(await vvdFile.arrayBuffer());
-        const vertecies = vvd.convertToMesh();
-
-        const vtxFile = await fetchResource(propVVDPath.replace('.vvd', '.dx90.vtx'));
-        const vtx = VTXFile.fromDataArray(await vtxFile.arrayBuffer());
-
-        const realVertecies = vtx.vertexIndecies;
-        const realIndecies = vtx.indecies;
-
-        prop.vertecies = realVertecies.map(rv => {
-            return vertecies[rv];
-        });
-        prop.indecies = realIndecies;
-
-        return prop;
-    }
-
 }

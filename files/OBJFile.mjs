@@ -143,14 +143,16 @@ export default class OBJFile extends TextFile {
 
                 if(materialindex != lastMaterialindex) {
                     const material = geo.materials[materialindex];
-                    const name = material.name.data || material.name;
 
-                    const materialName = `${name.replace(/(\/|\\)+/g, '_')}`;
-
-                    materialMap.set(materialName, material);
+                    if(material) {
+                        const name = material.name.data || material.name;
     
-                    this.appendLine(`usemtl ${materialName}`);
-                    this.appendLine(`s off`);
+                        const materialName = `${name.replace(/(\/|\\)+/g, '_')}`;
+                        materialMap.set(materialName, material);
+        
+                        this.appendLine(`usemtl ${materialName}`);
+                        this.appendLine(`s off`);
+                    }
                 }
 
                 lastMaterialindex = materialindex;

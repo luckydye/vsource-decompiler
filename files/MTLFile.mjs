@@ -81,7 +81,7 @@ export default class MTLFile extends TextFile {
             this.appendLine(`Ks ${material.reflectivity.map(v => v.toFixed(3)).join(" ")}`);
             this.appendLine(`Ns 10.000`);
             // diffuse texture
-            this.appendLine(`map_Kd res/textures/${materialName}.dds`);
+            this.appendLine(`map_Kd -s 1 -1 1 res/textures/${materialName}.dds`);
         }
     }
 

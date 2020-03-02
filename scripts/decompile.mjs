@@ -9,11 +9,11 @@ import { S3Texture } from '../files/S3Texture.mjs';
 import OBJFile from '../files/OBJFile.mjs';
 import MTLFile from '../files/MTLFile.mjs';
 
-function log(...str) {
+global.log = (...str) => {
     console.log('[INFO]', ...str);
 }
 
-function error(...str) {
+global.error = (...str) => {
     console.log(chalk.red('[ERROR]', ...str));
 }
 
@@ -39,16 +39,18 @@ const Commands = {
             const model = new Model();
             await model.loadMap(mapName);
 
-            const exportFileName = outputFilePath ? outputFilePath : model.name;
+            const exportFileName = outputFilePath ? outputFilePath : mapName;
     
             // write obj file
-            const objFile = new OBJFile(model.name);
+            const objFile = new OBJFile(mapName);
             objFile.openWriteStream(exportFileName + '.obj');
             objFile.fromGeometry(model.geometry);
 
-            const mtlFile = new MTLFile(model.name);
+            const mtlFile = new MTLFile(mapName);
             mtlFile.openWriteStream(exportFileName + '.mtl');
             mtlFile.fromObjFile(objFile);
+
+            log('Writing textures...');
 
             // write texture files
             for(let texName of objFile.materials.keys()) {
@@ -62,17 +64,24 @@ const Commands = {
                 const ddsBuffer = texture.toDDS();
 
                 // write texture
+                if(!fs.existsSync(`${resourcePath}/textures`)) {
+                    fs.mkdirSync(`${resourcePath}/textures`);
+                }
+
                 const fileBuffer = Buffer.from(ddsBuffer);
                 const writeStream = fs.createWriteStream(`${resourcePath}/textures/${texName}.dds`);
                 
                 writeStream.write(fileBuffer, 'binary');
-                writeStream.on('finish', () => {
-                    console.log(`wrote: ${resourcePath}/textures/${texName}.dds`, chalk.green('OK'));
+                writeStream.on('finish', () => {});
+                writeStream.on('error', () => {
+                    error(`Error writing texture: ${resourcePath}/textures/${texName}.dds`, chalk.green('OK'));
                 });
                 writeStream.end();
             }
 
-            log(model.name, 'decompiled.');
+            log('Textures written.');
+
+            log(mapName, 'decompiled.');
     
             return true;
         }

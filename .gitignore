@@ -2,3 +2,4 @@ res
 node_modules
 *.obj
 *.mtl
+*.log

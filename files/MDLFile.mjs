@@ -330,6 +330,8 @@ export default class MDLFile extends BinaryFile {
             mdl.textures.push(tex);
         }
 
+        // Is this right??:
+        // expectd: putting the path attr into every mdl.textures[i]
         for(let i = 0; i < mdl.header.texturePathCount; i++) {
             const texPathOffset = this.unserialize(mdl.view, mdl.header.texturePathOffset, { offset: 'int' });
             const texPathString = this.unserialize(mdl.view, texPathOffset.data.offset, {
