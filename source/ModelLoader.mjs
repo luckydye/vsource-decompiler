@@ -240,21 +240,7 @@ export class Model {
 
                 type.listeners.push(propData => {
 
-                    const mat = () => {
-                        if(propData.texture) {
-                            return {
-                                format: propData.texture.format,
-                                data: propData.texture.imageData
-                            }
-                        } else {
-                            return {
-                                format: null,
-                                data: null,
-                            };
-                        }
-                    }
-
-                    propGeometry.materials.push(mat());
+                    propGeometry.materials.push(propData.texture);
                     propGeometry.vertecies = propData.vertecies.flat();
                     propGeometry.indecies = propData.indecies;
                     
@@ -320,6 +306,7 @@ export class Model {
 
         const vtfFile = await fetchResource(`${texPath}.vtf`);
         const vtf = VTFFile.fromDataArray(await vtfFile.arrayBuffer());
+        vtf.name = texPath;
         prop.texture = vtf;
 
         const vvdFile = await fetchResource(propVVDPath);
