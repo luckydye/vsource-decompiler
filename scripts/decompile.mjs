@@ -6,6 +6,7 @@ import chalk from 'chalk';
 
 import { Model } from '../source/ModelLoader.mjs';
 import OBJFile from '../files/OBJFile.mjs';
+import { S3Texture } from '../files/S3Texture.mjs';
 
 function log(...str) {
     console.log('[INFO]', ...str);
@@ -21,7 +22,7 @@ const Commands = {
         usage: 'decompile <map_name> [<ouput_path>] [<resource_path>]',
         description: 'Decompile CS:GO maps from bsp format.',
 
-        async execute(mapName, resourcePath = "res/", outputFilePath) {
+        async execute(mapName, resourcePath = "csgo/", outputFilePath) {
             if(!mapName) {
                 error('Provide a map file.');
                 return;
@@ -37,10 +38,37 @@ const Commands = {
             const model = new Model();
             await model.loadMap(mapName);
     
+            // write obj file
             const objFile = new OBJFile();
             objFile.openWriteStream(outputFilePath ? outputFilePath : model.name + '.obj');
             objFile.fromGeometry(model.geometry);
-            // objFile.closeWriteStream();
+
+            // write texture files
+            for(let tex of objFile.textures) {
+                const format = tex.format;
+                const data = tex.imageData;
+                let name = tex.name;
+
+                if(tex.format.type === "NONE") continue;
+
+                const texture = S3Texture.fromDataArray(data, format.type, format.width, format.height);
+                const ddsBuffer = texture.toDDS();
+
+                // write texture
+                const dirPath = name.split("/");
+                if(!fs.existsSync('res/textures/' + dirPath[0])) {
+                    fs.mkdirSync('res/textures/' + dirPath[0]);
+                }
+
+                const fileBuffer = Buffer.from(ddsBuffer);
+                const writeStream = fs.createWriteStream(`res/textures/${name}.dds`);
+                
+                writeStream.write(fileBuffer, 'binary');
+                writeStream.on('finish', () => {
+                    console.log(`wrote: res/textures/${name}.dds`, chalk.green('OK'));
+                });
+                writeStream.end();
+            }
 
             log(model.name, 'decompiled.');
     

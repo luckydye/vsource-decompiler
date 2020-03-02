@@ -21,25 +21,61 @@ export class S3Texture extends BinaryFile {
         return file;
     }
 
-    constructor(dataView, format, width, height) {
-        super();
+    static fromDDS(buffer) {
 
-        this.view = this;
-        this.format = format;
-        this.width = width;
-        this.height = height;
+        const view = new DataView(buffer);
+
+        const DDS_HEADER = {
+            dwMagic: 'char[4]',
+            dwSize: 'unsigned int',
+            dwFlags: 'unsigned int',
+            dwHeight: 'unsigned int',
+            dwWidth: 'unsigned int',
+            dwPitchOrLinearSize: 'unsigned int',
+            dwDepth: 'unsigned int',
+            dwMipMapCount: 'unsigned int',
+            dwReserved1: 'unsigned int[11]',
+            dwSize_: 'unsigned int',
+            dwFlags_: 'unsigned int',
+            dwFourCC: 'char[4]',
+            dwRGBBitCount: 'unsigned int',
+            dwRBitMask: 'unsigned int',
+            dwGBitMask: 'unsigned int',
+            dwBBitMask: 'unsigned int',
+            dwABitMask: 'unsigned int',
+            dwCaps: 'unsigned int',
+            dwCaps2: 'unsigned int',
+            dwCaps3: 'unsigned int',
+            dwCaps4: 'unsigned int',
+            dwReserved2: 'unsigned int',
+        }
+
+        const header = S3Texture.unserialize(view, 0, DDS_HEADER);
+
+        const tex = this.fromDataArray(
+            new DataView(
+                buffer, 
+                header.byteOffset
+            ),
+            header.data.dwFourCC.data,
+            header.data.dwWidth.data,
+            header.data.dwHeight.data
+        );
+
+        tex.header = header;
+
+        return tex;
     }
 
-    read() {
-        // const header = S3Texture.unserialize(this.view, 0, {
-        //     dword: "int",
-        //     dwSize: "int",
-        //     dwFlags: "int",
-        //     dwHeight: "int",
-        //     dwWidth: "int",
-        // });
-
-        // console.log(header);
+    decompress() {
+        if(this.format === "DXT1")
+            return S3Texture.decompressDXT1(this);
+            
+        if(this.format === "DXT3")
+            return S3Texture.decompressDXT3(this);
+            
+        if(this.format === "DXT5")
+            return S3Texture.decompressDXT5(this);
     }
 
     toDDS() {
@@ -81,51 +117,54 @@ export class S3Texture extends BinaryFile {
               DDSCAPS2_CUBEMAP_NEGATIVEZ = 0x8000,
               DDSCAPS2_VOLUME = 0x200000;
 
+        // for a compressed texture, use the DDSD_LINEARSIZE and DDPF_FOURCC flags
+        // 524288
+
         const DDS_PIXELFORMAT = {
-            dwSize: 32,
-            dwFlags: DDPF_FOURCC,
-            dwFourCC: this.format,
-            dwRGBBitCount: 0,
-            dwRBitMask: 0,
-            dwGBitMask: 0,
-            dwBBitMask: 0,
-            dwABitMask: 0,
+            dwSize: { 'unsigned int': 32 },
+            dwFlags: { 'unsigned int': DDPF_FOURCC },
+            dwFourCC: { 'unsigned int': this.format },
+            dwRGBBitCount: { 'unsigned int': 0 },
+            dwRBitMask: { 'unsigned int': 0 },
+            dwGBitMask: { 'unsigned int': 0 },
+            dwBBitMask: { 'unsigned int': 0 },
+            dwABitMask: { 'unsigned int': 0 },
         }
 
         const DDS_HEADER = {
-            dword: 'DDS',
-            dwSize: 124,
-            // for a compressed texture, use the DDSD_LINEARSIZE and DDPF_FOURCC flags
-            dwFlags: DDSD_LINEARSIZE,
-            dwHeight: this.height,
-            dwWidth: this.width,
-            dwPitchOrLinearSize: this.view.byteLength,
-            dwDepth: 0,
-            dwMipMapCount: 0,
-            dwReserved1: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-            ddspf: DDS_PIXELFORMAT,
-            dwCaps: DDSCAPS_TEXTURE,
-            dwCaps2: 0,
-            dwCaps3: 0,
-            dwCaps4: 0,
-            dwReserved2: 0,
+            dwMagic: { 'unsigned int': "DDS " }, // 0x20534444 = "DDS "
+            dwSize: { 'unsigned int': 124 },
+            dwFlags: { 'unsigned int': 
+                DDSD_LINEARSIZE + 
+                DDSD_PIXELFORMAT + 
+                DDSD_WIDTH + 
+                DDSD_HEIGHT + 
+                DDSD_CAPS
+            },
+            dwHeight: { 'unsigned int': this.height },
+            dwWidth: { 'unsigned int': this.width },
+            dwPitchOrLinearSize: { 'unsigned int': this.view.byteLength },
+            dwDepth: { 'unsigned int': 0 },
+            dwMipMapCount: { 'unsigned int': 0 },
+            dwReserved1: { 'unsigned int': [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0] },
+            ddspf: { struct: DDS_PIXELFORMAT },
+            dwCaps: { 'unsigned int': DDSCAPS_TEXTURE },
+            dwCaps2: { 'unsigned int': 0 },
+            dwCaps3: { 'unsigned int': 0 },
+            dwCaps4: { 'unsigned int': 0 },
+            dwReserved2: { 'unsigned int': 0 },
         }
 
-        console.log(DDS_HEADER, this.view);
+        const serializedData = [];
+        S3Texture.serialize(serializedData, DDS_HEADER);
 
+        const headerBuffer = S3Texture.serializeData(serializedData);
+        const ddsBuffer = S3Texture.concatBuffer(
+            headerBuffer, 
+            this.view.buffer.slice(this.view.byteOffset, this.view.byteOffset + this.view.byteLength)
+        );
 
-        S3Texture.serialize(DDS_HEADER, this.view);
-    }
-
-    decompress() {
-        if(this.format === "DXT1")
-            return S3Texture.decompressDXT1(this);
-            
-        if(this.format === "DXT3")
-            return S3Texture.decompressDXT3(this);
-            
-        if(this.format === "DXT5")
-            return S3Texture.decompressDXT5(this);
+        return ddsBuffer;
     }
 
 }

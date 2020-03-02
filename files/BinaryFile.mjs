@@ -65,6 +65,15 @@ const typeMapping = {
 
 export class BinaryFile {
 
+    static concatBuffer(buffer1, buffer2) {
+        const newView = new Uint8Array(buffer1.byteLength + buffer2.byteLength);
+
+        newView.set(new Uint8Array(buffer1), 0);
+        newView.set(new Uint8Array(buffer2), buffer1.byteLength);
+
+        return newView.buffer;
+    }
+
     static Uint32ToBytes(int) {
         const bytes = [0, 0, 0, 0];
     
@@ -74,6 +83,28 @@ export class BinaryFile {
         bytes[3] = int & 0xFF;
     
         return bytes;
+    }
+
+    static StringToBytes(string) {
+        const bytes = [];
+        for(let char of string) {
+            const code = char.charCodeAt(0);
+            bytes.push(code & 0xFF);
+        }
+        return bytes;
+    }
+
+    static StringToInt32(string) {
+        const bytes = this.StringToBytes(string);
+
+        const buffer = new ArrayBuffer(4);
+        const view = new DataView(buffer);
+
+        for(let i = 0; i < 4; i++) {
+            view.setUint8(i, bytes[i]);
+        }
+
+        return view.getUint32(0, true);
     }
 
     static parseBytes(binary, byteOffset, type) {
@@ -236,6 +267,75 @@ export class BinaryFile {
         }
         
         return string;
+    }
+
+    static serialize(resultData = [], struct) {
+
+        // build data array with type mappings
+        for(let entry in struct) {
+
+            const keys = Object.keys(struct[entry]);
+
+            for(let key of keys) {
+                if(key in typeMapping) {
+                    const type = typeMapping[key];
+                    const value = struct[entry][key];
+
+                    if(Array.isArray(value)) {
+                        // push ech value of array to result array
+                        for(let val of value) {
+                            resultData.push([ type, val ]);
+                        }
+
+                    } else {
+                        // push to result array
+                        resultData.push([ type, value ]);
+                    }
+    
+                    break;
+
+                } else if(key == "struct") {
+                    const value = struct[entry][key];
+
+                    // get struct and run through serialize again with current resultData
+                    this.serialize(resultData, value);
+                    break;
+                }
+            }
+            
+        }
+
+        return resultData;
+    }
+
+    static serializeData(resultData, littleEndian = true) {
+
+        let byteLength = 0;
+        for(let data of resultData) {
+            const type = data[0];
+            byteLength += type.BYTES_PER_ELEMENT;
+        }
+
+        const bin = new ArrayBuffer(byteLength);
+        const view = new DataView(bin);
+
+        let byteOffset = 0;
+
+        for(let data of resultData) {
+            const type = data[0];
+            let value = data[1];
+
+            if(typeof value == "string") {
+                value = this.StringToInt32(value);
+            }
+
+            const typeFunction = 'set' + type.type;
+            view[typeFunction](byteOffset, value, littleEndian);
+
+            byteOffset += type.BYTES_PER_ELEMENT;
+        }
+
+        return bin;
     }
 
     static createFile(dataArray) {
