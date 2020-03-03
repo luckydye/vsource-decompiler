@@ -120,6 +120,7 @@ export class S3Texture extends BinaryFile {
         // for a compressed texture, use the DDSD_LINEARSIZE and DDPF_FOURCC flags
         // 524288
 
+        // change to 1d struct and look up the type in the type mapping arrya for unserialize.
         const DDS_PIXELFORMAT = {
             dwSize: { 'unsigned int': 32 },
             dwFlags: { 'unsigned int': DDPF_FOURCC },
