@@ -140,8 +140,9 @@ export class Model {
             log('Reading pakfile.');
             fileSystem.attatchPakfile(Buffer.from(bsp.pakfile.buffer));
 
-            log('Load map textures.');
+            log('Load map textures...');
             const textures = await this.loadMapTextures(bsp.textures);
+            log('Map textures loaded.');
 
             return { 
                 mesh, 

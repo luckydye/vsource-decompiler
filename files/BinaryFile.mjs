@@ -260,7 +260,7 @@ export class BinaryFile {
 
     static unserializeASCI(lumpBuffer) {
         let string = "";
-        const buff = new Uint8Array(lumpBuffer.buffer);
+        const buff = new Uint8Array(lumpBuffer.buffer, lumpBuffer.byteOffset, lumpBuffer.byteLength);
 
         for(let b of buff) {
             string += String.fromCharCode(b);
