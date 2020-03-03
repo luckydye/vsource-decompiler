@@ -40,52 +40,55 @@ const Commands = {
             const model = new Model();
             await model.loadMap(mapName);
 
-            const exportFileName = outputFilePath ? outputFilePath : mapName;
-
-            const gltfFile = GLTFFile.fromGeometry(model.geometry);
-            fs.writeFileSync(mapName + '_test.gltf', gltfFile.toString(), 'utf8');
-
-            return;
-    
-            // write obj file
-            const objFile = new OBJFile(mapName);
-            objFile.openWriteStream(exportFileName + '.obj');
-            objFile.fromGeometry(model.geometry);
-
-            const mtlFile = new MTLFile(mapName);
-            mtlFile.openWriteStream(exportFileName + '.mtl');
-            mtlFile.fromObjFile(objFile);
-
-            log('Writing textures...');
-
-            // write texture files
-            for(let texName of objFile.materials.keys()) {
-                const tex = objFile.materials.get(texName);
-                const format = tex.format;
-                const data = tex.imageData;
-
-                if(tex.format.type === "NONE") continue;
-
-                const texture = S3Texture.fromDataArray(data, format.type, format.width, format.height);
-                const ddsBuffer = texture.toDDS();
-
-                // write texture
-                if(!fs.existsSync(`${resourcePath}/textures`)) {
-                    fs.mkdirSync(`${resourcePath}/textures`);
-                }
-
-                const fileBuffer = Buffer.from(ddsBuffer);
-                const writeStream = fs.createWriteStream(`${resourcePath}/textures/${texName}.dds`);
-                
-                writeStream.write(fileBuffer, 'binary');
-                writeStream.on('finish', () => {});
-                writeStream.on('error', () => {
-                    error(`Error writing texture: ${resourcePath}/textures/${texName}.dds`, chalk.green('OK'));
-                });
-                writeStream.end();
+            function writeGltfFile(exportFileName) {
+                const gltfFile = GLTFFile.fromGeometry(model.geometry);
+                fs.writeFileSync(exportFileName + '.gltf', gltfFile.toString(), 'utf8');
             }
 
-            log('Textures written.');
+            function writeObjResources(exportFileName) {
+                // write obj file
+                const objFile = new OBJFile(mapName);
+                objFile.openWriteStream(exportFileName + '.obj');
+                objFile.fromGeometry(model.geometry);
+
+                const mtlFile = new MTLFile(mapName);
+                mtlFile.openWriteStream(exportFileName + '.mtl');
+                mtlFile.fromObjFile(objFile);
+
+                log('Writing textures...');
+
+                // write texture files
+                for(let texName of objFile.materials.keys()) {
+                    const tex = objFile.materials.get(texName);
+                    const format = tex.format;
+                    const data = tex.imageData;
+
+                    if(tex.format.type === "NONE") continue;
+
+                    const texture = S3Texture.fromDataArray(data, format.type, format.width, format.height);
+                    const ddsBuffer = texture.toDDS();
+
+                    // write texture
+                    if(!fs.existsSync(`${resourcePath}/textures`)) {
+                        fs.mkdirSync(`${resourcePath}/textures`);
+                    }
+
+                    const fileBuffer = Buffer.from(ddsBuffer);
+                    const writeStream = fs.createWriteStream(`${resourcePath}/textures/${texName}.dds`);
+                    
+                    writeStream.write(fileBuffer, 'binary');
+                    writeStream.on('finish', () => {});
+                    writeStream.on('error', () => {
+                        error(`Error writing texture: ${resourcePath}/textures/${texName}.dds`, chalk.green('OK'));
+                    });
+                    writeStream.end();
+                }
+
+                log('Textures written.');
+            }
+
+            const exportFileName = outputFilePath ? outputFilePath : mapName;
+            writeGltfFile(exportFileName);
 
             log(mapName, 'decompiled.');
     

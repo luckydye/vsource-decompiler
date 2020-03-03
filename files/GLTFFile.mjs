@@ -50,163 +50,12 @@ const type = {
 
 export default class GLTFFile extends TextFile {
 
-    /*  Format
-    
-        {
-            "asset": {
-                "version": "2.0",
-                "generator": "collada2gltf@f356b99aef8868f74877c7ca545f2cd206b9d3b7",
-                "copyright": "2020 (c) Tim Havlicek"
-            },
-            "buffers": [
-                {
-                    "byteLength": 504,
-                    "uri": "external.bin"
-                }
-            ],
-            "bufferViews": [
-                {
-                    "buffer": 0,
-                    "byteLength": 76768,
-                    "byteOffset": 25272,
-                    "byteStride": 32,
-                    "target": 34962
-                }
-            ],
-            "accessors": [
-                {
-                    "bufferView": 1,
-                    "byteOffset": 0,
-                    "componentType": 5126,
-                    "count": 2399,
-                    "max": [
-                        0.961799,
-                        1.6397,
-                        0.539252
-                    ],
-                    "min": [
-                        -0.692985,
-                        0.0992937,
-                        -0.613282
-                    ],
-                    "type": "VEC3"
-                }
-            ],
-            "nodes": [
-                {
-                    "name": "Car",
-                    "children": [ 1 ]
-                    "matrix": [],
-                    "scale": [0, 0, 0, 0],
-                    "rotation": [0, 0, 0, 0],
-                    "translation": [0, 0, 0, 0],
-                },
-                {
-                    "name": "camera",
-                    "camera": 1,
-                }
-            ],
-            "skins": [
-                {
-                    "name": "skin_0",
-                    "inverseBindMatrices": 0,
-                    "joints": [ 1, 2 ],
-                    "skeleton": 1
-                }
-            ],
-            "scenes": [
-                {
-                    "name": "singleScene",
-                    "nodes": [ 0, 1, 2 ]
-                }
-            ],
-            "scene": 0,
-            "cameras": [
-                {
-                    "name": "Camera_A",
-                    "type": "perspective",
-                    "perspective": {
-                        "aspectRatio": 1.5,
-                        "yfov": 0.660593,
-                        "zfar": 100,
-                        "znear": 0.01
-                    }      
-                }
-            ],
-            "meshes": [
-                {
-                    "primitives": [
-                        {
-                            "attributes": {
-                                "NORMAL": 23,
-                                "POSITION": 22,
-                                "TANGENT": 24,
-                                "TEXCOORD_0": 25
-                            },
-                            "indices": 21,
-                            "material": 3,
-                            "mode": 0
-                        }
-                    ]
-                }
-            ],
-            "textures": [
-                {
-                    "sampler": 0,
-                    "source": 2
-                }
-            ],
-            "samplers": [
-                {
-                    "magFilter": 9729,
-                    "minFilter": 9987,
-                    "wrapS": 10497,
-                    "wrapT": 10497
-                }
-            ],
-            "images": [
-                {
-                    "uri": "duckCM.png"
-                },
-                {
-                    "bufferView": 14,
-                    "mimeType": "image/jpeg" 
-                }
-            ],
-            "materials": [
-                {
-                    "name": "Material0",
-                    "pbrMetallicRoughness": {
-                        "baseColorFactor": [ 0.5, 0.5, 0.5, 1.0 ],
-                        "baseColorTexture": {
-                            "index": 1,
-                            "texCoord": 1
-                        },
-                        "metallicFactor": 1,
-                        "roughnessFactor": 1,
-                        "metallicRoughnessTexture": {
-                            "index": 2,
-                            "texCoord": 1
-                        }
-                    },
-                    "normalTexture": {
-                        "scale": 2,
-                        "index": 3,
-                        "texCoord": 1
-                    },
-                    "emissiveFactor": [ 0.2, 0.1, 0.0 ]
-                }
-            ]
-        }
-    */
-
     static fromGeometry(geometry = []) {
         const gltf = new GLTFFile();
 
         for(let geo of geometry) {
 
-            /* geometry structure
-    
+            /* geometry structure:
                 vertecies: [0, 0, 0],
                 indecies: [0, 0, 0],
                 position: [0, 0, 0],
@@ -215,8 +64,7 @@ export default class GLTFFile extends TextFile {
                 materials: [ ... ]
             */
     
-            /* material structure (vtf file)
-    
+            /* material structure (vtf file):
                 width: 1024,
                 height: 1024,
                 reflectivity: 0.512,
@@ -273,143 +121,128 @@ export default class GLTFFile extends TextFile {
         return this.asset.scenes[this.asset.scene];
     }
 
-    addObject(object) {
+    createBuffer(bufferArray) {
+        const buffer = Buffer.from(bufferArray.buffer);
+        const gltfBuffer = {
+            byteLength: buffer.byteLength,
+            uri: "data:application/octet-stream;base64," + buffer.toString('base64')
+        }
+        return this.asset.buffers.push(gltfBuffer) - 1;
+    }
 
-        const asset = this.asset;
+    createBufferView(options) {
+        const bufferView = options;
+        return this.asset.bufferViews.push(bufferView) - 1;
+    }
 
-        // geometry buffer
-        const vertecies = object.vertecies.filter((v, i) => ((i + 4) % 9));
-        const indices = object.indecies;
+    createAccessor(options) {
+        const accessors = options;
+        return this.asset.accessors.push(accessors) - 1;
+    }
 
-        const vertexCount = vertecies.length / 8;
+    createMesh(options) {
+        const mesh = options;
+        return this.asset.meshes.push(mesh) - 1;
+    }
+
+    createNode(options) {
+        const node = options;
+        const nodeIndex = this.asset.nodes.push(node) - 1;
+        this.activeScene.nodes.push(nodeIndex);
+        return nodeIndex;
+    }
+
+    createPrimitive(vertecies, indices) {
+
         const indexCount = indices.length;
-
-        const vertBuffer = new Float32Array(vertecies);
-        const indexBuffer = new Uint32Array(indices);
-        const bufferData = new Float32Array(vertBuffer.byteLength + indexBuffer.byteLength);
-
-        bufferData.set(vertBuffer, 0);
-        bufferData.set(indexBuffer, vertBuffer.byteLength);
+        const vertexCount = vertecies.length / 8;
 
         // asset buffers
-        const buffer = Buffer.from(bufferData.buffer);
-        const base64Buffer = buffer.toString('base64');
+        const indexBuffer = new Uint32Array(indices);
+        const vertexBuffer = new Float32Array(vertecies);
 
-        const geometryBuffer = {
-            byteLength: bufferData.byteLength,
-            uri: "data:application/octet-stream;base64," + base64Buffer
-        }
+        const indexBufferIndex = this.createBuffer(indexBuffer);
+        const vertexBufferIndex = this.createBuffer(vertexBuffer);
 
-        const bufferIndex = asset.buffers.push(geometryBuffer) - 1;
+        // buffer views
         const byteStride =  type.VEC3.components * type.FLOAT.byteLength +
                             type.VEC2.components * type.FLOAT.byteLength +
                             type.VEC3.components * type.FLOAT.byteLength;
 
-        // buffer vies
-        const posBufferView = {
-            buffer: bufferIndex,
-            byteStride: byteStride,
-            byteLength: vertBuffer.byteLength,
-        }
+        const indexBufferViewIndex = this.createBufferView({
+            buffer: indexBufferIndex, 
+            byteOffset: 0, 
+            byteLength: indexBuffer.byteLength
+        });
 
-        const texBufferView = {
-            buffer: bufferIndex,
-            byteOffset: type.VEC3.components * type.FLOAT.byteLength,
+        const posBufferViewIndex = this.createBufferView({
+            buffer: vertexBufferIndex, 
+            byteOffset: 0, 
+            byteLength: vertexBuffer.byteLength,
             byteStride: byteStride,
-            byteLength: vertBuffer.byteLength,
-        }
+        });
 
-        const normBufferView = {
-            buffer: bufferIndex,
+        const texBufferViewIndex = this.createBufferView({
+            buffer: vertexBufferIndex, 
+            byteOffset: type.VEC3.components * type.FLOAT.byteLength, 
+            byteLength: vertexBuffer.byteLength,
+            byteStride: byteStride,
+        });
+
+        const normBufferViewIndex = this.createBufferView({
+            buffer: vertexBufferIndex, 
             byteOffset: type.VEC3.components * type.FLOAT.byteLength + type.VEC2.components * type.FLOAT.byteLength,
+            byteLength: vertexBuffer.byteLength,
             byteStride: byteStride,
-            byteLength: vertBuffer.byteLength,
-        }
-
-        const indexBufferView = {
-            buffer: bufferIndex,
-            byteOffset: vertBuffer.byteLength,
-            byteLength: indexBuffer.byteLength,
-        }
-
-        const posBufferViewIndex = asset.bufferViews.push(posBufferView) - 1;
-        const texBufferViewIndex = asset.bufferViews.push(texBufferView) - 1;
-        const normBufferViewIndex = asset.bufferViews.push(normBufferView) - 1;
-        const indexBufferViewIndex = asset.bufferViews.push(indexBufferView) - 1;
+        });
 
         // accessors
-        const positionAccessor = {
+        const indexAccessor = this.createAccessor({
+            bufferView: indexBufferViewIndex,
+            componentType: type.UNSIGNED_INT,
+            count: indexCount,
+            type: type.SCALAR,
+        });
+
+        const positionAccessor = this.createAccessor({
             bufferView: posBufferViewIndex,
             componentType: type.FLOAT,
             count: vertexCount,
             type: type.VEC3,
-        }
+        });
 
-        const textureAccessor = {
+        const textureAccessor = this.createAccessor({
             bufferView: texBufferViewIndex,
             componentType: type.FLOAT,
             count: vertexCount,
             type: type.VEC2,
-        }
+        });
 
-        const normalAccessor = {
+        const normalAccessor = this.createAccessor({
             bufferView: normBufferViewIndex,
             componentType: type.FLOAT,
             count: vertexCount,
             max: [ 1, 1, 1 ],
             min: [ -1, -1, -1 ],
             type: type.VEC3,
+        });
+
+        return {
+            attributes: {
+                "POSITION": positionAccessor,
+                "TEXCOORD_0": textureAccessor,
+                "NORMAL": normalAccessor,
+            },
+            indices: indexAccessor,
         }
+    }
 
-        const indexAccessor = {
-            bufferView: indexBufferViewIndex,
-            componentType: type.UNSIGNED_INT,
-            count: indexCount,
-            type: type.SCALAR,
-        }
-
-        const positionAccessorIndex = asset.accessors.push(positionAccessor) - 1;
-        const textureAccessorIndex = asset.accessors.push(textureAccessor) - 1;
-        const normalAccessorIndex = asset.accessors.push(normalAccessor) - 1;
-        const indexAccessorIndex = asset.accessors.push(indexAccessor) - 1;
-
-        // mesh
-        const mesh = {
-            name: object.name,
-            primitives: [
-                {
-                    attributes: {
-                        "POSITION": positionAccessorIndex,
-                        "TEXCOORD_0": textureAccessorIndex,
-                        "NORMAL": normalAccessorIndex,
-                    },
-                    indices: indexAccessorIndex,
-                    // material: asset.materials.length,
-                }
-            ]
-        }
-
-        const meshIndex = asset.meshes.push(mesh) - 1;
-
-        object.position = [2, 1, 0.12];
+    createObjectMesh(object) {
+        // geometry buffer
+        const indices = object.indecies;
+        const vertecies = object.vertecies.filter((v, i) => ((i + 4) % 9));
         
-        // node
-        const node = {
-            name: object.name,
-            mesh: meshIndex,
-            scale: object.scale,
-            rotation: [
-                object.rotation[0],
-                object.rotation[1],
-                object.rotation[2],
-                0
-            ],
-            translation: object.position,
-        }
-
-        const nodeIndex = asset.nodes.push(node) - 1;
-
-        this.activeScene.nodes.push(nodeIndex);
+        const primitive = this.createPrimitive(vertecies, indices);
 
         // materials
         // for(let mat of geo.materials) {
@@ -438,14 +271,45 @@ export default class GLTFFile extends TextFile {
         //         uri: "duckCM.png"
         //     }
         // }
+
+        // mesh
+        return this.createMesh({
+            name: object.name,
+            primitives: [
+                {
+                    attributes: primitive.attributes,
+                    indices: primitive.indices,
+                    // material: asset.materials.length,
+                }
+            ]
+        });
     }
 
-    addMaterial(object) {
-        
-    }
+    addObject(object) {
+        let mesh = null;
 
-    addTexture(object) {
+        // find existing mesh with same name
+        for(let assetMesh of this.asset.meshes) {
+            if(object.name == assetMesh.name) {
+                mesh = this.asset.meshes.indexOf(assetMesh);
+            }
+        }
 
+        mesh = mesh || this.createObjectMesh(object);
+
+        // node
+        this.createNode({
+            name: object.name,
+            mesh: mesh,
+            scale: object.scale,
+            rotation: [
+                object.rotation[0],
+                object.rotation[1],
+                object.rotation[2],
+                0
+            ],
+            translation: object.position,
+        });
     }
 
     toString() {
