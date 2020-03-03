@@ -29,9 +29,15 @@ class Type extends String {
     }
 }
 
-// Types
+// type
 
-const types = {
+const type = {
+    BYTE: new ComponentType("BYTE", 5120, 1),
+    UNSIGNED_BYTE: new ComponentType("UNSIGNED_BYTE", 5121, 1),
+    SHORT: new ComponentType("SHORT", 5122, 2),
+    UNSIGNED_SHORT: new ComponentType("UNSIGNED_SHORT", 5123, 2),
+    UNSIGNED_INT: new ComponentType("UNSIGNED_INT", 5125, 4),
+    FLOAT: new ComponentType("FLOAT", 5126, 4),
     SCALAR: new Type("SCALAR", 1),
     VEC2: new Type("VEC2", 2),
     VEC3: new Type("VEC3", 3),
@@ -40,16 +46,6 @@ const types = {
     MAT3: new Type("MAT2", 9),
     MAT4: new Type("MAT4", 16),
 }
-
-const componentTypes = {
-    BYTE: new ComponentType("BYTE", 5120, 1),
-    UNSIGNED_BYTE: new ComponentType("UNSIGNED_BYTE", 5121, 1),
-    SHORT: new ComponentType("SHORT", 5122, 2),
-    UNSIGNED_SHORT: new ComponentType("UNSIGNED_SHORT", 5123, 2),
-    UNSIGNED_INT: new ComponentType("UNSIGNED_INT", 5125, 4),
-    FLOAT: new ComponentType("FLOAT", 5126, 4),
-}
-
 
 export default class GLTFFile extends TextFile {
 
@@ -228,6 +224,8 @@ export default class GLTFFile extends TextFile {
 
             gltf.addObject(geo);
         }
+
+        return gltf.toString();
     }
 
     static fromFile(GLTFFile) {
@@ -239,13 +237,14 @@ export default class GLTFFile extends TextFile {
         
         this.asset = {
             asset: {
-                version: "2.0",
-                copyright: "2020 (c) Tim Havlicek"
+                copyright: "2020 (c) Valve Software",
+                generator: "Khronos glTF @uncut/file-format-lib v1.0.0",
+                version: "2.0"
             },
             scene: 0,
             scenes: [
                 {
-                    name: "defaultScene",
+                    name: "Scene",
                     nodes: []
                 }
             ],
@@ -275,114 +274,157 @@ export default class GLTFFile extends TextFile {
 
     addObject(object) {
 
+        const asset = this.asset;
+
+        // geometry buffer
+        const vertecies = object.vertecies.filter((v, i) => ((i + 4) % 9));
+        const indices = object.indecies;
+
+        const vertexCount = vertecies.length / 8;
+        const indexCount = indices.length;
+
+        const vertBuffer = new Float32Array(vertecies);
+        const indexBuffer = new Uint32Array(indices);
+        const bufferData = new Float32Array(vertBuffer.byteLength + indexBuffer.byteLength);
+
+        bufferData.set(vertBuffer, 0);
+        bufferData.set(indexBuffer, vertBuffer.byteLength);
+
+        // asset buffers
+        const base64Buffer = Buffer.from(bufferData.buffer).toString('base64');
+
         const geometryBuffer = {
-            byteLength: 0,
-            uri: "data:"
-            // all position
-            // all texture
-            // all normal
-        }
-        const indexBuffer = {
-            byteLength: 0,
-            uri: "data:"
-            // all indices
+            byteLength: bufferData.byteLength,
+            uri: "data:application/octet-stream;base64," + base64Buffer
         }
 
-        const geometryBufferView = {
-            buffer: 0,
-            byteLength: 4,
-            byteStride: type.VEC3.components * componentTypes.FLOAT.byteLength,
+        const bufferIndex = asset.buffers.push(geometryBuffer) - 1;
+        const byteStride =  type.VEC3.components * type.FLOAT.byteLength +
+                            type.VEC2.components * type.FLOAT.byteLength +
+                            type.VEC3.components * type.FLOAT.byteLength;
+
+        // buffer vies
+        const posBufferView = {
+            buffer: bufferIndex,
+            byteOffset: 0,
+            byteStride: byteStride,
+            byteLength: type.VEC3.components * type.FLOAT.byteLength * vertexCount,
+        }
+        const texBufferView = {
+            buffer: bufferIndex,
+            byteOffset: type.VEC3.components * type.FLOAT.byteLength,
+            byteStride: byteStride,
+            byteLength: type.VEC2.components * type.FLOAT.byteLength * vertexCount,
+        }
+        const normBufferView = {
+            buffer: bufferIndex,
+            byteOffset: type.VEC3.components * type.FLOAT.byteLength +
+                        type.VEC2.components * type.FLOAT.byteLength,
+            byteStride: byteStride,
+            byteLength: type.VEC3.components * type.FLOAT.byteLength * vertexCount,
         }
         const indexBufferView = {
-            buffer: 1,
-            byteLength: 4,
-        }
-
-        const accessor = {
-            bufferView: 0,
+            buffer: bufferIndex,
             byteOffset: 0,
-            componentType: componentTypes.FLOAT,
-            count: 1,   // buffer view count
-            type: type.VEC3,
-            sparse: {
-                count: 2,  // indexed elements count
-                indices: {
-                    bufferView: 1,
-                    byteOffset: 0,
-                    componentType: componentTypes.UNSIGNED_INT
-                },
-                values: {
-                    bufferView: 0,
-                    byteOffset: 0
-                }
-            }
-        }
-        
-        const node = {
-            name: object.name,
-            children: []
-            scale: [
-                object.scale[0], 
-                object.scale[1], 
-                object.scale[2], 
-                0
-            ],
-            rotation: [
-                object.rotation[0], 
-                object.rotation[1], 
-                object.rotation[2], 
-                0
-            ],
-            translation: [
-                object.position[0], 
-                object.position[1], 
-                object.position[2], 
-                0
-            ],
+            byteLength: type.UNSIGNED_INT.byteLength * indexCount,
         }
 
+        const posBufferViewIndex = asset.bufferViews.push(posBufferView) - 1;
+        const texBufferViewIndex = asset.bufferViews.push(texBufferView) - 1;
+        const normBufferViewIndex = asset.bufferViews.push(normBufferView) - 1;
+        const indexBufferViewIndex = asset.bufferViews.push(indexBufferView) - 1;
+
+        // accessors
+        const indexAccessor = {
+            bufferView: indexBufferViewIndex,
+            componentType: type.FLOAT,
+            count: indexCount,
+            type: type.VEC3,
+        }
+
+        const positionAccessor = {
+            bufferView: posBufferViewIndex,
+            componentType: type.FLOAT,
+            count: vertexCount,
+            type: type.VEC3,
+        }
+
+        const textureAccessor = {
+            bufferView: texBufferViewIndex,
+            componentType: type.FLOAT,
+            count: vertexCount,
+            type: type.VEC3,
+        }
+
+        const normalAccessor = {
+            bufferView: normBufferViewIndex,
+            componentType: type.FLOAT,
+            count: vertexCount,
+            type: type.VEC3,
+        }
+
+        const indexAccessorIndex = asset.accessors.push(indexAccessor) - 1;
+        const positionAccessorIndex = asset.accessors.push(positionAccessor) - 1;
+        const textureAccessorIndex = asset.accessors.push(textureAccessor) - 1;
+        const normalAccessorIndex = asset.accessors.push(normalAccessor) - 1;
+
+        // mesh
         const mesh = {
             primitives: [
                 {
                     attributes: {
-                        "POSITION": 22,
-                        "TEXCOORD_0": 25
-                        "NORMAL": 23,
+                        "POSITION": positionAccessorIndex,
+                        "TEXCOORD_0": textureAccessorIndex,
+                        "NORMAL": normalAccessorIndex,
                     },
-                    indices: 0,
-                    material: 3,
-                    mode: 0
+                    indices: indexAccessorIndex,
+                    // material: asset.materials.length,
                 }
             ]
         }
 
-        for(let mat of geo.materials) {
-            const material = {
-                name: "Material0",
-                pbrMetallicRoughness: {
-                    baseColorTexture: {
-                        index: 1,
-                        texCoord: 1
-                    },
-                    metallicFactor: mat.reflectivity,
-                    roughnessFactor: 1,
-                    metallicRoughnessTexture: {
-                        index: 2,
-                        texCoord: 1
-                    }
-                }
-            }
-
-            const texture = {
-                sampler: 0,
-                source: 2
-            }
-
-            const image = {
-                uri: "duckCM.png"
-            }
+        const meshIndex = asset.meshes.push(mesh) - 1;
+        
+        // node
+        const node = {
+            mesh: meshIndex,
+            name: object.name,
+            scale: object.scale,
+            rotation: object.rotation,
+            translation: object.position,
         }
 
+        const nodeIndex = asset.nodes.push(node) - 1;
+
+        this.activeScene.nodes.push(nodeIndex);
+
+        // materials
+        // for(let mat of geo.materials) {
+        //     const material = {
+        //         name: "Material0",
+        //         pbrMetallicRoughness: {
+        //             baseColorTexture: {
+        //                 index: 1,
+        //                 texCoord: 1
+        //             },
+        //             metallicFactor: mat.reflectivity,
+        //             roughnessFactor: 1,
+        //             metallicRoughnessTexture: {
+        //                 index: 2,
+        //                 texCoord: 1
+        //             }
+        //         }
+        //     }
+
+        //     const texture = {
+        //         sampler: 0,
+        //         source: 2
+        //     }
+
+        //     const image = {
+        //         uri: "duckCM.png"
+        //     }
+        // }
     }
 
     addMaterial(object) {
@@ -394,6 +436,6 @@ export default class GLTFFile extends TextFile {
     }
 
     toString() {
-        return JSON.stringify(this.asset);
+        return JSON.stringify(this.asset, null, '  ');
     }
 }

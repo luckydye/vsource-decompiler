@@ -8,6 +8,7 @@ import { Model } from '../source/ModelLoader.mjs';
 import { S3Texture } from '../files/S3Texture.mjs';
 import OBJFile from '../files/OBJFile.mjs';
 import MTLFile from '../files/MTLFile.mjs';
+import GLTFFile from '../files/GLTFFile.mjs';
 
 global.log = (...str) => {
     console.log('[INFO]', ...str);
@@ -40,6 +41,11 @@ const Commands = {
             await model.loadMap(mapName);
 
             const exportFileName = outputFilePath ? outputFilePath : mapName;
+
+            const gltfFile = GLTFFile.fromGeometry(model.geometry);
+            fs.writeFileSync(mapName + '_test.gltf', gltfFile.toString(), 'utf8');
+
+            return;
     
             // write obj file
             const objFile = new OBJFile(mapName);

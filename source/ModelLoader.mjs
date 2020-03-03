@@ -45,9 +45,10 @@ export class Model {
             log('Reading pakfile.');
             fileSystem.attatchPakfile(Buffer.from(bsp.pakfile.buffer));
 
-            log('Load map textures...');
-            const textures = await this.loadMapTextures(bsp.textures);
-            log('Map textures loaded.');
+            // log('Load map textures...');
+            // const textures = await this.loadMapTextures(bsp.textures);
+            // log('Map textures loaded.');
+            const textures = new Map();
 
             return { 
                 mesh, 
@@ -79,11 +80,9 @@ export class Model {
             rotation: [0, 0, 0],
         });
 
-        log('Load map props...');
-
-        await this.loadMapProps(map.bsp.gamelumps.sprp);
-
-        log('Done loading map props.');
+        // log('Load map props...');
+        // await this.loadMapProps(map.bsp.gamelumps.sprp);
+        // log('Done loading map props.');
     }
 
     async loadMapTextures(textureArray) {
