@@ -1,6 +1,7 @@
 import { TextFile } from "./TextFile.mjs";
 
 // https://github.com/KhronosGroup/glTF/tree/master/specification/2.0#gltf-basics
+// https://github.com/KhronosGroup/glTF-Tutorials/blob/master/gltfTutorial/gltfTutorial_005_BuffersBufferViewsAccessors.md
 
 class ComponentType extends Number {
     
@@ -251,6 +252,7 @@ export default class GLTFFile extends TextFile {
             nodes: [],
             meshes: [],
             cameras: [],
+            materials: [],
             textures: [],
             images: [],
             samplers: [
@@ -261,10 +263,9 @@ export default class GLTFFile extends TextFile {
                     "wrapT": 10497
                 }
             ],
-            materials: [],
-            buffers: [],
-            bufferViews: [],
             accessors: [],
+            bufferViews: [],
+            buffers: [],
         };
     }
 
@@ -291,7 +292,8 @@ export default class GLTFFile extends TextFile {
         bufferData.set(indexBuffer, vertBuffer.byteLength);
 
         // asset buffers
-        const base64Buffer = Buffer.from(bufferData.buffer).toString('base64');
+        const buffer = Buffer.from(bufferData.buffer);
+        const base64Buffer = buffer.toString('base64');
 
         const geometryBuffer = {
             byteLength: bufferData.byteLength,
@@ -306,27 +308,28 @@ export default class GLTFFile extends TextFile {
         // buffer vies
         const posBufferView = {
             buffer: bufferIndex,
-            byteOffset: 0,
             byteStride: byteStride,
-            byteLength: type.VEC3.components * type.FLOAT.byteLength * vertexCount,
+            byteLength: vertBuffer.byteLength,
         }
+
         const texBufferView = {
             buffer: bufferIndex,
             byteOffset: type.VEC3.components * type.FLOAT.byteLength,
             byteStride: byteStride,
-            byteLength: type.VEC2.components * type.FLOAT.byteLength * vertexCount,
+            byteLength: vertBuffer.byteLength,
         }
+
         const normBufferView = {
             buffer: bufferIndex,
-            byteOffset: type.VEC3.components * type.FLOAT.byteLength +
-                        type.VEC2.components * type.FLOAT.byteLength,
+            byteOffset: type.VEC3.components * type.FLOAT.byteLength + type.VEC2.components * type.FLOAT.byteLength,
             byteStride: byteStride,
-            byteLength: type.VEC3.components * type.FLOAT.byteLength * vertexCount,
+            byteLength: vertBuffer.byteLength,
         }
+
         const indexBufferView = {
             buffer: bufferIndex,
-            byteOffset: 0,
-            byteLength: type.UNSIGNED_INT.byteLength * indexCount,
+            byteOffset: vertBuffer.byteLength,
+            byteLength: indexBuffer.byteLength,
         }
 
         const posBufferViewIndex = asset.bufferViews.push(posBufferView) - 1;
@@ -335,13 +338,6 @@ export default class GLTFFile extends TextFile {
         const indexBufferViewIndex = asset.bufferViews.push(indexBufferView) - 1;
 
         // accessors
-        const indexAccessor = {
-            bufferView: indexBufferViewIndex,
-            componentType: type.FLOAT,
-            count: indexCount,
-            type: type.VEC3,
-        }
-
         const positionAccessor = {
             bufferView: posBufferViewIndex,
             componentType: type.FLOAT,
@@ -353,23 +349,33 @@ export default class GLTFFile extends TextFile {
             bufferView: texBufferViewIndex,
             componentType: type.FLOAT,
             count: vertexCount,
-            type: type.VEC3,
+            type: type.VEC2,
         }
 
         const normalAccessor = {
             bufferView: normBufferViewIndex,
             componentType: type.FLOAT,
             count: vertexCount,
+            max: [ 1, 1, 1 ],
+            min: [ -1, -1, -1 ],
             type: type.VEC3,
         }
 
-        const indexAccessorIndex = asset.accessors.push(indexAccessor) - 1;
+        const indexAccessor = {
+            bufferView: indexBufferViewIndex,
+            componentType: type.UNSIGNED_INT,
+            count: indexCount,
+            type: type.SCALAR,
+        }
+
         const positionAccessorIndex = asset.accessors.push(positionAccessor) - 1;
         const textureAccessorIndex = asset.accessors.push(textureAccessor) - 1;
         const normalAccessorIndex = asset.accessors.push(normalAccessor) - 1;
+        const indexAccessorIndex = asset.accessors.push(indexAccessor) - 1;
 
         // mesh
         const mesh = {
+            name: object.name,
             primitives: [
                 {
                     attributes: {
@@ -384,13 +390,20 @@ export default class GLTFFile extends TextFile {
         }
 
         const meshIndex = asset.meshes.push(mesh) - 1;
+
+        object.position = [2, 1, 0.12];
         
         // node
         const node = {
-            mesh: meshIndex,
             name: object.name,
+            mesh: meshIndex,
             scale: object.scale,
-            rotation: object.rotation,
+            rotation: [
+                object.rotation[0],
+                object.rotation[1],
+                object.rotation[2],
+                0
+            ],
             translation: object.position,
         }
 
@@ -436,6 +449,6 @@ export default class GLTFFile extends TextFile {
     }
 
     toString() {
-        return JSON.stringify(this.asset, null, '  ');
+        return JSON.stringify(this.asset, null, '\t');
     }
 }
