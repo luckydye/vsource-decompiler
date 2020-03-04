@@ -48,6 +48,24 @@ const type = {
     MAT4: new Type("MAT4", 16),
 }
 
+function rotationToQuaternion(x, y, z) {
+    const cy = Math.cos(x * 0.5);
+    const sy = Math.sin(x * 0.5);
+    const cp = Math.cos(y * 0.5);
+    const sp = Math.sin(y * 0.5);
+    const cr = Math.cos(z * 0.5);
+    const sr = Math.sin(z * 0.5);
+
+    const q = [0, 0, 0, 0];
+
+    q[0] = cy * cp * sr - sy * sp * cr;
+    q[1] = sy * cp * sr + cy * sp * cr;
+    q[2] = sy * cp * cr - cy * sp * sr;
+    q[3] = cy * cp * cr + sy * sp * sr;
+
+    return q;
+}
+
 export default class GLTFFile extends TextFile {
 
     static fromGeometry(geometry = []) {
@@ -301,13 +319,17 @@ export default class GLTFFile extends TextFile {
         this.createNode({
             name: object.name,
             mesh: mesh,
-            scale: object.scale,
-            rotation: [
+            scale: [
+                object.scale[0],
+                object.scale[1],
+                object.scale[2],
+                1
+            ],
+            rotation: rotationToQuaternion(
                 object.rotation[0],
                 object.rotation[1],
-                object.rotation[2],
-                0
-            ],
+                object.rotation[2]
+            ),
             translation: object.position,
         });
     }
