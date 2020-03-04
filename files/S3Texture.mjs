@@ -156,10 +156,9 @@ export class S3Texture extends BinaryFile {
             dwReserved2: { 'unsigned int': 0 },
         }
 
-        const serializedData = [];
-        S3Texture.serialize(serializedData, DDS_HEADER);
+        // try using "S3Texture.serializeStruct" instead
 
-        const headerBuffer = S3Texture.serializeData(serializedData);
+        const headerBuffer = S3Texture.serialize(DDS_HEADER);
         const ddsBuffer = S3Texture.concatBuffer(
             headerBuffer, 
             this.view.buffer.slice(this.view.byteOffset, this.view.byteOffset + this.view.byteLength)

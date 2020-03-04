@@ -9,6 +9,7 @@ import { S3Texture } from '../files/S3Texture.mjs';
 import OBJFile from '../files/OBJFile.mjs';
 import MTLFile from '../files/MTLFile.mjs';
 import GLTFFile from '../files/GLTFFile.mjs';
+import GLBFile from '../files/GLBFile.mjs';
 
 global.log = (...str) => {
     console.log('[INFO]', ...str);
@@ -41,8 +42,12 @@ const Commands = {
             await model.loadMap(mapName);
 
             function writeGltfFile(exportFileName) {
-                const gltfFile = GLTFFile.fromGeometry(model.geometry);
-                fs.writeFileSync(exportFileName + '.gltf', gltfFile.toString(), 'utf8');
+                const gltfFile = GLBFile.fromGeometry(model.geometry);
+
+                const arrayBuffer = gltfFile.toBinary();
+                const bin = Buffer.from(arrayBuffer);
+
+                fs.writeFileSync(exportFileName + '.glb', bin, 'binary');
             }
 
             function writeObjResources(exportFileName) {
@@ -114,3 +119,5 @@ const command = process.argv.slice(2)[0];
 const args = process.argv.slice(3);
 
 main(command, args);
+
+export default Commands;

@@ -1,67 +1,11 @@
-const nativeStructs = {
-    vector: {
-        0: 'float',
-        1: 'float',
-        2: 'float',
-    },
-    vector4d: {
-        0: 'float',
-        1: 'float',
-        2: 'float',
-        3: 'float',
-    },
-    vector2d: {
-        0: 'float',
-        1: 'float',
-    },
-    color32: {
-        0: 'byte',
-        1: 'byte',
-        2: 'byte',
-        3: 'byte',
-    },
-}
-
-const typeMapping = {
-    'int': {
-        type: 'Int32',
-        BYTES_PER_ELEMENT: Int32Array.BYTES_PER_ELEMENT,
-    },
-    'long': {
-        type: 'BigInt64',
-        BYTES_PER_ELEMENT: BigInt64Array.BYTES_PER_ELEMENT,
-    },
-    'unsigned int': {
-        type: 'Uint32',
-        BYTES_PER_ELEMENT: Uint32Array.BYTES_PER_ELEMENT,
-    },
-    'float': {
-        type: 'Float32',
-        BYTES_PER_ELEMENT: Float32Array.BYTES_PER_ELEMENT,
-    },
-    'short': {
-        type: 'Int16',
-        BYTES_PER_ELEMENT: Int16Array.BYTES_PER_ELEMENT,
-    },
-    'unsigned short': {
-        type: 'Uint16',
-        BYTES_PER_ELEMENT: Uint16Array.BYTES_PER_ELEMENT,
-    },
-    'byte': {
-        type: 'Int8',
-        BYTES_PER_ELEMENT: Int8Array.BYTES_PER_ELEMENT,
-    },
-    'bool': {
-        type: 'Int8',
-        BYTES_PER_ELEMENT: Int8Array.BYTES_PER_ELEMENT,
-    },
-}
-
 // Resolving data types chain:
 // -> typeMapping (int, float ... to TypedArray)
 // -> nativeStructs (vector, color32 ..)
 // -> File Structs
 // -> throw Error "type not found"
+
+const textDecoder = new TextDecoder();
+const textEncoder = new TextEncoder();
 
 export class BinaryFile {
 
@@ -85,26 +29,10 @@ export class BinaryFile {
         return bytes;
     }
 
-    static StringToBytes(string) {
-        const bytes = [];
-        for(let char of string) {
-            const code = char.charCodeAt(0);
-            bytes.push(code & 0xFF);
-        }
-        return bytes;
-    }
-
     static StringToInt32(string) {
-        const bytes = this.StringToBytes(string);
-
-        const buffer = new ArrayBuffer(4);
-        const view = new DataView(buffer);
-
-        for(let i = 0; i < 4; i++) {
-            view.setUint8(i, bytes[i]);
-        }
-
-        return view.getUint32(0, true);
+        const data = textEncoder.encode(string);
+        const bin = new DataView(data.buffer);
+        return bin.getUint32(0, true);
     }
 
     static parseBytes(binary, byteOffset, type) {
@@ -205,6 +133,12 @@ export class BinaryFile {
 
     static unserialize(binary, byteOffset = 0, struct) {
 
+        const isDataView = binary instanceof Buffer || binary instanceof DataView;
+
+        if(!isDataView) {
+            throw new Error('to unserialize, provide a DataView object');
+        }
+
         const structData = {};
 
         for(let key in struct) {
@@ -259,18 +193,25 @@ export class BinaryFile {
     }
 
     static unserializeASCI(lumpBuffer) {
-        let string = "";
-        const buff = new Uint8Array(lumpBuffer.buffer, lumpBuffer.byteOffset, lumpBuffer.byteLength);
-
-        for(let b of buff) {
-            string += String.fromCharCode(b);
-        }
+        const buff = new Uint8Array(
+            lumpBuffer.buffer, 
+            lumpBuffer.byteOffset, 
+            lumpBuffer.byteLength
+        );
         
-        return string;
+        return textDecoder.decode(buff);
     }
 
-    static serialize(resultData = [], struct) {
+    static serializeStruct(types, data) {
+        const struct = mapTypesToValues(types, data);
+        return this.serialize(struct);
+    }
 
+    static serialize(struct) {
+        const resultData = [];
+
+        // actually serialize struct
+        
         // build data array with type mappings
         for(let entry in struct) {
 
@@ -305,7 +246,7 @@ export class BinaryFile {
             
         }
 
-        return resultData;
+        return this.serializeData(resultData);
     }
 
     static serializeData(resultData, littleEndian = true) {
@@ -371,4 +312,83 @@ export class BinaryFile {
         });
     }
 
+}
+
+function mapTypesToValues(typesMap, valuesMap) {
+    const typeValues = {};
+
+    for(let key in valuesMap) {
+        if(key in typesMap) {
+
+            const type = typesMap[key];
+            const value = valuesMap[key];
+
+            typeValues[key] = {};
+            typeValues[key][type] = value;
+
+        } else {
+            throw new Error(`type "${key}" not defined in types.`);
+        }
+    }
+
+    return typeValues;
+}
+
+const nativeStructs = {
+    vector: {
+        0: 'float',
+        1: 'float',
+        2: 'float',
+    },
+    vector4d: {
+        0: 'float',
+        1: 'float',
+        2: 'float',
+        3: 'float',
+    },
+    vector2d: {
+        0: 'float',
+        1: 'float',
+    },
+    color32: {
+        0: 'byte',
+        1: 'byte',
+        2: 'byte',
+        3: 'byte',
+    },
+}
+
+const typeMapping = {
+    'int': {
+        type: 'Int32',
+        BYTES_PER_ELEMENT: Int32Array.BYTES_PER_ELEMENT,
+    },
+    'long': {
+        type: 'BigInt64',
+        BYTES_PER_ELEMENT: BigInt64Array.BYTES_PER_ELEMENT,
+    },
+    'unsigned int': {
+        type: 'Uint32',
+        BYTES_PER_ELEMENT: Uint32Array.BYTES_PER_ELEMENT,
+    },
+    'float': {
+        type: 'Float32',
+        BYTES_PER_ELEMENT: Float32Array.BYTES_PER_ELEMENT,
+    },
+    'short': {
+        type: 'Int16',
+        BYTES_PER_ELEMENT: Int16Array.BYTES_PER_ELEMENT,
+    },
+    'unsigned short': {
+        type: 'Uint16',
+        BYTES_PER_ELEMENT: Uint16Array.BYTES_PER_ELEMENT,
+    },
+    'byte': {
+        type: 'Uint8',
+        BYTES_PER_ELEMENT: Uint8Array.BYTES_PER_ELEMENT,
+    },
+    'bool': {
+        type: 'Uint8',
+        BYTES_PER_ELEMENT: Uint8Array.BYTES_PER_ELEMENT,
+    },
 }

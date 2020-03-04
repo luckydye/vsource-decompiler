@@ -51,7 +51,7 @@ const type = {
 export default class GLTFFile extends TextFile {
 
     static fromGeometry(geometry = []) {
-        const gltf = new GLTFFile();
+        const gltf = new this();
 
         for(let geo of geometry) {
 
@@ -74,10 +74,10 @@ export default class GLTFFile extends TextFile {
             gltf.addObject(geo);
         }
 
-        return gltf.toString();
+        return gltf;
     }
 
-    static fromFile(GLTFFile) {
+    static fromFile(gLTFFile) {
         // read gltf file and create instance
     }
 

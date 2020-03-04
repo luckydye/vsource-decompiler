@@ -1,44 +1,129 @@
 import { BinaryFile } from "./BinaryFile.mjs";
+import GLTFFile from "./GLTFFile.mjs";
 
-export default class GLBFile extends BinaryFile {
+const TPYE_JSON = 0x4E4F534A;
+const TYPE_BIN = 0x004E4942;
 
-    /*  Format
-    
+export default class GLBFile extends GLTFFile {
 
-    */
+    static fromFile(fileBuffer) {
+        const data = BinaryFile.unserialize(new DataView(fileBuffer), 0, {
+            magic: 'char[4]',
+            version: 'unsigned int',
+            length: 'unsigned int',
+            jsonChunkLength: 'unsigned int',
+            jsonChunkType: 'unsigned int',
+            jsonChunkData: 'byte[jsonChunkLength]',
+            binChunkLength: 'unsigned int',
+            binChunkType: 'unsigned int',
+            binChunkData: 'byte[binChunkLength]'
+        });
 
-    constructor(geometry) {
-        super();
-        
-        this.gltf = GLTFFile.fromGeometry(geometry);
+        // turn into file...
+        return data;
+    }
 
-        const fileLength = 0;
+    createBuffer(bufferArray) {
+        const gltfBuffer = {
+            byteLength: bufferArray.byteLength,
+        }
+        this.buffers.push(bufferArray);
+        return this.asset.buffers.push(gltfBuffer) - 1;
+    }
 
-        const header = {
-            magic: { 'unsigned int': 'glTF' },
+    decodeJsonChunk(chunkBuffer) {
+        return new TextDecoder().decode(chunkBuffer);
+    }
+
+    encodeJsonChunk() {
+
+        const jsonEncodedData = new TextEncoder().encode(JSON.stringify(this.asset));
+        const jsonPaddingLength = 4 - (jsonEncodedData.byteLength % 4);
+
+        const jsonBinaryData = new Uint8Array(jsonEncodedData.byteLength + jsonPaddingLength);
+        jsonBinaryData.set(jsonEncodedData, 0);
+
+        for(let i = jsonEncodedData.byteLength; i < jsonEncodedData.byteLength + jsonPaddingLength; i++) {
+            jsonBinaryData.set([ 0x20 ], i);
+        }
+
+        const jsonChunkHeader = {
+            chunkLength: { 'unsigned int': jsonBinaryData.byteLength },
+            chunkType: { 'unsigned int': TPYE_JSON }, // or 'JSON'
+        }
+
+        const headerBuffer = BinaryFile.serialize(jsonChunkHeader);
+
+        const buffer = new Uint8Array(headerBuffer.byteLength + jsonBinaryData.byteLength);
+        buffer.set(new Uint8Array(headerBuffer), 0);
+        buffer.set(jsonBinaryData, headerBuffer.byteLength);
+
+        return buffer;
+    }
+
+    encodeBinaryChunk() {
+
+        let binaryDataLength = 0;
+        for(let buffer of this.asset.buffers) {
+            binaryDataLength += buffer.byteLength;
+        }
+
+        const binaryDataPaddingLength = 4 - (binaryDataLength % 4);
+        const binaryData = new Float32Array(binaryDataLength + binaryDataPaddingLength);
+
+        let bufferStartIndex = 0;
+
+        for(let buffer of this.buffers) {
+            binaryData.set(buffer, bufferStartIndex);
+            bufferStartIndex += buffer.byteLength;
+        }
+
+        const binaryChunkHeader = {
+            chunkLength: { 'unsigned int': binaryData.byteLength },
+            chunkType: { 'unsigned int': TYPE_BIN }, // or 'BIN'
+        }
+
+        const headerBuffer = BinaryFile.serialize(binaryChunkHeader);
+
+        const buffer = new Uint8Array(headerBuffer.byteLength + binaryData.byteLength);
+        buffer.set(new Uint8Array(headerBuffer), 0);
+        buffer.set(new Uint8Array(binaryData.buffer), headerBuffer.byteLength);
+
+        return buffer;
+    }
+
+    toBinary() {
+        const jsonBinaryData = this.encodeJsonChunk();
+        const binaryData = this.encodeBinaryChunk();
+
+        const glbHeader = {
+            magic: { 'unsigned int': 0x46546C67 }, // 0x46546C67 = "glTF"
             version: { 'unsigned int': 2 },
-            length: { 'unsigned int': fileLength },
+            length: { 
+                'unsigned int': 12 + jsonBinaryData.byteLength + binaryData.byteLength
+            },
         }
 
-        const chunkLength = 0;
+        const fileHeaderBuffer = BinaryFile.serialize(glbHeader);
 
-        const JSON = 0x4E4F534A;
-        const BIN = 0x004E4942;
 
-        const chunkData = new Float32Array();
+        const fileBuffer = new Uint8Array(
+            fileHeaderBuffer.byteLength +
+            jsonBinaryData.byteLength +
+            binaryData.byteLength
+        );
 
-        // JSON chunk:
-        // encode:
-        // new TextEncoder().encode(JSON.stringify({ asd: 123 }))
+        fileBuffer.set(new Uint8Array(fileHeaderBuffer), 0);
+        fileBuffer.set(jsonBinaryData, fileHeaderBuffer.byteLength);
+        fileBuffer.set(binaryData, fileHeaderBuffer.byteLength + jsonBinaryData.byteLength);
 
-        // decode: 
-        // JSON.parse(new TextDecoder().decode(Uint8Array))
+        return fileBuffer.buffer;
+    }
 
-        const chunk = {
-            chunkLength: { 'unsigned int': chunkLength },
-            chunkType: { 'unsigned int': 'JSON' }, // or 'BIN'
-            chunkData: { 'binary': chunkData },
-        }
+    constructor() {
+        super();
+
+        this.buffers = [];
     }
 
 }

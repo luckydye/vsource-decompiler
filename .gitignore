@@ -4,3 +4,4 @@ node_modules
 *.mtl
 *.log
 *.gltf
+*.glb
