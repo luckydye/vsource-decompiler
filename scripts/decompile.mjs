@@ -53,7 +53,7 @@ const Commands = {
                 // fs.writeFileSync(exportFileName + '.glb', bin, 'binary');
 
                 const gltfFile = GLTFFile.fromGeometry(model.geometry);
-                fs.writeFileSync(exportFileName + '.glb', gltfFile.toString(), 'utf8');
+                fs.writeFileSync(exportFileName + '.gltf', gltfFile.toString(), 'utf8');
             }
 
             function writeObjResources(exportFileName) {
