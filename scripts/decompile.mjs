@@ -42,12 +42,18 @@ const Commands = {
             await model.loadMap(mapName);
 
             function writeGltfFile(exportFileName) {
-                const gltfFile = GLBFile.fromGeometry(model.geometry);
+                // const gltfFile = GLBFile.fromGeometry(model.geometry);
 
-                const arrayBuffer = gltfFile.toBinary();
-                const bin = Buffer.from(arrayBuffer);
+                // const arrayBuffer = gltfFile.toBinary();
+                // const bin = Buffer.from(arrayBuffer);
 
-                fs.writeFileSync(exportFileName + '.glb', bin, 'binary');
+                // const test = GLBFile.fromFile(arrayBuffer);
+                // console.log(test);
+
+                // fs.writeFileSync(exportFileName + '.glb', bin, 'binary');
+
+                const gltfFile = GLTFFile.fromGeometry(model.geometry);
+                fs.writeFileSync(exportFileName + '.glb', gltfFile.toString(), 'utf8');
             }
 
             function writeObjResources(exportFileName) {
