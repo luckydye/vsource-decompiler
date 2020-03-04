@@ -207,9 +207,7 @@ export class BinaryFile {
         return this.serialize(struct);
     }
 
-    static serialize(struct) {
-        const resultData = [];
-
+    static serialize(struct, resultData = []) {
         // actually serialize struct
         
         // build data array with type mappings
@@ -239,7 +237,7 @@ export class BinaryFile {
                     const value = struct[entry][key];
 
                     // get struct and run through serialize again with current resultData
-                    this.serialize(resultData, value);
+                    this.serialize(value, resultData);
                     break;
                 }
             }

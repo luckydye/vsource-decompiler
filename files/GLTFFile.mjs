@@ -1,4 +1,5 @@
 import { TextFile } from "./TextFile.mjs";
+import { S3Texture } from "./S3Texture.mjs";
 
 // https://github.com/KhronosGroup/glTF/tree/master/specification/2.0#gltf-basics
 // https://github.com/KhronosGroup/glTF-Tutorials/blob/master/gltfTutorial/gltfTutorial_005_BuffersBufferViewsAccessors.md
@@ -255,52 +256,88 @@ export default class GLTFFile extends TextFile {
         }
     }
 
+    createMaterial(options) {
+        const material = options;
+        return this.asset.materials.push(material) - 1;
+    }
+
+    createTexture(imageDataBuffer, options) {
+
+        const imageBuffer = this.createBuffer({ buffer: imageDataBuffer });
+
+        const imageBufferView = this.createBufferView({
+            buffer: imageBuffer, 
+            byteOffset: 0, 
+            byteLength: imageDataBuffer.byteLength
+        });
+
+        const image = Object.assign({
+            bufferView: imageBufferView,
+        }, options);
+
+        const textureSource = this.asset.images.push(image) - 1;
+
+        const texture = {
+            sampler: 0,
+            source: textureSource,
+        };
+
+        return this.asset.textures.push(texture) - 1;
+    }
+
     createObjectMesh(object) {
         // geometry buffer
         const indices = object.indecies;
         const vertecies = object.vertecies.filter((v, i) => ((i + 4) % 9));
+
+        const mesh = {
+            name: object.name,
+            primitives: []
+        };
+
+        const objectMaterial = object.materials[object.materials.length-1];
+
+        let texture;
+
+        if(objectMaterial.imageData) {
+            const textureImage = S3Texture.fromDataArray(
+                objectMaterial.imageData, 
+                objectMaterial.format.type, 
+                objectMaterial.format.width, 
+                objectMaterial.format.height
+            );
+            const ddsBuffer = textureImage.toDDS();
+    
+            texture = this.createTexture(ddsBuffer, {
+                mimeType: 'image/vnd-ms.dds',
+                name: objectMaterial.name.toString().replace("/", "_") + "_texture.dds",
+            });
+        }
+
+        const material = this.createMaterial({
+            name: objectMaterial.name.toString().replace(/\//g, "_"),
+            doubleSided: true,
+            alphaMode: "MASK",
+            pbrMetallicRoughness: {
+                baseColorTexture: {
+                    index: texture,
+                    texCoord: 0
+                },
+                metallicFactor: 0,
+                roughnessFactor: objectMaterial.reflectivity[0]
+            }
+        });
         
         const primitive = this.createPrimitive(vertecies, indices);
 
-        // materials
-        // for(let mat of geo.materials) {
-        //     const material = {
-        //         name: "Material0",
-        //         pbrMetallicRoughness: {
-        //             baseColorTexture: {
-        //                 index: 1,
-        //                 texCoord: 1
-        //             },
-        //             metallicFactor: mat.reflectivity,
-        //             roughnessFactor: 1,
-        //             metallicRoughnessTexture: {
-        //                 index: 2,
-        //                 texCoord: 1
-        //             }
-        //         }
-        //     }
-
-        //     const texture = {
-        //         sampler: 0,
-        //         source: 2
-        //     }
-
-        //     const image = {
-        //         uri: "duckCM.png"
-        //     }
-        // }
+        mesh.primitives.push({
+            attributes: primitive.attributes,
+            indices: primitive.indices,
+            material: material,
+        });
 
         // mesh
-        return this.createMesh({
-            name: object.name,
-            primitives: [
-                {
-                    attributes: primitive.attributes,
-                    indices: primitive.indices,
-                    // material: asset.materials.length,
-                }
-            ]
-        });
+        return this.createMesh(mesh);
     }
 
     addObject(object) {

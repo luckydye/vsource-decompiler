@@ -42,19 +42,20 @@ const Commands = {
             await model.loadMap(mapName);
 
             function writeGltfFile(exportFileName) {
+                // GLB file export:
                 // const gltfFile = GLBFile.fromGeometry(model.geometry);
-
                 // const arrayBuffer = gltfFile.toBinary();
                 // const bin = Buffer.from(arrayBuffer);
-
                 // const test = GLBFile.fromFile(arrayBuffer);
                 // console.log(test);
-
                 // fs.writeFileSync(exportFileName + '.glb', bin, 'binary');
 
                 const gltfFile = GLTFFile.fromGeometry(model.geometry);
                 fs.writeFileSync(exportFileName + '.gltf', gltfFile.toString(), 'utf8');
             }
+
+            const exportFileName = outputFilePath ? outputFilePath : mapName;
+            writeGltfFile(exportFileName);
 
             function writeObjResources(exportFileName) {
                 // write obj file
@@ -66,40 +67,37 @@ const Commands = {
                 mtlFile.openWriteStream(exportFileName + '.mtl');
                 mtlFile.fromObjFile(objFile);
 
-                log('Writing textures...');
 
+                log('Writing textures...');
                 // write texture files
-                for(let texName of objFile.materials.keys()) {
-                    const tex = objFile.materials.get(texName);
+                for(let texName of materials.keys()) {
+                    const tex = materials.get(texName);
                     const format = tex.format;
                     const data = tex.imageData;
-
+    
                     if(tex.format.type === "NONE") continue;
-
+    
                     const texture = S3Texture.fromDataArray(data, format.type, format.width, format.height);
                     const ddsBuffer = texture.toDDS();
-
+    
                     // write texture
-                    if(!fs.existsSync(`${resourcePath}/textures`)) {
-                        fs.mkdirSync(`${resourcePath}/textures`);
+                    if(!fs.existsSync(`textures`)) {
+                        fs.mkdirSync(`textures`);
                     }
-
+    
                     const fileBuffer = Buffer.from(ddsBuffer);
-                    const writeStream = fs.createWriteStream(`${resourcePath}/textures/${texName}.dds`);
+                    const writeStream = fs.createWriteStream(`textures/${texName}.dds`);
                     
                     writeStream.write(fileBuffer, 'binary');
                     writeStream.on('finish', () => {});
-                    writeStream.on('error', () => {
-                        error(`Error writing texture: ${resourcePath}/textures/${texName}.dds`, chalk.green('OK'));
+                    writeStream.on('error', err => {
+                        console.log(err);
+                        error(`Error writing texture: textures/${texName}.dds`);
                     });
                     writeStream.end();
                 }
-
                 log('Textures written.');
             }
-
-            const exportFileName = outputFilePath ? outputFilePath : mapName;
-            writeGltfFile(exportFileName);
 
             log(mapName, 'decompiled.');
     
