@@ -1,7 +1,7 @@
 const fs = require('fs');
 const validator = require('gltf-validator');
  
-const asset = fs.readFileSync('./ar_shoots.gltf');
+const asset = fs.readFileSync('./de_mirage.gltf');
  
 validator.validateBytes(new Uint8Array(asset))
     .then((report) => {

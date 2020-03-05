@@ -135,6 +135,7 @@ export class Model {
                             }).catch(err => {
                                 error('Missing map texture ' + resPath);
                                 log(err);
+                                console.log('');
                             });
                         }
                     }
@@ -150,6 +151,7 @@ export class Model {
                             }).catch(err => {
                                 error('Missing map texture ' + resPath);
                                 log(err);
+                                console.log('');
                             });
                         }
                     }
@@ -228,10 +230,13 @@ export class Model {
             }
 
             const vmtFile = await fileSystem.getFile(`${texPath}.vmt`);
+
             const vmt = VMTFile.fromDataArray(await vmtFile.arrayBuffer());
             // not used right now:
             // prop.materials.push(vmt);
     
+            // TODO: texPath != .vtx path, look harder! in the vmt?
+
             const vtfFile = await fileSystem.getFile(`${texPath}.vtf`);
             const vtf = VTFFile.fromDataArray(await vtfFile.arrayBuffer());
             vtf.name = texPath;

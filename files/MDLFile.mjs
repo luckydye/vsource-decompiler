@@ -339,13 +339,7 @@ export default class MDLFile extends BinaryFile {
             });
 
             if(mdl.textures[i]) {
-                const texDirPath = texPathString.valueOf().path.valueOf();
-
-                if(texDirPath != "") {
-                    mdl.textures[i].path = texDirPath + mdl.textures[i].name;
-                } else {
-                    mdl.textures[i].path = mdl.textures[i].name;
-                }
+                mdl.textures[i].path = mdl.textures[i].name;
             }
         }
 
