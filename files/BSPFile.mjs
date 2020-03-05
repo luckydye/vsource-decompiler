@@ -575,6 +575,7 @@ export default class BSPFile extends BinaryFile {
 
         let currentVertexIndex = 0;
         
+        // TODO: Split faces into texture mapped meshes
         for(let face of faces) {
             const plane = planes[face.planenum.data];
             
