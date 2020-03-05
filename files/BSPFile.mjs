@@ -569,9 +569,8 @@ export default class BSPFile extends BinaryFile {
         const faces = this.faces;
         const texInfos = this.texInfo;
 
-        const vertexResultArray = [];
-        const indexResultArray = [];
         const textureArray = this.textures;
+        const meshes = [];
 
         let currentVertexIndex = 0;
         
@@ -640,15 +639,17 @@ export default class BSPFile extends BinaryFile {
                 material: textureIndex
             }));
 
-            vertexResultArray.push(...parsedVertecies);
-            indexResultArray.push(...indexes);
+            meshes[textureIndex] = meshes[textureIndex] || {
+                indices: [],
+                vertecies: [],
+                texture: textureIndex
+            };
+
+            meshes[textureIndex].vertecies.push(...parsedVertecies);
+            meshes[textureIndex].indices.push(...indexes);
         }
 
-        return {
-            indecies: indexResultArray,
-            textures: textureArray,
-            vertecies: vertexResultArray,
-        };
+        return meshes;
     }
 
 }
