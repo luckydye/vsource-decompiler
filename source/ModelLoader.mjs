@@ -94,9 +94,9 @@ export class Model {
                     prop.Origin.data[1].data,
                 ],
                 rotation: [
-                    -prop.Angles.data[2].data * Math.PI / 180,
-                    -prop.Angles.data[1].data * Math.PI / 180,
                     prop.Angles.data[0].data * Math.PI / 180,
+                    prop.Angles.data[1].data * Math.PI / 180,
+                    prop.Angles.data[2].data * Math.PI / 180,
                 ],
             }
 

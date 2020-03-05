@@ -387,6 +387,15 @@ export default class GLTFFile extends TextFile {
 
         mesh = mesh || this.createObjectMesh(object);
 
+        const qrotation = rotationToQuaternion(
+            object.rotation[0],
+            object.rotation[1],
+            object.rotation[2]
+        );
+
+        qrotation[0] = -qrotation[0];
+        qrotation[2] = -qrotation[2];
+
         // node
         this.createNode({
             name: object.name,
@@ -396,11 +405,7 @@ export default class GLTFFile extends TextFile {
                 object.scale[1],
                 object.scale[2]
             ],
-            rotation: rotationToQuaternion(
-                object.rotation[0],
-                object.rotation[1],
-                object.rotation[2]
-            ),
+            rotation: qrotation,
             translation: object.position,
         });
     }
