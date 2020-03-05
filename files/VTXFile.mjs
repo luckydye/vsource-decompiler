@@ -77,8 +77,8 @@ export default class VTXFile extends BinaryFile {
         const parts = this.unserializeArray(vtx.view, bodyPartOffset, BodyPartHeader_t, bodyPartCount);
 
         vtx.bodyparts = parts;
-        vtx.indecies = [];
-        vtx.vertexIndecies = [];
+        vtx.indices = [];
+        vtx.vertexindices = [];
 
         let meshVertexOffset = 0;
 
@@ -105,12 +105,12 @@ export default class VTXFile extends BinaryFile {
                             const vertOffset = stripGroup.byteOffset + stripGroup.vertOffset.data;
                             const vertCount = stripGroup.numVerts.data;
         
-                            const indecies = this.unserializeArray(vtx.view, indexOffset, { index: 'unsigned short' }, indexCount);
+                            const indices = this.unserializeArray(vtx.view, indexOffset, { index: 'unsigned short' }, indexCount);
                             const vertecies = this.unserializeArray(vtx.view, vertOffset, Vertex_t, vertCount);
 
-                            // collect indecies
-                            vtx.indecies.push(indecies.map(i => i.index.data + meshVertexOffset));
-                            vtx.vertexIndecies.push(vertecies.map(v => v.origMeshVertID.data + meshVertexOffset));
+                            // collect indices
+                            vtx.indices.push(indices.map(i => i.index.data + meshVertexOffset));
+                            vtx.vertexindices.push(vertecies.map(v => v.origMeshVertID.data + meshVertexOffset));
 
                             meshVertexOffset += vertCount;
                         }
@@ -122,8 +122,8 @@ export default class VTXFile extends BinaryFile {
             }
         }
 
-        vtx.indecies = vtx.indecies.flat();
-        vtx.vertexIndecies = vtx.vertexIndecies.flat();
+        vtx.indices = vtx.indices.flat();
+        vtx.vertexindices = vtx.vertexindices.flat();
 
         return vtx;
     }

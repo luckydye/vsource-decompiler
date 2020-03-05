@@ -3,6 +3,10 @@ import { BinaryFile } from './BinaryFile.mjs';
 // https://developer.valvesoftware.com/wiki/Valve_Texture_Format
 
 export const VTF = {
+    vtfheader_sig_version: {
+        signature: 'char[4]',
+        version: 'unsigned int[2]',
+    },
     vtfheader: {
         signature: 'char[4]',
         version: 'unsigned int[2]',
@@ -12,9 +16,9 @@ export const VTF = {
         flags: 'unsigned int',
         frames: 'unsigned short',
         firstFrame: 'unsigned short',
-        padding0: 'unsigned char[4]',
+        padding0: 'char[4]',
         reflectivity: 'float[3]',
-        padding1: 'unsigned char[4]',
+        padding1: 'char[4]',
         bumpmapScale: 'float',
         highResImageFormat: 'unsigned int',
         mipmapCount: 'byte',
@@ -24,7 +28,7 @@ export const VTF = {
         depth: 'unsigned short',
         padding2: 'unsigned char[3]',
         numResources: 'unsigned int',
-    }
+    },
 }
 
 export const IMAGE_FORMAT = {
@@ -88,18 +92,14 @@ export default class VTFFile extends BinaryFile {
     }
 
     static readHeader(vtf) {
-        const fileHeader = this.unserialize(vtf.view, 0, VTF.vtfheader).data;
-        const sig = fileHeader.signature.data.split("").slice(0, 3).join("");
+        const fileSigVersion = this.unserialize(vtf.view, 0, VTF.vtfheader_sig_version).data;
 
-        let header = {};
-
-        if(sig == "VTF") {
-            const version = parseInt(fileHeader.version.data.join(""));
-            header = fileHeader;
-            header.version = version;
+        const sig = fileSigVersion.signature.data.split("").slice(0, 3).join("");
+        if(sig !== "VTF") {
+            throw new Error('wrong signature: ' + sig);
         }
 
-        return header;
+        return this.unserialize(vtf.view, 0, VTF.vtfheader).data;
     }
 
     static fromDataArray(dataArray) {

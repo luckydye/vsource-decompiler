@@ -76,7 +76,7 @@ export default class GLTFFile extends TextFile {
 
             /* geometry structure:
                 vertecies: [0, 0, 0],
-                indecies: [0, 0, 0],
+                indices: [0, 0, 0],
                 position: [0, 0, 0],
                 rotation: [0, 0, 0],
                 scale: [0, 0, 0],
@@ -90,7 +90,9 @@ export default class GLTFFile extends TextFile {
                 imageData: [ ... ]
             */
 
-            gltf.addObject(geo);
+            if(geo.vertecies.length > 0) {
+                gltf.addObject(geo);
+            }
         }
 
         return gltf;
@@ -336,53 +338,19 @@ export default class GLTFFile extends TextFile {
 
     createObjectMesh(object) {
         // geometry buffer
-        const indices = object.indecies;
-        const vertecies = object.vertecies.map(vert => ([
-            vert.vertex[0], vert.vertex[1], vert.vertex[2], 
-            vert.uv[0], vert.uv[1], 
-            vert.normal[0], vert.normal[1], vert.normal[2], 
-        ])).flat();
+        const indices = object.indices;
+        const vertecies = object.vertecies;
 
         const mesh = {
             name: object.name,
             primitives: []
         };
 
-        // for every index
-            // look at material index
-            // begin new primitve for every new mat index
+        let objectMaterial = object.material;
 
-
-        // splitting the buffer intor material sections
-
-        // let currentMaterial = null;
-        // let byteOffset = 0;
-
-        // for(let i = 0; i < indexBuffer.length; i++) {
-        //     const index = indexBuffer[i];
-        //     const byteIndex = i * indexBuffer.BYTES_PER_ELEMENT;
-
-        //     const vert = object.vertecies[index];
-
-        //     if(currentMaterial != vert.material) {
-        //         currentMaterial = vert.material;
-
-        //         const indexBufferOffset = byteOffset;
-        //         const indexBufferLength = byteIndex - indexBufferOffset;
-
-        //         const vertBufferOffset = byteOffset * 8;
-        //         const vertBufferLength = (byteIndex * 8) - vertBufferOffset;
-
-        //         const indexCount = indexBufferLength / indexBuffer.BYTES_PER_ELEMENT;
-        //         const vertexCount = vertBufferLength / vertexBuffer.BYTES_PER_ELEMENT;
-
-        //         console.log(indexCount);
-
-        //         byteOffset = byteIndex;
-        //     }
-        // }
-
-        let objectMaterial = object.materials[12];
+        if(objectMaterial && !objectMaterial.imageData) {
+            throw new Error('Missing texture imageData');
+        }
 
         if(objectMaterial && objectMaterial.imageData) {
 
@@ -394,59 +362,14 @@ export default class GLTFFile extends TextFile {
                 indices: primitive.indices,
                 material: material,
             });
-
         } else {
-            objectMaterial = object.materials[0];
-
-            if(objectMaterial && objectMaterial.imageData) {
-                const material = this.createMaterialFromVTX(objectMaterial);
-                const primitive = this.createPrimitive(indices, vertecies);
-                
-                mesh.primitives.push({
-                    attributes: primitive.attributes,
-                    indices: primitive.indices,
-                    material: material,
-                });
-            }
+            const primitive = this.createPrimitive(indices, vertecies);
+            
+            mesh.primitives.push({
+                attributes: primitive.attributes,
+                indices: primitive.indices,
+            });
         }
-
-        // let currentMaterial = null;
-        // let primVertecies = [];
-        // let primIndecies = [];
-        // let indexOffset = 0;
-        
-        // for(let index of indices) {
-        //     const vert = object.vertecies[index];
-
-        //     if(currentMaterial != vert.material) {
-        //         currentMaterial = vert.material;
-
-        //         indexOffset = index;
-
-        //         const objectMaterial = object.materials[currentMaterial];
-
-        //         if(objectMaterial && objectMaterial.imageData) {
-
-        //             const material = this.createMaterialFromVTX(objectMaterial);
-
-        //             const primitive = this.createPrimitive(primIndecies, primVertecies);
-    
-        //             primVertecies = [];
-        //             primIndecies = [];
-                    
-        //             mesh.primitives.push({
-        //                 attributes: primitive.attributes,
-        //                 indices: primitive.indices,
-        //                 material: material,
-        //             });
-        //         }
-        //     }
-
-        //     // Cant do it like this, order of vertecies would be disorganized
-        //     primVertecies.push(vert);
-
-        //     primIndecies.push(index - indexOffset);
-        // }
 
         // mesh
         return this.createMesh(mesh);

@@ -136,8 +136,8 @@ export default class OBJFile extends TextFile {
 
             let lastMaterialindex = null;
             
-            for(let i = 0; i < geo.indecies.length; i += 3) {
-                const [ i1, i2, i3 ] = geo.indecies.slice(i, i + 3);
+            for(let i = 0; i < geo.indices.length; i += 3) {
+                const [ i1, i2, i3 ] = geo.indices.slice(i, i + 3);
 
                 const materialindex = uvs[i1][2];
 

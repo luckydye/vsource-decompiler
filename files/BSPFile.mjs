@@ -569,19 +569,26 @@ export default class BSPFile extends BinaryFile {
         const faces = this.faces;
         const texInfos = this.texInfo;
 
-        const textureArray = this.textures;
         const meshes = [];
-
-        let currentVertexIndex = 0;
         
         // TODO: Split faces into texture mapped meshes
         for(let face of faces) {
+            
             const plane = planes[face.planenum.data];
             
             const textureInfo = this.texinfo[face.texinfo.data];
             const textureData = this.texdata[textureInfo.texdata.data];
             const textureIndex = textureData.nameStringTableID.data;
             const textureFlag = textureInfo.flags.data;
+
+            meshes[textureIndex] = meshes[textureIndex] || {
+                indices: [],
+                vertecies: [],
+                material: textureIndex,
+                currentVertexIndex: 0,
+            };
+
+            const currentVertexIndex = meshes[textureIndex].currentVertexIndex;
 
             switch(textureFlag) {
                 case 0: break;
@@ -605,45 +612,34 @@ export default class BSPFile extends BinaryFile {
             const indexes = [];
 
             for(let edge of faceEdges) {
-                let vertIndecies = edge;
-                verts.push(vertecies[vertIndecies[0]]);
+                let vertindices = edge;
+                verts.push(vertecies[vertindices[0]]);
             }
 
-            const numberOfIndecies = (verts.length - 2) * 3;
+            const numberOfindices = (verts.length - 2) * 3;
 
-            for(let i = 0; i < numberOfIndecies / 3; i++) {
+            for(let i = 0; i < numberOfindices / 3; i++) {
                 indexes.push(currentVertexIndex + 0);
                 indexes.push(currentVertexIndex + 1 + i);
                 indexes.push(currentVertexIndex + 2 + i);
             }
 
-            currentVertexIndex += verts.length;
+            meshes[textureIndex].currentVertexIndex += verts.length;
 
             const tv = textureInfo.textureVecs.data;
 
-            const parsedVertecies = verts.map(v => ({
-                vertex: [
-                    -v.x.data, 
-                    v.z.data, 
-                    v.y.data
-                ], 
-                uv: [
-                    (tv[0][0] * v.x.data + tv[0][1] * v.y.data + tv[0][2] * v.z.data + tv[0][3]) / textureData.width_height_0,
-                    (tv[1][0] * v.x.data + tv[1][1] * v.y.data + tv[1][2] * v.z.data + tv[1][3]) / textureData.width_height_1,
-                ],
-                normal: [
-                    normal[0].valueOf(), 
-                    -normal[2].valueOf(), 
-                    -normal[1].valueOf()
-                ],
-                material: textureIndex
-            }));
+            const parsedVertecies = verts.map(v => ([
+                -v.x.data, 
+                v.z.data, 
+                v.y.data,
 
-            meshes[textureIndex] = meshes[textureIndex] || {
-                indices: [],
-                vertecies: [],
-                texture: textureIndex
-            };
+                (tv[0][0] * v.x.data + tv[0][1] * v.y.data + tv[0][2] * v.z.data + tv[0][3]) / textureData.width_height_0,
+                (tv[1][0] * v.x.data + tv[1][1] * v.y.data + tv[1][2] * v.z.data + tv[1][3]) / textureData.width_height_1,
+
+                normal[0].valueOf(), 
+                -normal[2].valueOf(), 
+                -normal[1].valueOf(),
+            ]));
 
             meshes[textureIndex].vertecies.push(...parsedVertecies);
             meshes[textureIndex].indices.push(...indexes);
