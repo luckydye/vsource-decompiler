@@ -37,38 +37,30 @@ export class Model {
         const mapPath = `maps/${mapName}.bsp`;
         log('Loading map', mapPath);
 
-        const map = await fileSystem.getFile(mapPath).then(async res => {
+        const map = await fileSystem.getFile(mapPath);
+        const bsp = BSPFile.fromDataArray(await map.arrayBuffer());
+        const meshes = bsp.convertToMesh();
 
-            const bsp = BSPFile.fromDataArray(await res.arrayBuffer());
-            const meshes = bsp.convertToMesh();
+        log('Reading pakfile.');
+        fileSystem.attatchPakfile(Buffer.from(bsp.pakfile.buffer));
 
-            log('Reading pakfile.');
-            fileSystem.attatchPakfile(Buffer.from(bsp.pakfile.buffer));
-
-            log('Load map textures...');
-            const textures = await this.loadMapTextures(bsp.textures);
-            log('Map textures loaded.');
-
-            return { 
-                meshes, 
-                bsp, 
-                textures
-            };
-        })
-
+        log('Load map textures...');
+        const textures = await this.loadMapTextures(bsp.textures);
+        log(`${textures.size} of ${bsp.textures.length} textures loaded.`);
+        
         // world
-        const textures = map.textures;
+        function getMapTexture(textureIndex) {
+            const tex = bsp.textures[textureIndex];
+            const vtf = textures.get(tex);
 
-        const materials = [...textures.keys()].map(key => {
-            return textures.get(key);
-        });
+            return vtf;
+        }
 
-        for(let mesh of map.meshes) {
+        for(let mesh of meshes) {
             if(!mesh) continue;
 
-            const material = materials[mesh.material];
-
-            const objectName = material ? mapName + "__" + material.name : mapName;
+            const material = getMapTexture(mesh.material);
+            const objectName = material ? mapName + "__" + mesh.material : mapName;
 
             this.geometry.add({
                 name: objectName,
@@ -83,7 +75,7 @@ export class Model {
         }
 
         log('Load map props...');
-        await this.loadMapProps(map.bsp.gamelumps.sprp, (type, prop, propData) => {
+        await this.loadMapProps(bsp.gamelumps.sprp, (type, prop, propData) => {
 
             const propGeometry = {
                 vertecies: propData.vertecies.flat(),
@@ -91,9 +83,9 @@ export class Model {
                 name: type.name.replace(/\\+|\/+/g, "_"),
                 material: propData.textures[0],
                 scale: [
-                    prop.UniformScale || 1, 
-                    prop.UniformScale || 1, 
-                    prop.UniformScale || 1
+                    prop.UniformScale.valueOf() || 1, 
+                    prop.UniformScale.valueOf() || 1, 
+                    prop.UniformScale.valueOf() || 1
                 ],
                 origin: [0, 0, 0],
                 position: [
@@ -103,7 +95,7 @@ export class Model {
                 ],
                 rotation: [
                     -prop.Angles.data[2].data * Math.PI / 180,
-                    prop.Angles.data[1].data * Math.PI / 180,
+                    -prop.Angles.data[1].data * Math.PI / 180,
                     prop.Angles.data[0].data * Math.PI / 180,
                 ],
             }
@@ -254,7 +246,14 @@ export class Model {
         const realVertecies = vtx.vertexindices;
         const realindices = vtx.indices;
 
-        prop.vertecies = realVertecies.map(rv => vertecies[rv]);
+        prop.vertecies = realVertecies.map(rv => {
+            const vert = vertecies[rv];
+            if(!vert) {
+                throw new Error('Vertex doesnt exist');
+            }
+            return vert;
+        });
+
         prop.indices = realindices;
 
         return prop;
