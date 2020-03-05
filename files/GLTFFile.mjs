@@ -118,7 +118,7 @@ export default class GLTFFile extends TextFile {
             ],
             nodes: [],
             meshes: [],
-            cameras: [],
+            // cameras: [],
             materials: [],
             textures: [],
             images: [],
@@ -143,7 +143,7 @@ export default class GLTFFile extends TextFile {
     createBuffer(bufferArray) {
         const buffer = Buffer.from(bufferArray.buffer);
         const gltfBuffer = {
-            byteLength: buffer.byteLength,
+            byteLength: bufferArray.buffer.byteLength,
             uri: "data:application/octet-stream;base64," + buffer.toString('base64')
         }
         return this.asset.buffers.push(gltfBuffer) - 1;
@@ -171,8 +171,7 @@ export default class GLTFFile extends TextFile {
         return nodeIndex;
     }
 
-    createPrimitive(vertecies, indices) {
-
+    createPrimitive(indices, vertecies) {
         const indexCount = indices.length;
         const vertexCount = vertecies.length / 8;
 
@@ -201,17 +200,19 @@ export default class GLTFFile extends TextFile {
             byteStride: byteStride,
         });
 
+        const texBufferByteOffset = type.VEC3.components * type.FLOAT.byteLength;
         const texBufferViewIndex = this.createBufferView({
             buffer: vertexBufferIndex, 
-            byteOffset: type.VEC3.components * type.FLOAT.byteLength, 
-            byteLength: vertexBuffer.byteLength,
+            byteOffset: texBufferByteOffset, 
+            byteLength: vertexBuffer.byteLength - texBufferByteOffset,
             byteStride: byteStride,
         });
 
+        const normalBufferByteOffset = texBufferByteOffset + type.VEC2.components * type.FLOAT.byteLength;
         const normBufferViewIndex = this.createBufferView({
             buffer: vertexBufferIndex, 
-            byteOffset: type.VEC3.components * type.FLOAT.byteLength + type.VEC2.components * type.FLOAT.byteLength,
-            byteLength: vertexBuffer.byteLength,
+            byteOffset: normalBufferByteOffset,
+            byteLength: vertexBuffer.byteLength - normalBufferByteOffset,
             byteStride: byteStride,
         });
 
@@ -227,6 +228,8 @@ export default class GLTFFile extends TextFile {
             bufferView: posBufferViewIndex,
             componentType: type.FLOAT,
             count: vertexCount,
+            max: [ 1000.0, 1000.0, 1000.0 ],
+            min: [ -1000.0, -1000.0, -1000.0 ],
             type: type.VEC3,
         });
 
@@ -273,6 +276,7 @@ export default class GLTFFile extends TextFile {
 
         const image = Object.assign({
             bufferView: imageBufferView,
+            mimeType: "image/png"
         }, options);
 
         const textureSource = this.asset.images.push(image) - 1;
@@ -285,37 +289,30 @@ export default class GLTFFile extends TextFile {
         return this.asset.textures.push(texture) - 1;
     }
 
-    createObjectMesh(object) {
-        // geometry buffer
-        const indices = object.indecies;
-        const vertecies = object.vertecies.filter((v, i) => ((i + 4) % 9));
+    createMaterialFromVTX(objectMaterial) {
 
-        const mesh = {
-            name: object.name,
-            primitives: []
-        };
+        const materialName = objectMaterial.name.toString().replace(/\//g, "_");
 
-        const objectMaterial = object.materials[object.materials.length-1];
+        const existingMaterial = this.getMaterialByName(materialName);
 
-        let texture;
-
-        if(objectMaterial.imageData) {
-            const textureImage = S3Texture.fromDataArray(
-                objectMaterial.imageData, 
-                objectMaterial.format.type, 
-                objectMaterial.format.width, 
-                objectMaterial.format.height
-            );
-            const ddsBuffer = textureImage.toDDS();
-    
-            texture = this.createTexture(ddsBuffer, {
-                mimeType: 'image/vnd-ms.dds',
-                name: objectMaterial.name.toString().replace("/", "_") + "_texture.dds",
-            });
+        if(existingMaterial) {
+            return existingMaterial;
         }
 
-        const material = this.createMaterial({
-            name: objectMaterial.name.toString().replace(/\//g, "_"),
+        const textureImage = S3Texture.fromDataArray(
+            objectMaterial.imageData, 
+            objectMaterial.format.type,
+            objectMaterial.format.width, 
+            objectMaterial.format.height
+        );
+        const ddsBuffer = textureImage.toDDS();
+
+        const texture = this.createTexture(ddsBuffer, {
+            name: materialName + "_texture.dds",
+        });
+
+        return this.createMaterial({
+            name: materialName,
             doubleSided: true,
             alphaMode: "MASK",
             pbrMetallicRoughness: {
@@ -324,17 +321,132 @@ export default class GLTFFile extends TextFile {
                     texCoord: 0
                 },
                 metallicFactor: 0,
-                roughnessFactor: objectMaterial.reflectivity[0]
+                roughnessFactor: 1 - objectMaterial.reflectivity[0]
             }
         });
-        
-        const primitive = this.createPrimitive(vertecies, indices);
+    }
 
-        mesh.primitives.push({
-            attributes: primitive.attributes,
-            indices: primitive.indices,
-            material: material,
-        });
+    getMaterialByName(name) {
+        for(let mat of this.asset.materials) {
+            if(mat.name == name) {
+                return this.asset.materials.indexOf(mat);
+            }
+        }
+    }
+
+    createObjectMesh(object) {
+        // geometry buffer
+        const indices = object.indecies;
+        const vertecies = object.vertecies.map(vert => ([
+            vert.vertex[0], vert.vertex[1], vert.vertex[2], 
+            vert.uv[0], vert.uv[1], 
+            vert.normal[0], vert.normal[1], vert.normal[2], 
+        ])).flat();
+
+        const mesh = {
+            name: object.name,
+            primitives: []
+        };
+
+        // for every index
+            // look at material index
+            // begin new primitve for every new mat index
+
+
+        // splitting the buffer intor material sections
+
+        // let currentMaterial = null;
+        // let byteOffset = 0;
+
+        // for(let i = 0; i < indexBuffer.length; i++) {
+        //     const index = indexBuffer[i];
+        //     const byteIndex = i * indexBuffer.BYTES_PER_ELEMENT;
+
+        //     const vert = object.vertecies[index];
+
+        //     if(currentMaterial != vert.material) {
+        //         currentMaterial = vert.material;
+
+        //         const indexBufferOffset = byteOffset;
+        //         const indexBufferLength = byteIndex - indexBufferOffset;
+
+        //         const vertBufferOffset = byteOffset * 8;
+        //         const vertBufferLength = (byteIndex * 8) - vertBufferOffset;
+
+        //         const indexCount = indexBufferLength / indexBuffer.BYTES_PER_ELEMENT;
+        //         const vertexCount = vertBufferLength / vertexBuffer.BYTES_PER_ELEMENT;
+
+        //         console.log(indexCount);
+
+        //         byteOffset = byteIndex;
+        //     }
+        // }
+
+        let objectMaterial = object.materials[12];
+
+        if(objectMaterial && objectMaterial.imageData) {
+
+            const material = this.createMaterialFromVTX(objectMaterial);
+            const primitive = this.createPrimitive(indices, vertecies);
+            
+            mesh.primitives.push({
+                attributes: primitive.attributes,
+                indices: primitive.indices,
+                material: material,
+            });
+
+        } else {
+            objectMaterial = object.materials[0];
+
+            if(objectMaterial && objectMaterial.imageData) {
+                const material = this.createMaterialFromVTX(objectMaterial);
+                const primitive = this.createPrimitive(indices, vertecies);
+                
+                mesh.primitives.push({
+                    attributes: primitive.attributes,
+                    indices: primitive.indices,
+                    material: material,
+                });
+            }
+        }
+
+        // let currentMaterial = null;
+        // let primVertecies = [];
+        // let primIndecies = [];
+        // let indexOffset = 0;
+        
+        // for(let index of indices) {
+        //     const vert = object.vertecies[index];
+
+        //     if(currentMaterial != vert.material) {
+        //         currentMaterial = vert.material;
+
+        //         indexOffset = index;
+
+        //         const objectMaterial = object.materials[currentMaterial];
+
+        //         if(objectMaterial && objectMaterial.imageData) {
+
+        //             const material = this.createMaterialFromVTX(objectMaterial);
+
+        //             const primitive = this.createPrimitive(primIndecies, primVertecies);
+    
+        //             primVertecies = [];
+        //             primIndecies = [];
+                    
+        //             mesh.primitives.push({
+        //                 attributes: primitive.attributes,
+        //                 indices: primitive.indices,
+        //                 material: material,
+        //             });
+        //         }
+        //     }
+
+        //     // Cant do it like this, order of vertecies would be disorganized
+        //     primVertecies.push(vert);
+
+        //     primIndecies.push(index - indexOffset);
+        // }
 
         // mesh
         return this.createMesh(mesh);
@@ -359,8 +471,7 @@ export default class GLTFFile extends TextFile {
             scale: [
                 object.scale[0],
                 object.scale[1],
-                object.scale[2],
-                1
+                object.scale[2]
             ],
             rotation: rotationToQuaternion(
                 object.rotation[0],

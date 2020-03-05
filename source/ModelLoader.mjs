@@ -66,11 +66,7 @@ export class Model {
 
         this.geometry.add({
             name: mapName,
-            vertecies: mesh.vertecies.map(vert => ([
-                vert.vertex[0], vert.vertex[1], vert.vertex[2],
-                vert.uv[0], vert.uv[1], vert.uv[2],
-                vert.normal[0], vert.normal[1], vert.normal[2]
-            ])).flat(),
+            vertecies: mesh.vertecies,
             indecies: mesh.indecies,
             materials: materials,
             scale: [1, 1, 1],
@@ -165,7 +161,7 @@ export class Model {
 
                 type.listeners.push(propData => {
                     propGeometry.materials = propData.textures;
-                    propGeometry.vertecies = propData.vertecies.flat();
+                    propGeometry.vertecies = propData.vertecies;
                     propGeometry.indecies = propData.indecies;
                     this.geometry.add(propGeometry);
                 });

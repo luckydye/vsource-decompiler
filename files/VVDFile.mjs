@@ -60,19 +60,23 @@ export default class VVDFile extends BinaryFile {
             byteOffset += 16;
             const vert = this.unserialize(vvd.view, byteOffset, Structs.mstudiovertex_t);
             byteOffset = vert.byteOffset;
-            vertecies.push([
-                -vert.data.pos_x.data,
-                vert.data.pos_z.data,
-                vert.data.pos_y.data,
-                
-                vert.data.tex_u.data,
-                vert.data.tex_v.data,
-                0,
-
-                vert.data.norm_x.data,
-                -vert.data.norm_z.data,
-                -vert.data.norm_y.data,
-            ]);
+            vertecies.push({
+                vertex: [
+                    -vert.data.pos_x.data,
+                    vert.data.pos_z.data,
+                    vert.data.pos_y.data,
+                ], 
+                uv: [
+                    vert.data.tex_u.data,
+                    vert.data.tex_v.data,
+                ],
+                normal: [
+                    vert.data.norm_x.data,
+                    -vert.data.norm_z.data,
+                    -vert.data.norm_y.data,
+                ],
+                material: 0
+            });
         }
 
         return vertecies;
