@@ -60,10 +60,9 @@ export class Model {
             if(!mesh) continue;
 
             const material = getMapTexture(mesh.material);
-            const objectName = material ? mapName + "__" + mesh.material : mapName;
 
             this.geometry.add({
-                name: objectName,
+                name: mapName + "_" + meshes.indexOf(mesh),
                 vertecies: mesh.vertecies.flat(),
                 indices: mesh.indices,
                 material: material,
