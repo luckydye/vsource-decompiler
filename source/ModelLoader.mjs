@@ -82,35 +82,35 @@ export class Model {
             });
         }
 
-        // log('Load map props...');
-        // await this.loadMapProps(map.bsp.gamelumps.sprp, (type, prop, propData) => {
+        log('Load map props...');
+        await this.loadMapProps(map.bsp.gamelumps.sprp, (type, prop, propData) => {
 
-        //     const propGeometry = {
-        //         vertecies: propData.vertecies.flat(),
-        //         indices: propData.indices,
-        //         name: type.name.replace(/\\+||\/+/g, "_"),
-        //         material: propData.textures[0],
-        //         scale: [
-        //             prop.UniformScale || 1, 
-        //             prop.UniformScale || 1, 
-        //             prop.UniformScale || 1
-        //         ],
-        //         origin: [0, 0, 0],
-        //         position: [
-        //             -prop.Origin.data[0].data,
-        //             prop.Origin.data[2].data,
-        //             prop.Origin.data[1].data,
-        //         ],
-        //         rotation: [
-        //             -prop.Angles.data[2].data * Math.PI / 180,
-        //             prop.Angles.data[1].data * Math.PI / 180,
-        //             prop.Angles.data[0].data * Math.PI / 180,
-        //         ],
-        //     }
+            const propGeometry = {
+                vertecies: propData.vertecies.flat(),
+                indices: propData.indices,
+                name: type.name.replace(/\\+|\/+/g, "_"),
+                material: propData.textures[0],
+                scale: [
+                    prop.UniformScale || 1, 
+                    prop.UniformScale || 1, 
+                    prop.UniformScale || 1
+                ],
+                origin: [0, 0, 0],
+                position: [
+                    -prop.Origin.data[0].data,
+                    prop.Origin.data[2].data,
+                    prop.Origin.data[1].data,
+                ],
+                rotation: [
+                    -prop.Angles.data[2].data * Math.PI / 180,
+                    prop.Angles.data[1].data * Math.PI / 180,
+                    prop.Angles.data[0].data * Math.PI / 180,
+                ],
+            }
 
-        //     this.geometry.add(propGeometry);
-        // });
-        // log('Done loading map props.');
+            this.geometry.add(propGeometry);
+        });
+        log('Done loading map props.');
     }
 
     async loadMapTextures(textureArray) {
