@@ -225,10 +225,21 @@ export class Model {
             const vmt = VMTFile.fromDataArray(await vmtFile.arrayBuffer());
             // not used right now:
             // prop.materials.push(vmt);
-    
-            // TODO: texPath != .vtx path, look harder! in the vmt?
 
-            const vtfFile = await fileSystem.getFile(`${texPath}.vtf`);
+            const vertexlit = vmt.data.vertexlitgeneric;
+            const lightmapped = vmt.data.lightmappedgeneric;
+
+            let texture;
+
+            if(vertexlit) {
+                texture = vertexlit.$basetexture.replace(/\\+|\/+/g, "/");
+            } else if(lightmapped) {
+                texture = lightmapped.$basetexture.replace(/\\+|\/+/g, "/");
+            } else {
+                texture = texPath.toString().replace(/\\+|\/+/g, "/");
+            }
+    
+            const vtfFile = await fileSystem.getFile(texture.replace('.vtf', '') + '.vtf');
             const vtf = VTFFile.fromDataArray(await vtfFile.arrayBuffer());
             vtf.name = texPath;
             prop.textures.push(vtf);
