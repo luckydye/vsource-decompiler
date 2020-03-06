@@ -33,6 +33,11 @@ export default class VMTFile extends BinaryFile {
         let currentClass = null;
 
         for(let line of lines) {
+
+            // skip whitespace lines
+            if(line.match(/^\s+$/g))
+                continue;
+
             if(line[0] == "{") {
                 blockIndex++;
                 insideBlock = true;

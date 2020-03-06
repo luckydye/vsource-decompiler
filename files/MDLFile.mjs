@@ -299,6 +299,7 @@ export default class MDLFile extends BinaryFile {
         mdl.models = [];
         mdl.meshes = [];
         mdl.textures = [];
+        mdl.texturePaths = [];
         mdl.skins = [];
 
         // meshes
@@ -316,7 +317,6 @@ export default class MDLFile extends BinaryFile {
 
         // textures
         let byteOffset = mdl.header.texture_offset.data;
-
         for(let t = 0; t < mdl.header.texture_count.data; t++) {
             const part = this.unserialize(mdl.view, byteOffset, MDL.mstudiotexture_t);
             const name_offset = part.data.name_offset.data;
@@ -330,17 +330,14 @@ export default class MDLFile extends BinaryFile {
             mdl.textures.push(tex);
         }
 
-        // Is this right??:
-        // expectd: putting the path attr into every mdl.textures[i]
+        // texture paths
         for(let i = 0; i < mdl.header.texturePathCount; i++) {
             const texPathOffset = this.unserialize(mdl.view, mdl.header.texturePathOffset, { offset: 'int' });
             const texPathString = this.unserialize(mdl.view, texPathOffset.data.offset, {
                 path: `unsigned char`,
-            });
+            }).data;
 
-            if(mdl.textures[i]) {
-                mdl.textures[i].path = mdl.textures[i].name;
-            }
+            mdl.texturePaths.push(texPathString.path.toString());
         }
 
         // skins

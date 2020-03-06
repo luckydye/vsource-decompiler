@@ -19,17 +19,6 @@ export class Model {
     constructor() {
         this.geometry = new Set();
     }
-    
-    registerProp(prop) {
-        if(!propTypes.has(prop.PropType)) {
-            propTypes.set(prop.PropType, {
-                name: prop.PropType,
-                mdlPath: prop.PropType,
-                vvdPath: prop.PropType.replace('.mdl', '.vvd'),
-                listeners: [],
-            });
-        }
-    }
 
     async loadMap(mapName) {
         this.name = mapName;
@@ -45,15 +34,25 @@ export class Model {
         fileSystem.attatchPakfile(Buffer.from(bsp.pakfile.buffer));
 
         log('Load map textures...');
-        const textures = await this.loadMapTextures(bsp.textures);
+
+        const textures = new Map();
+            
+        for(let texture of bsp.textures) {
+            const mat = await this.loadMaterial(texture.toLocaleLowerCase()).catch(err => {
+                error(err);
+            });
+
+            if(mat) {
+                textures.set(texture, mat);
+            }
+        }
+
         log(`${textures.size} of ${bsp.textures.length} textures loaded.`);
         
         // world
         function getMapTexture(textureIndex) {
             const tex = bsp.textures[textureIndex];
-            const vtf = textures.get(tex);
-
-            return vtf;
+            return textures.get(tex);
         }
 
         for(let mesh of meshes) {
@@ -74,87 +73,50 @@ export class Model {
         }
 
         log('Load map props...');
-        await this.loadMapProps(bsp.gamelumps.sprp, (type, prop, propData) => {
 
-            const propGeometry = {
-                vertecies: propData.vertecies.flat(),
-                indices: propData.indices,
-                name: type.name.replace(/\\+|\/+/g, "_"),
-                material: propData.textures[0],
-                scale: [
-                    prop.UniformScale.valueOf() || 1, 
-                    prop.UniformScale.valueOf() || 1, 
-                    prop.UniformScale.valueOf() || 1
-                ],
-                origin: [0, 0, 0],
-                position: [
-                    -prop.Origin.data[0].data,
-                    prop.Origin.data[2].data,
-                    prop.Origin.data[1].data,
-                ],
-                rotation: [
-                    prop.Angles.data[0].data * Math.PI / 180,
-                    prop.Angles.data[1].data * Math.PI / 180,
-                    prop.Angles.data[2].data * Math.PI / 180,
-                ],
+        await this.loadMapProps(bsp.gamelumps.sprp, (type, prop, propMeshes) => {
+
+            for(let propData of propMeshes) {
+
+                const propGeometry = {
+                    name: type.name.replace(/\\+|\/+/g, "_") + '_' + propMeshes.indexOf(propData),
+                    vertecies: propData.vertecies.flat(),
+                    indices: propData.indices,
+                    material: propData.material,
+                    scale: [
+                        prop.UniformScale.valueOf() || 1, 
+                        prop.UniformScale.valueOf() || 1, 
+                        prop.UniformScale.valueOf() || 1
+                    ],
+                    origin: [0, 0, 0],
+                    position: [
+                        -prop.Origin.data[0].data,
+                        prop.Origin.data[2].data,
+                        prop.Origin.data[1].data,
+                    ],
+                    rotation: [
+                        prop.Angles.data[0].data * Math.PI / 180,
+                        prop.Angles.data[1].data * Math.PI / 180,
+                        prop.Angles.data[2].data * Math.PI / 180,
+                    ],
+                }
+    
+                this.geometry.add(propGeometry);
             }
-
-            this.geometry.add(propGeometry);
         });
+
         log('Done loading map props.');
     }
-
-    async loadMapTextures(textureArray) {
-        return new Promise(async (resolve, reject) => {
-            const textures = new Map();
-            
-            for(let texture of textureArray) {
-
-                const resPath = `${texture.toLocaleLowerCase()}.vmt`;
-                await fileSystem.getFile(resPath).then(async vmtFile => {
-                    const vmt = VMTFile.fromDataArray(await vmtFile.arrayBuffer());
-
-                    if(vmt && vmt.data.lightmappedgeneric) {
-                        const materialTexture = vmt.data.lightmappedgeneric['$basetexture'];
     
-                        if(materialTexture) {
-                            const resPath = `${materialTexture.toLocaleLowerCase()}.vtf`;
-                            await fileSystem.getFile(resPath).then(async res => {
-                                const vtf = VTFFile.fromDataArray(await res.arrayBuffer());
-                                vtf.name = materialTexture.toLocaleLowerCase().replace(/\\|\//g, "/");
-                                textures.set(texture, vtf);
-                            }).catch(err => {
-                                error('Missing map texture ' + resPath);
-                                log(err);
-                                console.log('');
-                            });
-                        }
-                    }
-                    if(vmt && vmt.data.worldvertextransition) {
-                        const materialTexture = vmt.data.worldvertextransition['$basetexture'];
-    
-                        if(materialTexture) {
-                            const resPath = `${materialTexture.toLocaleLowerCase()}.vtf`;
-                            await fileSystem.getFile(resPath).then(async res => {
-                                const vtf = VTFFile.fromDataArray(await res.arrayBuffer());
-                                vtf.name = materialTexture.toLocaleLowerCase().replace(/\\|\//g, "/");
-                                textures.set(texture, vtf);
-                            }).catch(err => {
-                                error('Missing map texture ' + resPath);
-                                log(err);
-                                console.log('');
-                            });
-                        }
-                    }
-
-                    // want to check if texture loaded correctly? check with "!textures.has(texture)"
-                }).catch(err => {
-                    console.error(err);
-                })
-            }
-
-            resolve(textures);
-        })
+    registerProp(prop) {
+        if(!propTypes.has(prop.PropType)) {
+            propTypes.set(prop.PropType, {
+                name: prop.PropType,
+                mdlPath: prop.PropType,
+                vvdPath: prop.PropType.replace('.mdl', '.vvd'),
+                listeners: [],
+            });
+        }
     }
 
     async loadMapProps(props, callback) {
@@ -178,8 +140,8 @@ export class Model {
 
             for(let [_, propType] of propTypes) {
 
-                this.loadProp(propType.mdlPath).then(p => {
-                    for(let listener of propType.listeners) listener(p);
+                this.loadProp(propType.mdlPath).then(meshes => {
+                    for(let listener of propType.listeners) listener(meshes);
                     
                 }).catch(err => {
                     console.log('');
@@ -202,6 +164,50 @@ export class Model {
         })
     }
 
+    async loadMaterial(materialName) {
+
+        if(materialName == undefined) {
+            throw new Error('Material name undefined.');
+        }
+
+        const vmtFile = await fileSystem.getFile(`${materialName}.vmt`);
+        let vmt = VMTFile.fromDataArray(await vmtFile.arrayBuffer());
+
+        const patch = vmt.data.patch;
+        
+        if(patch && patch.include) {
+            const vmtFile = await fileSystem.getFile(patch.include);
+            vmt = VMTFile.fromDataArray(await vmtFile.arrayBuffer());
+        }
+        
+        const vertexlit = vmt.data.vertexlitgeneric;
+        const lightmapped = vmt.data.lightmappedgeneric;
+        const unlit = vmt.data.unlitgeneric;
+        const world = vmt.data.worldvertextransition;
+
+        const shader = vertexlit || lightmapped || unlit || world;
+        if(!shader) {
+            throw new Error('Unknown material.');
+        }
+
+        const texture = shader['$basetexture'];
+
+        if(!texture) {
+            throw new Error('Missing texture.');
+        }
+
+        const vtfFile = await fileSystem.getFile(texture.replace('.vtf', '') + '.vtf');
+        const vtf = VTFFile.fromDataArray(await vtfFile.arrayBuffer());
+        vtf.name = texture;
+
+        return {
+            name: materialName,
+            translucent: shader['$translucent'],
+            texture: vtf,
+            material: vmt,
+        }
+    }
+
     async loadProp(propType) {
         
         const mdlPath = propType;
@@ -210,7 +216,6 @@ export class Model {
 
         const prop = {
             materials: [],
-            textures: []
         };
 
         // mdl
@@ -219,35 +224,9 @@ export class Model {
 
         // textures and materials
         for(let tex of mdl.textures) {
-            const texPath = tex.path;
-
-            if(texPath == undefined) {
-                continue;
-            }
-
-            const vmtFile = await fileSystem.getFile(`${texPath}.vmt`);
-
-            const vmt = VMTFile.fromDataArray(await vmtFile.arrayBuffer());
-            // not used right now:
-            // prop.materials.push(vmt);
-
-            const vertexlit = vmt.data.vertexlitgeneric;
-            const lightmapped = vmt.data.lightmappedgeneric;
-
-            let texture;
-
-            if(vertexlit) {
-                texture = vertexlit.$basetexture.replace(/\\+|\/+/g, "/");
-            } else if(lightmapped) {
-                texture = lightmapped.$basetexture.replace(/\\+|\/+/g, "/");
-            } else {
-                texture = texPath.toString().replace(/\\+|\/+/g, "/");
-            }
-    
-            const vtfFile = await fileSystem.getFile(texture.replace('.vtf', '') + '.vtf');
-            const vtf = VTFFile.fromDataArray(await vtfFile.arrayBuffer());
-            vtf.name = texPath;
-            prop.textures.push(vtf);
+            const materialName = tex.name.toString();
+            const mat = await this.loadMaterial(materialName);
+            prop.materials.push(mat);
         }
 
         // geometry info
@@ -258,20 +237,26 @@ export class Model {
         const vtxFile = await fileSystem.getFile(vtxPath);
         const vtx = VTXFile.fromDataArray(await vtxFile.arrayBuffer());
 
-        const realVertecies = vtx.vertexindices;
-        const realindices = vtx.indices;
+        const propMeshes = [];
+        let meshIndex = 0;
 
-        prop.vertecies = realVertecies.map(rv => {
-            const vert = vertecies[rv];
-            if(!vert) {
-                throw new Error('Vertex doesnt exist');
-            }
-            return vert;
-        });
+        for(let mesh of vtx.meshes) {
+            propMeshes.push({
+                material: prop.materials[meshIndex],
+                indices: mesh.indices,
+                vertecies: mesh.vertexindices.map(rv => {
+                    const vert = vertecies[rv];
+                    if(!vert) {
+                        throw new Error('Vertex doesnt exist');
+                    }
+                    return vert;
+                })
+            });
 
-        prop.indices = realindices;
+            meshIndex++;
+        }
 
-        return prop;
+        return propMeshes;
     }
 
     static loadVPK(vpkPath) {

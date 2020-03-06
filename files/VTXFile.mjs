@@ -77,23 +77,13 @@ export default class VTXFile extends BinaryFile {
         const parts = this.unserializeArray(vtx.view, bodyPartOffset, BodyPartHeader_t, bodyPartCount);
 
         vtx.bodyparts = parts;
-        vtx.indices = [];
-        vtx.vertexindices = [];
+        vtx.meshes = [];
 
         let meshVertexOffset = 0;
-
-        console.log(vtx.header);
-
-        console.log('vtx.bodyparts');
-        console.log(bodyPartCount);
-        console.log(vtx.bodyparts);
 
         for(let part of vtx.bodyparts) {
             const modelOffset = bodyPartOffset + part.modelOffset.data;
             const models = this.unserializeArray(vtx.view, modelOffset, ModelHeader_t, part.modelCount.data);
-
-            console.log('models');
-            console.log(models);
 
             for(let mdl of models) {
                 const lodOffset = modelOffset + mdl.lodOffset.data;
@@ -103,34 +93,30 @@ export default class VTXFile extends BinaryFile {
                 for(let lod of lods) {
                     const meshOffset = lodOffset + lod.meshOffset.data;
                     const meshes = this.unserializeArray(vtx.view, meshOffset, MeshHeader_t, lod.numMeshes.data);
-                    
-                    console.log('meshes');
-                    console.log(meshes);
 
                     for(let mesh of meshes) {
                         const stripsOffset = mesh.byteOffset + mesh.stripGroupHeaderOffset.data;
                         const stripGroups = this.unserializeArray(vtx.view, stripsOffset, StripGroupHeader_t, mesh.numStripGroups.data);
-
-                        // where do props get texture index from?
-                        console.log('mesh');
-                        console.log(mesh);
-                        process.exit();
 
                         for(let stripGroup of stripGroups) {
                             const indexOffset = stripGroup.byteOffset + stripGroup.indexOffset.data;
                             const indexCount = stripGroup.numIndices.data;
 
                             const vertOffset = stripGroup.byteOffset + stripGroup.vertOffset.data;
-                            const vertCount = stripGroup.numVerts.data;
+                            const vertexCount = stripGroup.numVerts.data;
         
                             const indices = this.unserializeArray(vtx.view, indexOffset, { index: 'unsigned short' }, indexCount);
-                            const vertecies = this.unserializeArray(vtx.view, vertOffset, Vertex_t, vertCount);
+                            const vertecies = this.unserializeArray(vtx.view, vertOffset, Vertex_t, vertexCount);
 
                             // collect indices
-                            vtx.indices.push(indices.map(i => i.index.data + meshVertexOffset));
-                            vtx.vertexindices.push(vertecies.map(v => v.origMeshVertID.data + meshVertexOffset));
+                            vtx.meshes.push({
+                                indexCount: indexCount,
+                                vertexCount: vertexCount,
+                                indices: indices.map(i => i.index.data),
+                                vertexindices: vertecies.map(v => v.origMeshVertID.data + meshVertexOffset),
+                            });
 
-                            meshVertexOffset += vertCount;
+                            meshVertexOffset += vertexCount;
                         }
                     }
 
@@ -139,9 +125,6 @@ export default class VTXFile extends BinaryFile {
                 }
             }
         }
-
-        vtx.indices = vtx.indices.flat();
-        vtx.vertexindices = vtx.vertexindices.flat();
 
         return vtx;
     }

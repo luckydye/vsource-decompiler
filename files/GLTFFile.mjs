@@ -291,9 +291,12 @@ export default class GLTFFile extends TextFile {
         return this.asset.textures.push(texture) - 1;
     }
 
-    createMaterialFromVTX(objectMaterial) {
+    createMaterialFromObjectMaterial(objectMaterial) {
 
         const materialName = objectMaterial.name.toString().replace(/\//g, "_");
+
+        const baseTexture = objectMaterial.texture;
+        const translucent = objectMaterial.translucent;
 
         const existingMaterial = this.getMaterialByName(materialName);
 
@@ -302,10 +305,10 @@ export default class GLTFFile extends TextFile {
         }
 
         const textureImage = S3Texture.fromDataArray(
-            objectMaterial.imageData, 
-            objectMaterial.format.type,
-            objectMaterial.format.width, 
-            objectMaterial.format.height
+            baseTexture.imageData, 
+            baseTexture.format.type,
+            baseTexture.format.width, 
+            baseTexture.format.height
         );
         const ddsBuffer = textureImage.toDDS();
 
@@ -316,14 +319,16 @@ export default class GLTFFile extends TextFile {
         return this.createMaterial({
             name: materialName,
             doubleSided: true,
-            alphaMode: "MASK",
+            alphaMode: translucent ? "MASK" : "OPAQUE",
             pbrMetallicRoughness: {
                 baseColorTexture: {
                     index: texture,
                     texCoord: 0
                 },
                 metallicFactor: 0,
-                roughnessFactor: 1 - objectMaterial.reflectivity[0]
+                roughnessFactor: 1 - ((baseTexture.reflectivity[0] +
+                                       baseTexture.reflectivity[1] +
+                                       baseTexture.reflectivity[2]) / 3)
             }
         });
     }
@@ -348,13 +353,8 @@ export default class GLTFFile extends TextFile {
 
         let objectMaterial = object.material;
 
-        if(objectMaterial && !objectMaterial.imageData) {
-            throw new Error('Missing texture imageData');
-        }
-
-        if(objectMaterial && objectMaterial.imageData) {
-
-            const material = this.createMaterialFromVTX(objectMaterial);
+        if(objectMaterial) {
+            const material = this.createMaterialFromObjectMaterial(objectMaterial);
             const primitive = this.createPrimitive(indices, vertecies);
             
             mesh.primitives.push({

@@ -41,20 +41,23 @@ const Commands = {
             log('Loading prop.');
     
             const model = new Model();
-            const propData = await model.loadProp(propname + '.mdl');
+            const propMeshes = await model.loadProp(propname + '.mdl');
 
-            const propGeometry = {
-                vertecies: propData.vertecies.flat(),
-                indices: propData.indices,
-                name: propname,
-                material: propData.textures[0],
-                scale: [0.0125, 0.0125, 0.0125],
-                origin: [0, 0, 0],
-                position: [0, 0, 0],
-                rotation: [0, 0, 0],
+            for(let propData of propMeshes) {
+
+                const propGeometry = {
+                    name: propname + '_' + propMeshes.indexOf(propData),
+                    vertecies: propData.vertecies.flat(),
+                    indices: propData.indices,
+                    material: propData.material,
+                    scale: [0.0125, 0.0125, 0.0125],
+                    origin: [0, 0, 0],
+                    position: [0, 0, 0],
+                    rotation: [0, 0, 0],
+                }
+    
+                model.geometry.add(propGeometry);
             }
-
-            model.geometry.add(propGeometry);
 
             log('Prop decompiled.');
             
