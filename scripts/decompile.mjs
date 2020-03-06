@@ -37,6 +37,8 @@ const Commands = {
                 error(`Resource folder "${resourcePath}" not found.`);
                 return;
             }
+
+            log('Loading prop.');
     
             const model = new Model();
             const propData = await model.loadProp(propname + '.mdl');
@@ -54,9 +56,13 @@ const Commands = {
 
             model.geometry.add(propGeometry);
 
+            log('Prop decompiled.');
+            
             const exportFileName = outputFilePath ? outputFilePath : propname;
             const gltfFile = GLTFFile.fromGeometry(model.geometry);
             fs.writeFileSync(exportFileName + '.gltf', gltfFile.toString(), 'utf8');
+
+            log('Saved prop to file ' + exportFileName + '.gltf');
 
             return true;
         }

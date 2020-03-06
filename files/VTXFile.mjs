@@ -82,25 +82,39 @@ export default class VTXFile extends BinaryFile {
 
         let meshVertexOffset = 0;
 
+        console.log(vtx.header);
+
+        console.log('vtx.bodyparts');
+        console.log(bodyPartCount);
+        console.log(vtx.bodyparts);
+
         for(let part of vtx.bodyparts) {
             const modelOffset = bodyPartOffset + part.modelOffset.data;
             const models = this.unserializeArray(vtx.view, modelOffset, ModelHeader_t, part.modelCount.data);
+
+            console.log('models');
+            console.log(models);
 
             for(let mdl of models) {
                 const lodOffset = modelOffset + mdl.lodOffset.data;
                 const lods = this.unserializeArray(vtx.view, lodOffset, ModelLODHeader_t, mdl.lodCount.data);
 
+                
                 for(let lod of lods) {
                     const meshOffset = lodOffset + lod.meshOffset.data;
                     const meshes = this.unserializeArray(vtx.view, meshOffset, MeshHeader_t, lod.numMeshes.data);
+                    
+                    console.log('meshes');
+                    console.log(meshes);
 
                     for(let mesh of meshes) {
                         const stripsOffset = mesh.byteOffset + mesh.stripGroupHeaderOffset.data;
                         const stripGroups = this.unserializeArray(vtx.view, stripsOffset, StripGroupHeader_t, mesh.numStripGroups.data);
 
                         // where do props get texture index from?
-                        // console.log(mesh);
-                        // process.exit();
+                        console.log('mesh');
+                        console.log(mesh);
+                        process.exit();
 
                         for(let stripGroup of stripGroups) {
                             const indexOffset = stripGroup.byteOffset + stripGroup.indexOffset.data;
