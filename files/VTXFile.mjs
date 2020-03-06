@@ -99,8 +99,8 @@ export default class VTXFile extends BinaryFile {
                         const stripGroups = this.unserializeArray(vtx.view, stripsOffset, StripGroupHeader_t, mesh.numStripGroups.data);
 
                         // where do props get texture index from?
-                        console.log(mesh);
-                        process.exit();
+                        // console.log(mesh);
+                        // process.exit();
 
                         for(let stripGroup of stripGroups) {
                             const indexOffset = stripGroup.byteOffset + stripGroup.indexOffset.data;

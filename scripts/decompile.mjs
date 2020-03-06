@@ -21,7 +21,48 @@ global.error = (...str) => {
 
 const Commands = {
 
-    decompile: {
+    prop: {
+        usage: "prop <prop name>",
+        description: "get prop",
+
+        async execute(propname, resourcePath = "csgo/", outputFilePath) {
+            if(!propname) {
+                error('Provide a prop file.');
+                return;
+            }
+
+            if(resourcePath && fs.existsSync(path.resolve(resourcePath))) {
+                Model.resourceRoot = resourcePath;
+            } else if(resourcePath) {
+                error(`Resource folder "${resourcePath}" not found.`);
+                return;
+            }
+    
+            const model = new Model();
+            const propData = await model.loadProp(propname + '.mdl');
+
+            const propGeometry = {
+                vertecies: propData.vertecies.flat(),
+                indices: propData.indices,
+                name: propname,
+                material: propData.textures[0],
+                scale: [0.0125, 0.0125, 0.0125],
+                origin: [0, 0, 0],
+                position: [0, 0, 0],
+                rotation: [0, 0, 0],
+            }
+
+            model.geometry.add(propGeometry);
+
+            const exportFileName = outputFilePath ? outputFilePath : propname;
+            const gltfFile = GLTFFile.fromGeometry(model.geometry);
+            fs.writeFileSync(exportFileName + '.gltf', gltfFile.toString(), 'utf8');
+
+            return true;
+        }
+    },
+
+    map: {
         usage: 'decompile <map_name> [<ouput_path>] [<resource_path>]',
         description: 'Decompile CS:GO maps from bsp format.',
 

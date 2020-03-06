@@ -178,7 +178,7 @@ export class Model {
 
             for(let [_, propType] of propTypes) {
 
-                this.loadProp(propType).then(p => {
+                this.loadProp(propType.mdlPath).then(p => {
                     for(let listener of propType.listeners) listener(p);
                     
                 }).catch(err => {
@@ -203,13 +203,18 @@ export class Model {
     }
 
     async loadProp(propType) {
+        
+        const mdlPath = propType;
+        const vddPath = propType.replace('.mdl', '.vvd');
+        const vtxPath = propType.replace('.mdl', '.dx90.vtx');
+
         const prop = {
             materials: [],
             textures: []
         };
 
         // mdl
-        const mdlFile = await fileSystem.getFile(propType.mdlPath);
+        const mdlFile = await fileSystem.getFile(mdlPath);
         const mdl = MDLFile.fromDataArray(await mdlFile.arrayBuffer());
 
         // textures and materials
@@ -246,11 +251,11 @@ export class Model {
         }
 
         // geometry info
-        const vvdFile = await fileSystem.getFile(propType.vvdPath);
+        const vvdFile = await fileSystem.getFile(vddPath);
         const vvd = VVDFile.fromDataArray(await vvdFile.arrayBuffer());
         const vertecies = vvd.convertToMesh();
 
-        const vtxFile = await fileSystem.getFile(propType.vvdPath.replace('.vvd', '.dx90.vtx'));
+        const vtxFile = await fileSystem.getFile(vtxPath);
         const vtx = VTXFile.fromDataArray(await vtxFile.arrayBuffer());
 
         const realVertecies = vtx.vertexindices;
