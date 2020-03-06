@@ -98,7 +98,8 @@ const Structs = {
         mins_maxs: 'vector, vector',
         origin: 'vector',
         headnode: 'int',
-        firstface_numfaces: 'int, int'
+        firstface: 'int',
+        numfaces: 'int'
     },
     ddispinfo_t: {
         startPosition: 'vector',
@@ -531,6 +532,10 @@ export default class BSPFile extends BinaryFile {
         bsp.texdatastringtable = this.unserializeArray(lumps[this.LUMP.TEXDATA_STRING_TABLE], 0, { tex: 'int' });
         bsp.textures = this.unserializeTextureDataLump(lumps[this.LUMP.TEXDATA_STRING_DATA], bsp.texdatastringtable);
         
+        // brushes
+        // bsp.brushes = this.unserializeArray(lumps[this.LUMP.BRUSHES], 0, this.STRUCT.dbrush_t);
+        // bsp.brushsides = this.unserializeArray(lumps[this.LUMP.BRUSHSIDES], 0, this.STRUCT.dbrushside_t);
+        
         // displacements
         // bsp.displacements = this.unserializeArray(lumps[this.LUMP.DISPINFO], 0, this.STRUCT.ddispinfo_t);
         // bsp.displacementverts = this.unserializeArray(lumps[this.LUMP.DISP_VERTS], 0, this.STRUCT.dDispVert);
@@ -566,83 +571,126 @@ export default class BSPFile extends BinaryFile {
         const edges = this.edges;
         const surfedges = this.surfedges;
         const vertecies = this.vertecies;
-        const faces = this.faces;
+        const mapFaces = this.faces;
         const texInfos = this.texInfo;
+        const models = this.models;
+        const entities = this.entities;
 
         const meshes = [];
-        
-        // TODO: Split faces into texture mapped meshes
-        for(let face of faces) {
-            
-            const plane = planes[face.planenum.data];
-            
-            const textureInfo = this.texinfo[face.texinfo.data];
-            const textureData = this.texdata[textureInfo.texdata.data];
-            const textureIndex = textureData.nameStringTableID.data;
-            const textureFlag = textureInfo.flags.data;
 
-            meshes[textureIndex] = meshes[textureIndex] || {
-                indices: [],
-                vertecies: [],
-                material: textureIndex,
-                currentVertexIndex: 0,
-            };
+        const convertModelToMesh = (model, position) => {
 
-            const currentVertexIndex = meshes[textureIndex].currentVertexIndex;
-
-            switch(textureFlag) {
-                case 0: break;
-                case TextureFlags.SURF_BUMPLIGHT: break;
-                default: continue;
-            }
-            
-            const faces = face.side.data;
-            const normal = plane.normal.data;
-            const faceSurfedges = surfedges.slice(face.firstedge.data, face.firstedge.data + face.numedges.data);
-
-            const faceEdges = faceSurfedges.map(surfEdge => {
-                let edge = edges[Math.abs(surfEdge.edge.data)].v.data;
-                if(surfEdge.edge.data < 0) {
-                    edge = edge.reverse();
+            const origin = [
+                model.origin.data[0] + position[0],
+                model.origin.data[1] + position[1],
+                model.origin.data[2] + position[2]
+            ]
+    
+            const firstFace = model.firstface;
+            const faceCount = model.numfaces;
+    
+            const faces = mapFaces.slice(firstFace, firstFace + faceCount);
+    
+            for(let face of faces) {
+                
+                const plane = planes[face.planenum.data];
+                
+                const textureInfo = this.texinfo[face.texinfo.data];
+                const textureData = this.texdata[textureInfo.texdata.data];
+                const textureIndex = textureData.nameStringTableID.data;
+                const textureFlag = textureInfo.flags.data;
+    
+                meshes[textureIndex] = meshes[textureIndex] || {
+                    indices: [],
+                    vertecies: [],
+                    material: textureIndex,
+                    currentVertexIndex: 0,
+                };
+    
+                const currentVertexIndex = meshes[textureIndex].currentVertexIndex;
+    
+                switch(textureFlag) {
+                    case 0: break;
+                    case TextureFlags.SURF_BUMPLIGHT: break;
+                    default: continue;
                 }
-                return edge;
-            });
-
-            const verts = [];
-            const indexes = [];
-
-            for(let edge of faceEdges) {
-                let vertindices = edge;
-                verts.push(vertecies[vertindices[0]]);
+                
+                const faces = face.side.data;
+                const normal = plane.normal.data;
+                const faceSurfedges = surfedges.slice(face.firstedge.data, face.firstedge.data + face.numedges.data);
+    
+                const faceEdges = faceSurfedges.map(surfEdge => {
+                    let edge = edges[Math.abs(surfEdge.edge.data)].v.data;
+                    if(surfEdge.edge.data < 0) {
+                        edge = edge.reverse();
+                    }
+                    return edge;
+                });
+    
+                const verts = [];
+                const indexes = [];
+    
+                for(let edge of faceEdges) {
+                    let vertindices = edge;
+                    verts.push(vertecies[vertindices[0]]);
+                }
+    
+                const numberOfindices = (verts.length - 2) * 3;
+    
+                for(let i = 0; i < numberOfindices / 3; i++) {
+                    indexes.push(currentVertexIndex + 0);
+                    indexes.push(currentVertexIndex + 1 + i);
+                    indexes.push(currentVertexIndex + 2 + i);
+                }
+    
+                meshes[textureIndex].currentVertexIndex += verts.length;
+    
+                const tv = textureInfo.textureVecs.data;
+    
+                const parsedVertecies = verts.map(v => ([
+                    -v.x.data + -origin[0], 
+                    v.z.data + origin[2], 
+                    v.y.data + origin[1],
+    
+                    (tv[0][0] * v.x.data + tv[0][1] * v.y.data + tv[0][2] * v.z.data + tv[0][3]) / textureData.width_height_0,
+                    (tv[1][0] * v.x.data + tv[1][1] * v.y.data + tv[1][2] * v.z.data + tv[1][3]) / textureData.width_height_1,
+    
+                    normal[0].valueOf(), 
+                    -normal[2].valueOf(), 
+                    -normal[1].valueOf(),
+                ]));
+    
+                meshes[textureIndex].vertecies.push(...parsedVertecies);
+                meshes[textureIndex].indices.push(...indexes);
             }
+        }
 
-            const numberOfindices = (verts.length - 2) * 3;
+        for(let entity of entities) {
+            switch(entity.classname) {
+                case 'func_brush':
+                    const model = entity.model;
+                    const origin = entity.origin || [0, 0, 0];
+                    const angles = entity.angles || [0, 0, 0];
 
-            for(let i = 0; i < numberOfindices / 3; i++) {
-                indexes.push(currentVertexIndex + 0);
-                indexes.push(currentVertexIndex + 1 + i);
-                indexes.push(currentVertexIndex + 2 + i);
+                    if(model[0] == '*') {
+                        const modelIndex = parseInt(model.substring(1));
+                        const entityModel = models[modelIndex];
+
+                        models[modelIndex] = null;
+
+                        convertModelToMesh(entityModel, origin);
+                    }
+
+                    break;
+                default:
+                    continue;
             }
-
-            meshes[textureIndex].currentVertexIndex += verts.length;
-
-            const tv = textureInfo.textureVecs.data;
-
-            const parsedVertecies = verts.map(v => ([
-                -v.x.data, 
-                v.z.data, 
-                v.y.data,
-
-                (tv[0][0] * v.x.data + tv[0][1] * v.y.data + tv[0][2] * v.z.data + tv[0][3]) / textureData.width_height_0,
-                (tv[1][0] * v.x.data + tv[1][1] * v.y.data + tv[1][2] * v.z.data + tv[1][3]) / textureData.width_height_1,
-
-                normal[0].valueOf(), 
-                -normal[2].valueOf(), 
-                -normal[1].valueOf(),
-            ]));
-
-            meshes[textureIndex].vertecies.push(...parsedVertecies);
-            meshes[textureIndex].indices.push(...indexes);
+        }
+        
+        for(let model of models) {
+            if(model) {
+                convertModelToMesh(model, [0, 0, 0]);
+            }
         }
 
         return meshes;
