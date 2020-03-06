@@ -1,9 +1,9 @@
-A BSP library to read Source .bsp map files.
+A BSP library to read Source .bsp map files and convert into .gltf or .obj.
 
-Spec: https://developer.valvesoftware.com/wiki/Source_BSP_File_Format#Introduction
+Spec: https://developer.valvesoftware.com/wiki/
 
 ### Todo
 
-- glTF file writer
+- glTF file writer  	                        ✓
+- read prop textures                            ✓
 - fix wrong prop orientation on some props
-- read prop textures
