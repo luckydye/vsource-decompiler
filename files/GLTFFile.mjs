@@ -321,6 +321,7 @@ export default class GLTFFile extends TextFile {
             doubleSided: true,
             alphaMode: translucent ? "MASK" : "OPAQUE",
             pbrMetallicRoughness: {
+                baseColorFactor: [ 1, 1, 1, 1 ],
                 baseColorTexture: {
                     index: texture,
                     texCoord: 0

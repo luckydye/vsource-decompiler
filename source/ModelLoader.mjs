@@ -33,6 +33,43 @@ export class Model {
         log('Reading pakfile.');
         fileSystem.attatchPakfile(Buffer.from(bsp.pakfile.buffer));
 
+        log('Load prop_dynamic ...');
+
+        for(let prop of bsp.props) {
+
+            const modelMeshes = await this.loadProp(prop.model).catch(err => {
+                console.log('');
+                error('Failed loading prop_dynamic: ' + prop.model);
+                log(err);
+                console.log('');
+            });
+
+            if(!modelMeshes) continue;
+
+            for(let propData of modelMeshes) {
+                const propGeometry = {
+                    name: prop.model.replace(/\\+|\/+/g, "_"),
+                    vertecies: propData.vertecies.flat(),
+                    indices: propData.indices,
+                    material: propData.material,
+                    scale: [ 1, 1, 1 ],
+                    origin: [ 0, 0, 0 ],
+                    position: [
+                        -prop.origin[0],
+                        prop.origin[2],
+                        prop.origin[1],
+                    ],
+                    rotation: [
+                        prop.angles[0] * Math.PI / 180,
+                        prop.angles[1] * Math.PI / 180,
+                        prop.angles[2] * Math.PI / 180,
+                    ],
+                }
+    
+                this.geometry.add(propGeometry);
+            }
+        }
+
         log('Load map textures...');
 
         const textures = new Map();

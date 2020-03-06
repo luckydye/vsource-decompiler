@@ -545,6 +545,18 @@ export default class BSPFile extends BinaryFile {
         const entitiesString = BSPFile.unserializeASCI(lumps[BSPFile.LUMP.ENTITIES]);
         bsp.entities = BSPFile.unserializeVMFString(entitiesString);
 
+        bsp.props = [];
+
+        for(let entity of bsp.entities) {
+            switch(entity.classname) {
+                case 'prop_dynamic':
+                    bsp.props.push(entity);
+                    break;
+                default:
+                    continue;
+            }
+        }
+
         // pakfile
         bsp.pakfile = lumps[BSPFile.LUMP.PAKFILE];
 
