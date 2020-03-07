@@ -6,6 +6,28 @@ import VirtualFileSystem from './VirtualFileSystem.mjs';
 const fileSystem = new VirtualFileSystem();
 const propTypes = new Map();
 
+function transformPropGeometry(prop) {
+    const propGeometry = {
+        name: prop.name,
+        vertecies: prop.vertecies.flat(),
+        indices: prop.indices,
+        material: prop.material,
+        scale: [ 1, 1, 1 ],
+        origin: [ 0, 0, 0 ],
+        position: [
+            prop.origin[1],
+            prop.origin[2],
+            prop.origin[0],
+        ],
+        rotation: [
+            prop.angles[0],
+            prop.angles[1],
+            prop.angles[2],
+        ],
+    }
+    return propGeometry;
+}
+
 export class Model {
 
     static get resourceRoot() {
@@ -28,9 +50,8 @@ export class Model {
 
         const map = await fileSystem.getFile(mapPath);
         const bsp = BSPFile.fromDataArray(await map.arrayBuffer());
-        const meshes = bsp.convertToMesh();
 
-        log('Reading pakfile.');
+        log('Reading pakfile...');
         fileSystem.attatchPakfile(Buffer.from(bsp.pakfile.buffer));
 
         log('Load prop_dynamic ...');
@@ -47,24 +68,14 @@ export class Model {
             if(!modelMeshes) continue;
 
             for(let propData of modelMeshes) {
-                const propGeometry = {
+                const propGeometry = transformPropGeometry({
                     name: prop.model.replace(/\\+|\/+/g, "_"),
                     vertecies: propData.vertecies.flat(),
                     indices: propData.indices,
                     material: propData.material,
-                    scale: [ 1, 1, 1 ],
-                    origin: [ 0, 0, 0 ],
-                    position: [
-                        -prop.origin[0],
-                        prop.origin[2],
-                        prop.origin[1],
-                    ],
-                    rotation: [
-                        prop.angles[0] * Math.PI / 180,
-                        prop.angles[1] * Math.PI / 180,
-                        prop.angles[2] * Math.PI / 180,
-                    ],
-                }
+                    origin: prop.origin,
+                    angles: prop.angles,
+                });
     
                 this.geometry.add(propGeometry);
             }
@@ -92,6 +103,8 @@ export class Model {
             return textures.get(tex);
         }
 
+        const meshes = bsp.convertToMesh();
+
         for(let mesh of meshes) {
             if(!mesh) continue;
 
@@ -109,34 +122,33 @@ export class Model {
             });
         }
 
-        log('Load map props...');
+        log('Load props_static ...');
 
         await this.loadMapProps(bsp.gamelumps.sprp, (type, prop, propMeshes) => {
 
             for(let propData of propMeshes) {
 
-                const propGeometry = {
+                const propGeometry = transformPropGeometry({
                     name: type.name.replace(/\\+|\/+/g, "_") + '_' + propMeshes.indexOf(propData),
                     vertecies: propData.vertecies.flat(),
                     indices: propData.indices,
                     material: propData.material,
                     scale: [
-                        prop.UniformScale.valueOf() || 1, 
-                        prop.UniformScale.valueOf() || 1, 
-                        prop.UniformScale.valueOf() || 1
+                        prop.UniformScale ? prop.UniformScale.valueOf() : 1, 
+                        prop.UniformScale ? prop.UniformScale.valueOf() : 1, 
+                        prop.UniformScale ? prop.UniformScale.valueOf() : 1
                     ],
-                    origin: [0, 0, 0],
-                    position: [
-                        -prop.Origin.data[0].data,
-                        prop.Origin.data[2].data,
-                        prop.Origin.data[1].data,
+                    origin: [
+                        prop.Origin.data[0].valueOf(),
+                        prop.Origin.data[1].valueOf(),
+                        prop.Origin.data[2].valueOf(),
                     ],
-                    rotation: [
-                        prop.Angles.data[0].data * Math.PI / 180,
-                        prop.Angles.data[1].data * Math.PI / 180,
-                        prop.Angles.data[2].data * Math.PI / 180,
-                    ],
-                }
+                    angles: [
+                        prop.Angles.data[0].valueOf(),
+                        prop.Angles.data[1].valueOf(),
+                        prop.Angles.data[2].valueOf(),
+                    ]
+                });
     
                 this.geometry.add(propGeometry);
             }

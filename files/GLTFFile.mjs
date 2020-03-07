@@ -1,5 +1,6 @@
 import { TextFile } from "./TextFile.mjs";
 import { S3Texture } from "./S3Texture.mjs";
+import glmatrix from 'gl-matrix';
 
 // https://github.com/KhronosGroup/glTF/tree/master/specification/2.0#gltf-basics
 // https://github.com/KhronosGroup/glTF-Tutorials/blob/master/gltfTutorial/gltfTutorial_005_BuffersBufferViewsAccessors.md
@@ -50,21 +51,8 @@ const type = {
 }
 
 function rotationToQuaternion(x, y, z) {
-    const cy = Math.cos(x * 0.5);
-    const sy = Math.sin(x * 0.5);
-    const cp = Math.cos(y * 0.5);
-    const sp = Math.sin(y * 0.5);
-    const cr = Math.cos(z * 0.5);
-    const sr = Math.sin(z * 0.5);
-
-    const q = [0, 0, 0, 0];
-
-    q[0] = cy * cp * sr - sy * sp * cr;
-    q[1] = sy * cp * sr + cy * sp * cr;
-    q[2] = sy * cp * cr - cy * sp * sr;
-    q[3] = cy * cp * cr + sy * sp * sr;
-
-    return q;
+    const q = glmatrix.quat.fromEuler(glmatrix.quat.create(), x, y, z);
+    return [ q[0], q[1], q[2], q[3] ];
 }
 
 export default class GLTFFile extends TextFile {
@@ -394,9 +382,6 @@ export default class GLTFFile extends TextFile {
             object.rotation[2]
         );
 
-        qrotation[0] = -qrotation[0];
-        qrotation[2] = -qrotation[2];
-
         // node
         this.createNode({
             name: object.name,
@@ -406,7 +391,12 @@ export default class GLTFFile extends TextFile {
                 object.scale[1],
                 object.scale[2]
             ],
-            rotation: qrotation,
+            rotation: [
+                qrotation[0],
+                qrotation[1],
+                qrotation[2],
+                qrotation[3],
+            ],
             translation: object.position,
         });
     }

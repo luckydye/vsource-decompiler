@@ -89,9 +89,9 @@ export default class OBJFile extends TextFile {
 
             quat.fromEuler(
                 rotQuat, 
-                rotation[0] * ( 180 / Math.PI ), 
-                rotation[1] * ( 180 / Math.PI ), 
-                rotation[2] * ( 180 / Math.PI )
+                rotation[0], 
+                rotation[1], 
+                rotation[2]
             );
             mat4.fromRotationTranslationScaleOrigin(modelMatrix, rotQuat, position, scale, origin);
             mat4.translate(modelMatrix, modelMatrix, origin);

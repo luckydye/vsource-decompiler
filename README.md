@@ -6,4 +6,7 @@ Spec: https://developer.valvesoftware.com/wiki/
 
 - glTF file writer  	                        ✓
 - read prop textures                            ✓
-- fix wrong prop orientation on some props
+- fix wrong prop orientation on some props      ✓
+- displacements
+- texture blends
+- texture displacement
