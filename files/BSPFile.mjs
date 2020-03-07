@@ -684,7 +684,7 @@ export default class BSPFile extends BinaryFile {
                     const origin = entity.origin || [0, 0, 0];
                     const angles = entity.angles || [0, 0, 0];
 
-                    if(model[0] == '*') {
+                    if(model && model[0] == '*') {
                         const modelIndex = parseInt(model.substring(1));
                         const entityModel = models[modelIndex];
 
