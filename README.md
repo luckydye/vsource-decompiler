@@ -10,3 +10,4 @@ Spec: https://developer.valvesoftware.com/wiki/
 - displacements
 - texture blends
 - texture displacement
+- 3d skybox placement
