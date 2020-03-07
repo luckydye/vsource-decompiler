@@ -1,5 +1,7 @@
 import { BinaryFile } from './BinaryFile.mjs';
 
+const MAX_DISP_CORNER_NEIGHBORS = 4;
+
 const Structs = {
     dheader_t: {
         ident: 'byte[4]',
@@ -115,6 +117,20 @@ const Structs = {
         EdgeNeighbors: 'CDispNeighbor[4]',
         CornerNeighbors: 'CDispCornerNeighbors[4]',
         AllowedVerts: 'unsigned int[10]',
+        help: 'byte[14]'
+    },
+    CDispNeighbor: {
+        m_SubNeighbors: 'CDispSubNeighbor[2]',
+    },
+    CDispSubNeighbor: {
+        m_iNeighbor: 'unsigned short',
+        m_NeighborOrientation: 'byte',
+        m_Span: 'byte',
+        m_NeighborSpan: 'byte',
+    },
+    CDispCornerNeighbors: {
+        m_Neighbors: `unsigned short[${MAX_DISP_CORNER_NEIGHBORS}]`,
+        m_nNeighbors: 'byte',
     },
     dDispVert: {
         vec: 'vector',
@@ -190,12 +206,6 @@ const Structs = {
         // FlagsEx: 'unsigned int',
 
         UniformScale: 'float',
-    },
-    CDispNeighbor: {
-        noteused: 'byte[16]'
-    },
-    CDispCornerNeighbors: {
-        noteused: 'byte[16]'
     }
 };
 
@@ -514,7 +524,7 @@ export default class BSPFile extends BinaryFile {
 
         const lumps = this.readLumpData(bsp.header.lumps, bsp.view);
 
-        console.log('decode lumps...');
+        log('decode lumps...');
 
         // models
         bsp.models = this.unserializeArray(lumps[this.LUMP.MODELS], 0, this.STRUCT.dmodel_t);
@@ -537,8 +547,10 @@ export default class BSPFile extends BinaryFile {
         // bsp.brushsides = this.unserializeArray(lumps[this.LUMP.BRUSHSIDES], 0, this.STRUCT.dbrushside_t);
         
         // displacements
-        // bsp.displacements = this.unserializeArray(lumps[this.LUMP.DISPINFO], 0, this.STRUCT.ddispinfo_t);
-        // bsp.displacementverts = this.unserializeArray(lumps[this.LUMP.DISP_VERTS], 0, this.STRUCT.dDispVert);
+        log('Decompile displacements...');
+
+        bsp.displacements = this.unserializeArray(lumps[this.LUMP.DISPINFO], 0, this.STRUCT.ddispinfo_t);
+        bsp.displacementverts = this.unserializeArray(lumps[this.LUMP.DISP_VERTS], 0, this.STRUCT.dDispVert);
         // bsp.displacementtris = this.unserializeArray(lumps[this.LUMP.DISP_TRIS], 0, this.STRUCT.dDispTri);
 
         // entities
@@ -560,14 +572,14 @@ export default class BSPFile extends BinaryFile {
         // pakfile
         bsp.pakfile = lumps[BSPFile.LUMP.PAKFILE];
 
-        console.log('read gamelumps...');
+        log('read gamelumps...');
 
         // gamelumps
         const gamelumps = BSPFile.unserializeGameLumps(lumps[BSPFile.LUMP.GAME_LUMP], bsp.view);
 
         bsp.gamelumps = {};
 
-        console.log('decode gamelumps...');
+        log('decode gamelumps...');
 
         for(let lump of gamelumps) {
             if(lump.id == "sprp") {
@@ -611,7 +623,19 @@ export default class BSPFile extends BinaryFile {
                 const textureData = this.texdata[textureInfo.texdata.data];
                 const textureIndex = textureData.nameStringTableID.data;
                 const textureFlag = textureInfo.flags.data;
+
+                const dispInfo = this.displacements[face.dispinfo.data];
+
+                let dispPower = 0;
+
+                if(dispInfo) {
+                    dispPower = dispInfo.power.valueOf();
     
+                    const dispStartVert = dispInfo.DispVertStart.valueOf();
+                    const dispVerts = this.displacementverts.slice(dispStartVert);
+                }
+
+
                 meshes[textureIndex] = meshes[textureIndex] || {
                     indices: [],
                     vertecies: [],
@@ -646,6 +670,11 @@ export default class BSPFile extends BinaryFile {
                     let vertindices = edge;
                     verts.push(vertecies[vertindices[0]]);
                 }
+
+                for(let i = 0; i < dispPower; i++) {
+                    // split this face by the power of dispPower
+                    
+                }
     
                 const numberOfindices = (verts.length - 2) * 3;
     
@@ -656,7 +685,7 @@ export default class BSPFile extends BinaryFile {
                 }
     
                 meshes[textureIndex].currentVertexIndex += verts.length;
-    
+
                 const tv = textureInfo.textureVecs.data;
     
                 const parsedVertecies = verts.map(v => ([

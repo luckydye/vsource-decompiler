@@ -152,6 +152,8 @@ export class Model {
     
                 this.geometry.add(propGeometry);
             }
+        }).catch(err => {
+            error(err);
         });
 
         log('Done loading map props.');
@@ -170,6 +172,12 @@ export class Model {
 
     async loadMapProps(props, callback) {
         return new Promise((resolve, reject) => {
+
+            if(props.length == 0) {
+                resolve();
+                return;
+            }
+
             // collect all different types of props
             for(let prop of props) {
 
