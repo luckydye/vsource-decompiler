@@ -1,4 +1,5 @@
 import { BinaryFile } from './BinaryFile.mjs';
+import pex from 'pex-geom';
 
 const MAX_DISP_CORNER_NEIGHBORS = 4;
 
@@ -114,10 +115,8 @@ const Structs = {
         MapFace: 'unsigned short',
         LightmapAlphaStart: 'int',
         LightmapSamplePositionStart: 'int',
-        EdgeNeighbors: 'CDispNeighbor[4]',
-        CornerNeighbors: 'CDispCornerNeighbors[4]',
+        neighbors: 'byte[90]',
         AllowedVerts: 'unsigned int[10]',
-        help: 'byte[14]'
     },
     CDispNeighbor: {
         m_SubNeighbors: 'CDispSubNeighbor[2]',
@@ -516,6 +515,8 @@ export default class BSPFile extends BinaryFile {
         headerStruct.data.ident = String.fromCharCode(...headerStruct.data.ident.data);
         bsp.header = headerStruct.data;
 
+        bsp.version = bsp.header.version.valueOf();
+
         try {
             BSPFile.verifyHeader(bsp.header);
         } catch(err) {
@@ -623,18 +624,19 @@ export default class BSPFile extends BinaryFile {
                 const textureData = this.texdata[textureInfo.texdata.data];
                 const textureIndex = textureData.nameStringTableID.data;
                 const textureFlag = textureInfo.flags.data;
-
                 const dispInfo = this.displacements[face.dispinfo.data];
 
-                let dispPower = 0;
+                let dispPower = 0, dispVerts = [];
 
                 if(dispInfo) {
                     dispPower = dispInfo.power.valueOf();
-    
-                    const dispStartVert = dispInfo.DispVertStart.valueOf();
-                    const dispVerts = this.displacementverts.slice(dispStartVert);
-                }
 
+                    const powerSize = 1 << dispPower;
+                    const vertexCount = (powerSize + 1) * (powerSize + 1);
+
+                    const dispStartVert = dispInfo.DispVertStart.valueOf();
+                    dispVerts = this.displacementverts.slice(dispStartVert, dispStartVert + vertexCount);
+                }
 
                 meshes[textureIndex] = meshes[textureIndex] || {
                     indices: [],
@@ -671,38 +673,115 @@ export default class BSPFile extends BinaryFile {
                     verts.push(vertecies[vertindices[0]]);
                 }
 
-                for(let i = 0; i < dispPower; i++) {
-                    // split this face by the power of dispPower
-                    
-                }
-    
-                const numberOfindices = (verts.length - 2) * 3;
-    
-                for(let i = 0; i < numberOfindices / 3; i++) {
-                    indexes.push(currentVertexIndex + 0);
-                    indexes.push(currentVertexIndex + 1 + i);
-                    indexes.push(currentVertexIndex + 2 + i);
-                }
-    
-                meshes[textureIndex].currentVertexIndex += verts.length;
+                let geo;
+                
+                // apply displacements if exist
+                if(dispInfo) {
+                    const dispWidth = dispPower * dispPower;
+                    const faceWidth = verts[2].x - verts[0].x;
+                    const faceHeight = verts[1].y - verts[3].y;
+                    const base_vertex = verts[0];
 
+                    const indexes = [];
+    
+                    for(let i = 0; i < ((verts.length - 2) * 3) / 3; i++) {
+                        indexes.push([ 0, 1 + i, 2 + i ]);
+                    }
+
+                    geo = new pex.Geometry({
+                        vertices: verts.map(v => new pex.Vec3(v.x, v.y, v.z)),
+                        faces: indexes
+                    });
+                    
+                    let geom = new pex.Geometry({
+                        vertices: [
+                            new pex.Vec3(0, 1, 0),
+                            new pex.Vec3(0, 0, 0),
+                            new pex.Vec3(1, 1, 0),
+                        ],
+                        faces: [
+                            [ 0, 1, 2 ]
+                        ]
+                    });
+    
+                    try {
+                        geom.computeNormals();
+                        geom.computeEdges();
+                        geom.triangulate();
+                        geom.computeHalfEdges();
+
+                        geom = geom.triangulate();
+
+                        geom.catmullClark(0.5, 0.1);
+
+                        console.log(geom);
+                        
+                        return;
+                    } catch(err) {
+                        error(err);
+                        return;
+                    }
+
+                } else {
+
+                    const numberOfindices = (verts.length - 2) * 3;
+    
+                    for(let i = 0; i < numberOfindices / 3; i++) {
+                        indexes.push(0);
+                        indexes.push(1 + i);
+                        indexes.push(2 + i);
+                    }
+
+                    geo = {
+                        vertices: verts,
+                        faces: indexes
+                    }
+                }
+
+                // transform geo data
+                // get uvs
                 const tv = textureInfo.textureVecs.data;
     
-                const parsedVertecies = verts.map(v => ([
-                    v.y.data + origin[1],
-                    v.z.data + origin[2], 
-                    v.x.data + origin[0], 
-    
-                    (tv[0][0] * v.x.data + tv[0][1] * v.y.data + tv[0][2] * v.z.data + tv[0][3]) / textureData.width_height_0,
-                    (tv[1][0] * v.x.data + tv[1][1] * v.y.data + tv[1][2] * v.z.data + tv[1][3]) / textureData.width_height_1,
-    
-                    -normal[1].valueOf(),
-                    -normal[2].valueOf(), 
-                    -normal[0].valueOf(), 
-                ]));
+                // vertexes
+                const parsedVertecies = geo.vertices.map((v, i) => {
+                    const x = v.x.valueOf();
+                    const y = v.y.valueOf();
+                    const z = v.z.valueOf();
+
+                    const displace = { x: 0, y: 0, z: 0 };
+
+                    if(dispInfo) {
+                        const dist = dispVerts[i].dist.valueOf();
+                        const vec = dispVerts[i].vec.valueOf();
+
+                        displace.x = vec[0] * dist;
+                        displace.y = vec[1] * dist;
+                        displace.z = vec[2] * dist;
+                    }
+
+                    const vertex = [
+                        y + origin[1] + displace.y,
+                        z + origin[2] + displace.z, 
+                        x + origin[0] + displace.x, 
+        
+                        (tv[0][0] * x + tv[0][1] * y + tv[0][2] * z + tv[0][3]) / textureData.width_height_0,
+                        (tv[1][0] * x + tv[1][1] * y + tv[1][2] * z + tv[1][3]) / textureData.width_height_1,
+        
+                        -normal[1].valueOf(),
+                        -normal[2].valueOf(), 
+                        -normal[0].valueOf(), 
+                    ];
+
+                    return vertex;
+                }).flat();
+
+                // indexes
+                const parsedIndices = geo.faces.flat().map(index => index += currentVertexIndex);
+
+                meshes[textureIndex].currentVertexIndex += geo.vertices.length;
     
                 meshes[textureIndex].vertecies.push(...parsedVertecies);
-                meshes[textureIndex].indices.push(...indexes);
+                meshes[textureIndex].indices.push(...parsedIndices);
             }
         }
 
