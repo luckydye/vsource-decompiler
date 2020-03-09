@@ -334,11 +334,11 @@ export default class BSPFile extends BinaryFile {
                 meshes[textureIndex] = meshes[textureIndex] || {
                     indices: [],
                     vertecies: [],
+                    uvs: [],
+                    normals: [],
                     material: textureIndex,
                     currentVertexIndex: 0,
                 };
-    
-                const currentVertexIndex = meshes[textureIndex].currentVertexIndex;
     
                 switch(textureFlag) {
                     case 0: break;
@@ -402,12 +402,10 @@ export default class BSPFile extends BinaryFile {
                     }
                 }
 
-                // transform geo data
-                // get uvs
-                const tv = textureInfo.textureVecs.data;
-    
-                // vertexes
-                const parsedVertecies = geo.vertices.map((v, i) => {
+                // vertexes and indexes
+
+                let i = 0;
+                for(let v of geo.vertices) {
                     const x = v.x.valueOf();
                     const y = v.y.valueOf();
                     const z = v.z.valueOf();
@@ -423,29 +421,35 @@ export default class BSPFile extends BinaryFile {
                         displace.z = vec[2] * dist;
                     }
 
-                    const vertex = [
+                    meshes[textureIndex].vertecies.push([
                         y + origin[1] + displace.y,
                         z + origin[2] + displace.z, 
                         x + origin[0] + displace.x, 
-        
+                    ]);
+
+                    const tv = textureInfo.textureVecs.data;
+                
+                    meshes[textureIndex].uvs.push([
                         (tv[0][0] * x + tv[0][1] * y + tv[0][2] * z + tv[0][3]) / textureData.width_height_0,
-                        (tv[1][0] * x + tv[1][1] * y + tv[1][2] * z + tv[1][3]) / textureData.width_height_1,
-        
+                        (tv[1][0] * x + tv[1][1] * y + tv[1][2] * z + tv[1][3]) / textureData.width_height_1
+                    ]);
+
+                    meshes[textureIndex].normals.push([
                         -normal[1].valueOf(),
                         -normal[2].valueOf(), 
-                        -normal[0].valueOf(), 
-                    ];
+                        -normal[0].valueOf()
+                    ]);
 
-                    return vertex;
-                }).flat();
+                    i++;
+                }
+    
+                const currentVertexIndex = meshes[textureIndex].currentVertexIndex;
 
-                // indexes
-                const parsedIndices = geo.faces.flat().map(index => index += currentVertexIndex);
+                for(let index of geo.faces.flat()) {
+                    meshes[textureIndex].indices.push(index += currentVertexIndex);
+                }
 
                 meshes[textureIndex].currentVertexIndex += geo.vertices.length;
-    
-                meshes[textureIndex].vertecies.push(...parsedVertecies);
-                meshes[textureIndex].indices.push(...parsedIndices);
             }
         }
 

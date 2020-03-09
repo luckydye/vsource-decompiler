@@ -9,7 +9,9 @@ const propTypes = new Map();
 function transformPropGeometry(prop) {
     const propGeometry = {
         name: prop.name,
-        vertecies: prop.vertecies.flat(),
+        vertecies: prop.vertecies,
+        uvs: prop.uvs,
+        normals: prop.normals,
         indices: prop.indices,
         material: prop.material,
         scale: [ 1, 1, 1 ],
@@ -70,7 +72,9 @@ export class Model {
             for(let propData of modelMeshes) {
                 const propGeometry = transformPropGeometry({
                     name: prop.model.replace(/\\+|\/+/g, "_"),
-                    vertecies: propData.vertecies.flat(),
+                    vertecies: propData.vertecies,
+                    uvs: propData.uvs,
+                    normals: propData.normals,
                     indices: propData.indices,
                     material: propData.material,
                     origin: prop.origin,
@@ -112,7 +116,9 @@ export class Model {
 
             this.geometry.add({
                 name: mapName + "_" + meshes.indexOf(mesh),
-                vertecies: mesh.vertecies.flat(),
+                vertecies: mesh.vertecies,
+                uvs: mesh.uvs,
+                normals: mesh.normals,
                 indices: mesh.indices,
                 material: material,
                 scale: [1, 1, 1],
@@ -130,7 +136,9 @@ export class Model {
 
                 const propGeometry = transformPropGeometry({
                     name: type.name.replace(/\\+|\/+/g, "_") + '_' + propMeshes.indexOf(propData),
-                    vertecies: propData.vertecies.flat(),
+                    vertecies: propData.vertecies,
+                    uvs: propData.uvs,
+                    normals: propData.normals,
                     indices: propData.indices,
                     material: propData.material,
                     scale: [
@@ -287,12 +295,12 @@ export class Model {
         }
 
         // geometry info
-        const vvdFile = await fileSystem.getFile(vddPath);
-        const vvd = VVDFile.fromDataArray(await vvdFile.arrayBuffer());
-        const vertecies = vvd.convertToMesh();
-
         const vtxFile = await fileSystem.getFile(vtxPath);
         const vtx = VTXFile.fromDataArray(await vtxFile.arrayBuffer());
+
+        const vvdFile = await fileSystem.getFile(vddPath);
+        const vvd = VVDFile.fromDataArray(await vvdFile.arrayBuffer());
+        const geometry = vvd.convertToMesh();
 
         const propMeshes = [];
         let meshIndex = 0;
@@ -302,12 +310,20 @@ export class Model {
                 material: prop.materials[meshIndex],
                 indices: mesh.indices,
                 vertecies: mesh.vertexindices.map(rv => {
-                    const vert = vertecies[rv];
-                    if(!vert) {
-                        throw new Error('Vertex doesnt exist');
-                    }
+                    const vert = geometry.vertecies[rv];
+                    if(!vert) throw new Error('Vertex doesnt exist');
                     return vert;
-                })
+                }),
+                uvs: mesh.vertexindices.map(rv => {
+                    const vert = geometry.uvs[rv];
+                    if(!vert) throw new Error('Vertex doesnt exist');
+                    return vert;
+                }),
+                normals: mesh.vertexindices.map(rv => {
+                    const vert = geometry.normals[rv];
+                    if(!vert) throw new Error('Vertex doesnt exist');
+                    return vert;
+                }),
             });
 
             meshIndex++;

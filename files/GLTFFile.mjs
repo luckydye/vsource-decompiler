@@ -161,13 +161,29 @@ export default class GLTFFile extends TextFile {
         return nodeIndex;
     }
 
-    createPrimitive(indices, vertecies) {
+    createPrimitive(indices, vertecies, normals, uvs) {
         const indexCount = indices.length;
-        const vertexCount = vertecies.length / 8;
+
+        const vertexCount = vertecies.length;
+
+        const vertexBufferArray = vertecies.map((vert, i) => {
+            return [
+                vert[0],
+                vert[1],
+                vert[2],
+
+                uvs[i][0],
+                uvs[i][1],
+
+                normals[i][0],
+                normals[i][1],
+                normals[i][2]
+            ];
+        }).flat();
 
         // asset buffers
         const indexBuffer = new Uint32Array(indices);
-        const vertexBuffer = new Float32Array(vertecies);
+        const vertexBuffer = new Float32Array(vertexBufferArray);
 
         const indexBufferIndex = this.createBuffer(indexBuffer);
         const vertexBufferIndex = this.createBuffer(vertexBuffer);
@@ -334,6 +350,8 @@ export default class GLTFFile extends TextFile {
         // geometry buffer
         const indices = object.indices;
         const vertecies = object.vertecies;
+        const normals = object.normals;
+        const uvs = object.uvs;
 
         const mesh = {
             name: object.name,
@@ -344,7 +362,7 @@ export default class GLTFFile extends TextFile {
 
         if(objectMaterial) {
             const material = this.createMaterialFromObjectMaterial(objectMaterial);
-            const primitive = this.createPrimitive(indices, vertecies);
+            const primitive = this.createPrimitive(indices, vertecies, normals, uvs);
             
             mesh.primitives.push({
                 attributes: primitive.attributes,
@@ -352,7 +370,7 @@ export default class GLTFFile extends TextFile {
                 material: material,
             });
         } else {
-            const primitive = this.createPrimitive(indices, vertecies);
+            const primitive = this.createPrimitive(indices, vertecies, normals, uvs);
             
             mesh.primitives.push({
                 attributes: primitive.attributes,

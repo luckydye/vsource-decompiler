@@ -47,7 +47,7 @@ const Commands = {
 
                 const propGeometry = {
                     name: propname + '_' + propMeshes.indexOf(propData),
-                    vertecies: propData.vertecies.flat(),
+                    vertecies: propData.vertecies,
                     indices: propData.indices,
                     material: propData.material,
                     scale: [0.0125, 0.0125, 0.0125],
