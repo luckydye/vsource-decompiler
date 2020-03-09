@@ -48,6 +48,8 @@ const Commands = {
                 const propGeometry = {
                     name: propname + '_' + propMeshes.indexOf(propData),
                     vertecies: propData.vertecies,
+                    uvs: propData.uvs,
+                    normals: propData.normals,
                     indices: propData.indices,
                     material: propData.material,
                     scale: [0.0125, 0.0125, 0.0125],
@@ -91,65 +93,22 @@ const Commands = {
             const model = new Model();
             await model.loadMap(mapName);
 
-            function writeGltfFile(exportFileName) {
-                // GLB file export:
-                // const gltfFile = GLBFile.fromGeometry(model.geometry);
-                // const arrayBuffer = gltfFile.toBinary();
-                // const bin = Buffer.from(arrayBuffer);
-                // const test = GLBFile.fromFile(arrayBuffer);
-                // console.log(test);
-                // fs.writeFileSync(exportFileName + '.glb', bin, 'binary');
-
-                const gltfFile = GLTFFile.fromGeometry(model.geometry);
-                fs.writeFileSync(exportFileName + '.gltf', gltfFile.toString(), 'utf8');
-            }
+            log(mapName, 'decompiled.');
 
             const exportFileName = outputFilePath ? outputFilePath : mapName;
-            writeGltfFile(exportFileName);
+            
+            // GLB file export:
+            // const gltfFile = GLBFile.fromGeometry(model.geometry);
+            // const arrayBuffer = gltfFile.toBinary();
+            // const bin = Buffer.from(arrayBuffer);
+            // const test = GLBFile.fromFile(arrayBuffer);
+            // console.log(test);
+            // fs.writeFileSync(exportFileName + '.glb', bin, 'binary');
 
-            function writeObjResources(exportFileName) {
-                // write obj file
-                const objFile = new OBJFile(mapName);
-                objFile.openWriteStream(exportFileName + '.obj');
-                objFile.fromGeometry(model.geometry);
+            const gltfFile = GLTFFile.fromGeometry(model.geometry);
+            fs.writeFileSync(exportFileName + '.gltf', gltfFile.toString(), 'utf8');
 
-                const mtlFile = new MTLFile(mapName);
-                mtlFile.openWriteStream(exportFileName + '.mtl');
-                mtlFile.fromObjFile(objFile);
-
-
-                log('Writing textures...');
-                // write texture files
-                for(let texName of materials.keys()) {
-                    const tex = materials.get(texName);
-                    const format = tex.format;
-                    const data = tex.imageData;
-    
-                    if(tex.format.type === "NONE") continue;
-    
-                    const texture = S3Texture.fromDataArray(data, format.type, format.width, format.height);
-                    const ddsBuffer = texture.toDDS();
-    
-                    // write texture
-                    if(!fs.existsSync(`textures`)) {
-                        fs.mkdirSync(`textures`);
-                    }
-    
-                    const fileBuffer = Buffer.from(ddsBuffer);
-                    const writeStream = fs.createWriteStream(`textures/${texName}.dds`);
-                    
-                    writeStream.write(fileBuffer, 'binary');
-                    writeStream.on('finish', () => {});
-                    writeStream.on('error', err => {
-                        console.log(err);
-                        error(`Error writing texture: textures/${texName}.dds`);
-                    });
-                    writeStream.end();
-                }
-                log('Textures written.');
-            }
-
-            log(mapName, 'decompiled.');
+            log('Saved map to file ' + exportFileName + '.gltf');
     
             return true;
         }
