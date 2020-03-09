@@ -367,40 +367,18 @@ export default class BSPFile extends BinaryFile {
                     verts.push(vertecies[vertindices[0]]);
                 }
 
-                let geo;
+                for(let i = 0; i < ((verts.length - 2) * 3) / 3; i++) {
+                    indexes.push([ 0, 1 + i, 2 + i ]);
+                }
+
+                let geo = {
+                    vertices: verts,
+                    indices: indexes
+                }
                 
                 // apply displacements if exist
                 if(dispInfo) {
-                    const dispWidth = dispPower * dispPower;
-                    const faceWidth = verts[2].x - verts[0].x;
-                    const faceHeight = verts[1].y - verts[3].y;
-                    const base_vertex = verts[0];
-
-                    const indexes = [];
-    
-                    for(let i = 0; i < ((verts.length - 2) * 3) / 3; i++) {
-                        indexes.push([ 0, 1 + i, 2 + i ]);
-                    }
-
-                    geo = new pex.Geometry({
-                        vertices: verts.map(v => new pex.Vec3(v.x, v.y, v.z)),
-                        faces: indexes
-                    });
-
-                } else {
-
-                    const numberOfindices = (verts.length - 2) * 3;
-    
-                    for(let i = 0; i < numberOfindices / 3; i++) {
-                        indexes.push(0);
-                        indexes.push(1 + i);
-                        indexes.push(2 + i);
-                    }
-
-                    geo = {
-                        vertices: verts,
-                        faces: indexes
-                    }
+                    geo = subdevideGeometry(geo, dispPower);
                 }
 
                 // vertexes and indexes
@@ -455,7 +433,7 @@ export default class BSPFile extends BinaryFile {
     
                 const currentVertexIndex = meshes[textureIndex].currentVertexIndex;
 
-                for(let index of geo.faces.flat()) {
+                for(let index of geo.indices.flat()) {
                     meshes[textureIndex].indices.push(index += currentVertexIndex);
                 }
 
@@ -494,4 +472,12 @@ export default class BSPFile extends BinaryFile {
         return meshes;
     }
 
+}
+
+function subdevideGeometry(geo, power) {
+    const dispWidth = power * power;
+
+    
+
+    return geo;
 }

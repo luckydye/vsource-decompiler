@@ -104,7 +104,7 @@ export class Model {
             });
         }
 
-        return;
+        // return;
 
         log('Load prop_dynamic ...');
 
