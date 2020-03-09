@@ -4,10 +4,6 @@ import { BinaryFile } from './BinaryFile.mjs';
 
 export default class VMTFile extends BinaryFile {
 
-    static get STRUCT() {
-        return Structs;
-    }
-
     static readHeader(vmt) {
         const fileHeader = this.unserialize(vmt.view, 0, VMT.vmtheader).data;
         return fileHeader;

@@ -22,8 +22,8 @@ global.error = (...str) => {
 const Commands = {
 
     prop: {
-        usage: "prop <prop name>",
-        description: "get prop",
+        usage: "prop <prop name> [<resource_path: csgo>] [<ouput_path>]",
+        description: "Decompile CS:GO models from mdl to gltf format.",
 
         async execute(propname, resourcePath = "csgo/", outputFilePath) {
             if(!propname) {
@@ -72,8 +72,8 @@ const Commands = {
     },
 
     map: {
-        usage: 'decompile <map_name> [<ouput_path>] [<resource_path>]',
-        description: 'Decompile CS:GO maps from bsp format.',
+        usage: 'decompile <map_name> [<resource_path: csgo>] [<ouput_path>]',
+        description: 'Decompile CS:GO maps from bsp to gltf format.',
 
         async execute(mapName, resourcePath = "csgo/", outputFilePath) {
             if(!mapName) {

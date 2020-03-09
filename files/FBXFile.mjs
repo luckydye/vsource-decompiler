@@ -1,37 +1,16 @@
 import { BinaryFile } from "./BinaryFile.mjs";
-
-const Structs = {
-    header: {
-        magic: 'unsigned char',
-        unknown: 'byte[2]',
-        version: 'unsigned int',
-    },
-    nodeRecord: {
-        endOffset: 'int',
-        numProperties: 'int',
-        propertyListLen: 'int',
-        nameLen: 'byte',
-        name: 'char[nameLen]',
-        
-        propertyData: 'byte[propertyListLen]',
-        // ... properties || Property[n], for n in 0:PropertyListLen
-
-    },
-    propertyRecord: {
-        typeCode: 'char[1]',
-    },
-}
+import { FBX } from './FBXStructure.mjs';
 
 export default class FBXFile extends BinaryFile {
 
     static get STRUCT() {
-        return Structs;
+        return FBX;
     }
 
     static fromDataArray(dataArray) {
         const fbx = this.createFile(dataArray);
 
-        const header = this.unserialize(fbx.view, 0, Structs.header);
+        const header = this.unserialize(fbx.view, 0, FBX.header);
 
         fbx.header = header.data;
         fbx.nodes = {};
@@ -44,7 +23,7 @@ export default class FBXFile extends BinaryFile {
 
         const unserializeNode = (nodeEndOffset) => {
 
-            const node = this.unserialize(fbx.view, byteOffset, Structs.nodeRecord);
+            const node = this.unserialize(fbx.view, byteOffset, FBX.nodeRecord);
             byteOffset = node.byteOffset;
 
             const nodeData = node.data;

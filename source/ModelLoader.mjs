@@ -56,30 +56,30 @@ export class Model {
 
         log('Load prop_dynamic ...');
 
-        // for(let prop of bsp.props) {
+        for(let prop of bsp.props) {
 
-        //     const modelMeshes = await this.loadProp(prop.model).catch(err => {
-        //         console.log('');
-        //         error('Failed loading prop_dynamic: ' + prop.model);
-        //         log(err);
-        //         console.log('');
-        //     });
+            const modelMeshes = await this.loadProp(prop.model).catch(err => {
+                console.log('');
+                error('Failed loading prop_dynamic: ' + prop.model);
+                log(err);
+                console.log('');
+            });
 
-        //     if(!modelMeshes) continue;
+            if(!modelMeshes) continue;
 
-        //     for(let propData of modelMeshes) {
-        //         const propGeometry = transformPropGeometry({
-        //             name: prop.model.replace(/\\+|\/+/g, "_"),
-        //             vertecies: propData.vertecies.flat(),
-        //             indices: propData.indices,
-        //             material: propData.material,
-        //             origin: prop.origin,
-        //             angles: prop.angles,
-        //         });
+            for(let propData of modelMeshes) {
+                const propGeometry = transformPropGeometry({
+                    name: prop.model.replace(/\\+|\/+/g, "_"),
+                    vertecies: propData.vertecies.flat(),
+                    indices: propData.indices,
+                    material: propData.material,
+                    origin: prop.origin,
+                    angles: prop.angles,
+                });
     
-        //         this.geometry.add(propGeometry);
-        //     }
-        // }
+                this.geometry.add(propGeometry);
+            }
+        }
 
         log('Load map textures...');
 
@@ -121,8 +121,6 @@ export class Model {
                 rotation: [0, 0, 0],
             });
         }
-
-        return;
 
         log('Load props_static ...');
 
