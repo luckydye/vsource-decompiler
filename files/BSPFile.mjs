@@ -334,6 +334,7 @@ export default class BSPFile extends BinaryFile {
                 meshes[textureIndex] = meshes[textureIndex] || {
                     indices: [],
                     vertecies: [],
+                    color: [],
                     uvs: [],
                     normals: [],
                     material: textureIndex,
@@ -415,10 +416,19 @@ export default class BSPFile extends BinaryFile {
                     if(dispInfo) {
                         const dist = dispVerts[i].dist.valueOf();
                         const vec = dispVerts[i].vec.valueOf();
+                        const alpha = dispVerts[i].alpha.valueOf();
 
                         displace.x = vec[0] * dist;
                         displace.y = vec[1] * dist;
                         displace.z = vec[2] * dist;
+
+                        meshes[textureIndex].color.push([
+                            0, 0, 0, alpha
+                        ]);
+                    } else {
+                        meshes[textureIndex].color.push([
+                            1, 1, 1, 1
+                        ]);
                     }
 
                     meshes[textureIndex].vertecies.push([

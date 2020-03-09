@@ -41,7 +41,11 @@ export class Model {
     }
 
     constructor() {
-        this.geometry = new Set();
+        this.geometry = {
+            map: [],
+            props_static: [],
+            prop_dynamic: [],
+        };
     }
 
     async loadMap(mapName) {
@@ -55,35 +59,6 @@ export class Model {
 
         log('Reading pakfile...');
         fileSystem.attatchPakfile(Buffer.from(bsp.pakfile.buffer));
-
-        log('Load prop_dynamic ...');
-
-        for(let prop of bsp.props) {
-
-            const modelMeshes = await this.loadProp(prop.model).catch(err => {
-                console.log('');
-                error('Failed loading prop_dynamic: ' + prop.model);
-                log(err);
-                console.log('');
-            });
-
-            if(!modelMeshes) continue;
-
-            for(let propData of modelMeshes) {
-                const propGeometry = transformPropGeometry({
-                    name: prop.model.replace(/\\+|\/+/g, "_"),
-                    vertecies: propData.vertecies,
-                    uvs: propData.uvs,
-                    normals: propData.normals,
-                    indices: propData.indices,
-                    material: propData.material,
-                    origin: prop.origin,
-                    angles: prop.angles,
-                });
-    
-                this.geometry.add(propGeometry);
-            }
-        }
 
         log('Load map textures...');
 
@@ -114,8 +89,9 @@ export class Model {
 
             const material = getMapTexture(mesh.material);
 
-            this.geometry.add({
+            this.geometry.map.push({
                 name: mapName + "_" + meshes.indexOf(mesh),
+                color: mesh.color,
                 vertecies: mesh.vertecies,
                 uvs: mesh.uvs,
                 normals: mesh.normals,
@@ -126,6 +102,37 @@ export class Model {
                 position: [0, 0, 0],
                 rotation: [0, 0, 0],
             });
+        }
+
+        return;
+
+        log('Load prop_dynamic ...');
+
+        for(let prop of bsp.props) {
+
+            const modelMeshes = await this.loadProp(prop.model).catch(err => {
+                console.log('');
+                error('Failed loading prop_dynamic: ' + prop.model);
+                log(err);
+                console.log('');
+            });
+
+            if(!modelMeshes) continue;
+
+            for(let propData of modelMeshes) {
+                const propGeometry = transformPropGeometry({
+                    name: prop.model.replace(/\\+|\/+/g, "_"),
+                    vertecies: propData.vertecies,
+                    uvs: propData.uvs,
+                    normals: propData.normals,
+                    indices: propData.indices,
+                    material: propData.material,
+                    origin: prop.origin,
+                    angles: prop.angles,
+                });
+    
+                this.geometry.prop_dynamic.push(propGeometry);
+            }
         }
 
         log('Load props_static ...');
@@ -158,7 +165,7 @@ export class Model {
                     ]
                 });
     
-                this.geometry.add(propGeometry);
+                this.geometry.props_static.push(propGeometry);
             }
         }).catch(err => {
             error(err);

@@ -57,29 +57,38 @@ function rotationToQuaternion(x, y, z) {
 
 export default class GLTFFile extends TextFile {
 
-    static fromGeometry(geometry = []) {
+    static fromGeometry(geometry = {}) {
         const gltf = new this();
 
-        for(let geo of geometry) {
+        for(let key in geometry) {
 
-            /* geometry structure:
-                vertecies: [0, 0, 0],
-                indices: [0, 0, 0],
-                position: [0, 0, 0],
-                rotation: [0, 0, 0],
-                scale: [0, 0, 0],
-                materials: [ ... ]
-            */
-    
-            /* material structure (vtf file):
-                width: 1024,
-                height: 1024,
-                reflectivity: 0.512,
-                imageData: [ ... ]
-            */
+            if(Array.isArray(geometry[key])) {
+                const geometryList = geometry[key];
 
-            if(geo.vertecies.length > 0) {
-                gltf.addObject(geo);
+                const parent = gltf.createNode({
+                    name: key,
+                    children: []
+                });
+
+                gltf.rootNode.children.push(parent);
+
+                for(let geo of geometryList) {
+
+                    /* geometry:
+                        vertecies: [0, 0, 0],
+                        uvs: [0, 0, 0],
+                        normals: [0, 0, 0],
+                        indices: [0, 0, 0],
+                        position: [0, 0, 0],
+                        rotation: [0, 0, 0],
+                        scale: [0, 0, 0],
+                        materials: [ ... ]
+                    */
+
+                    if(geo.vertecies.length > 0) {
+                        gltf.addObject(geo, parent);
+                    }
+                }
             }
         }
 
@@ -103,10 +112,15 @@ export default class GLTFFile extends TextFile {
             scenes: [
                 {
                     name: "Scene",
-                    nodes: []
+                    nodes: [ 0 ]
                 }
             ],
-            nodes: [],
+            nodes: [
+                {
+                    name: "Map",
+                    children: []
+                }
+            ],
             meshes: [],
             // cameras: [],
             materials: [],
@@ -126,8 +140,8 @@ export default class GLTFFile extends TextFile {
         };
     }
 
-    get activeScene() {
-        return this.asset.scenes[this.asset.scene];
+    get rootNode() {
+        return this.asset.nodes[0];
     }
 
     createBuffer(bufferArray) {
@@ -157,17 +171,15 @@ export default class GLTFFile extends TextFile {
     createNode(options) {
         const node = options;
         const nodeIndex = this.asset.nodes.push(node) - 1;
-        this.activeScene.nodes.push(nodeIndex);
         return nodeIndex;
     }
 
-    createPrimitive(indices, vertecies, normals, uvs) {
+    createPrimitive(indices, vertecies, normals, uvs, color) {
         const indexCount = indices.length;
-
         const vertexCount = vertecies.length;
 
         const vertexBufferArray = vertecies.map((vert, i) => {
-            return [
+            const vertex = [
                 vert[0],
                 vert[1],
                 vert[2],
@@ -179,6 +191,17 @@ export default class GLTFFile extends TextFile {
                 normals[i][1],
                 normals[i][2]
             ];
+
+            if(color) {
+                vertex.push(
+                    color[i][0],
+                    color[i][1],
+                    color[i][2],
+                    color[i][3]
+                );
+            }
+
+            return vertex;
         }).flat();
 
         // asset buffers
@@ -189,9 +212,13 @@ export default class GLTFFile extends TextFile {
         const vertexBufferIndex = this.createBuffer(vertexBuffer);
 
         // buffer views
-        const byteStride =  type.VEC3.components * type.FLOAT.byteLength +
+        let byteStride =  type.VEC3.components * type.FLOAT.byteLength +
                             type.VEC2.components * type.FLOAT.byteLength +
                             type.VEC3.components * type.FLOAT.byteLength;
+
+        if(color) {
+            byteStride += type.VEC4.components * type.FLOAT.byteLength;
+        }
 
         const indexBufferViewIndex = this.createBufferView({
             buffer: indexBufferIndex, 
@@ -221,6 +248,19 @@ export default class GLTFFile extends TextFile {
             byteLength: vertexBuffer.byteLength - normalBufferByteOffset,
             byteStride: byteStride,
         });
+
+        let colorBufferByteOffset;
+        let colorBufferViewIndex;
+
+        if(color) {
+            colorBufferByteOffset = normalBufferByteOffset + type.VEC3.components * type.FLOAT.byteLength;
+            colorBufferViewIndex = this.createBufferView({
+                buffer: vertexBufferIndex, 
+                byteOffset: colorBufferByteOffset,
+                byteLength: vertexBuffer.byteLength - colorBufferByteOffset,
+                byteStride: byteStride,
+            });
+        }
 
         // accessors
         const indexAccessor = this.createAccessor({
@@ -255,13 +295,36 @@ export default class GLTFFile extends TextFile {
             type: type.VEC3,
         });
 
-        return {
-            attributes: {
-                "POSITION": positionAccessor,
-                "TEXCOORD_0": textureAccessor,
-                "NORMAL": normalAccessor,
-            },
-            indices: indexAccessor,
+        if(color) {
+            const colorAccessor = this.createAccessor({
+                bufferView: colorBufferViewIndex,
+                componentType: type.FLOAT,
+                count: vertexCount,
+                max: [ 1, 1, 1, 1 ],
+                min: [ 0, 0, 0, 0 ],
+                type: type.VEC4,
+            });
+
+            return {
+                attributes: {
+                    "POSITION": positionAccessor,
+                    "TEXCOORD_0": textureAccessor,
+                    "NORMAL": normalAccessor,
+                    "COLOR_0": colorAccessor,
+                },
+                indices: indexAccessor,
+            }
+
+        } else {
+
+            return {
+                attributes: {
+                    "POSITION": positionAccessor,
+                    "TEXCOORD_0": textureAccessor,
+                    "NORMAL": normalAccessor,
+                },
+                indices: indexAccessor,
+            }
         }
     }
 
@@ -352,6 +415,7 @@ export default class GLTFFile extends TextFile {
         const vertecies = object.vertecies;
         const normals = object.normals;
         const uvs = object.uvs;
+        const color = object.color;
 
         const mesh = {
             name: object.name,
@@ -362,7 +426,7 @@ export default class GLTFFile extends TextFile {
 
         if(objectMaterial) {
             const material = this.createMaterialFromObjectMaterial(objectMaterial);
-            const primitive = this.createPrimitive(indices, vertecies, normals, uvs);
+            const primitive = this.createPrimitive(indices, vertecies, normals, uvs, color);
             
             mesh.primitives.push({
                 attributes: primitive.attributes,
@@ -370,7 +434,7 @@ export default class GLTFFile extends TextFile {
                 material: material,
             });
         } else {
-            const primitive = this.createPrimitive(indices, vertecies, normals, uvs);
+            const primitive = this.createPrimitive(indices, vertecies, normals, uvs, color);
             
             mesh.primitives.push({
                 attributes: primitive.attributes,
@@ -382,7 +446,7 @@ export default class GLTFFile extends TextFile {
         return this.createMesh(mesh);
     }
 
-    addObject(object) {
+    addObject(object, parentNode) {
         let mesh = null;
 
         // find existing mesh with same name
@@ -401,7 +465,7 @@ export default class GLTFFile extends TextFile {
         );
 
         // node
-        this.createNode({
+        const nodeIndex = this.createNode({
             name: object.name,
             mesh: mesh,
             scale: [
@@ -417,6 +481,16 @@ export default class GLTFFile extends TextFile {
             ],
             translation: object.position,
         });
+
+        if(parentNode) {
+            const node = this.asset.nodes[parentNode];
+            node.children = node.children || [];
+            node.children.push(nodeIndex);
+        } else {
+            this.rootNode.children.push(nodeIndex);
+        }
+
+        return nodeIndex;
     }
 
     toString() {
