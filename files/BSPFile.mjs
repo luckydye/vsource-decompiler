@@ -377,7 +377,7 @@ export default class BSPFile extends BinaryFile {
                 }
                 
                 // apply displacements if exist
-                if(dispInfo) {
+                if(dispInfo && dispPower > 0) {
                     geo = subdevideGeometry(geo, dispPower);
                 }
 
@@ -475,9 +475,66 @@ export default class BSPFile extends BinaryFile {
 }
 
 function subdevideGeometry(geo, power) {
-    const dispWidth = power * power;
 
-    
+    const vert0 = geo.vertices[0];
+    const vert1 = geo.vertices[1];
+    const vert2 = geo.vertices[2];
+    const vert3 = geo.vertices[3];
+
+    // This is not working:
+    const width = vert2.x - vert0.x;
+    const height = vert1.y - vert0.y;
+    const depth = vert3.z - vert0.z;
+
+    const dens = ((1 << power) + 1);
+    const size = ((1 << power) + 1) * ((1 << power) + 1);
+
+    const stepX = width / dens;
+    const stepY = height / dens;
+    const stepZ = depth / dens;
+
+    const faces = [];
+    const newVertexes = [];
+
+    for(let x = 0; x < dens; x++) {
+        for(let y = 0; y < dens; y++) {
+
+            const vert = {
+                x: vert0.x + (stepX * x),
+                y: vert0.y + (stepY * y),
+                z: vert0.z + (stepZ * y),
+            }
+
+            newVertexes.push(vert);
+        }
+    }
+
+    let counter = dens - 1;
+
+    for(let x = 0; x < ((dens - 1) * (dens - 1)) + (dens - 2); x++) {
+
+        if(x == counter) {
+            counter += dens;
+            continue;
+        }
+
+        faces.push([
+            x,
+            x + 1,
+            x + dens
+        ]);
+
+        faces.push([
+            x + 1,
+            x + dens + 1,
+            x + dens
+        ]);
+    }
+
+    geo = {
+        vertices: newVertexes,
+        indices: faces
+    }
 
     return geo;
 }
