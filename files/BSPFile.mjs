@@ -392,6 +392,7 @@ export default class BSPFile extends BinaryFile {
                     const displace = { x: 0, y: 0, z: 0 };
 
                     if(dispInfo) {
+                        // apply displacements:
                         const dist = dispVerts[i].dist.valueOf();
                         const vec = dispVerts[i].vec.valueOf();
                         const alpha = dispVerts[i].alpha.valueOf();
@@ -474,6 +475,17 @@ export default class BSPFile extends BinaryFile {
 
 }
 
+function dist(p1, p2) {
+    return Math.sqrt(
+        Math.pow(p2.x - p1.x, 2) +
+        Math.pow(p2.y - p1.y, 2)
+    );
+}
+
+function lerp(t, value1, value2) {
+    return value1 + (value2 - value1) * t;
+}
+
 function subdevideGeometry(geo, power) {
 
     const vert0 = geo.vertices[0];
@@ -481,17 +493,7 @@ function subdevideGeometry(geo, power) {
     const vert2 = geo.vertices[2];
     const vert3 = geo.vertices[3];
 
-    // This is not working:
-    const width = vert2.x - vert0.x;
-    const height = vert1.y - vert0.y;
-    const depth = vert3.z - vert0.z;
-
     const dens = ((1 << power) + 1);
-    const size = ((1 << power) + 1) * ((1 << power) + 1);
-
-    const stepX = width / dens;
-    const stepY = height / dens;
-    const stepZ = depth / dens;
 
     const faces = [];
     const newVertexes = [];
@@ -499,10 +501,19 @@ function subdevideGeometry(geo, power) {
     for(let x = 0; x < dens; x++) {
         for(let y = 0; y < dens; y++) {
 
+            const steps = (dens - 1);
+    
+            const stepX = (lerp(1 - (y / steps), dist(vert0, vert1), dist(vert3, vert2))) / steps * x;
+
+            const stepY = (lerp((x / steps), dist(vert0, vert3), dist(vert1, vert2))) / steps * y;
+
+            // const stepZ = (lerp((y / dens), dist(vert0, vert1), dist(vert3, vert2)) / 2) / dens;
+            // const zpos = vert0.z + (stepZ * x);
+
             const vert = {
-                x: vert0.x + (stepX * x),
-                y: vert0.y + (stepY * y),
-                z: vert0.z + (stepZ * y),
+                x: vert3.x - stepY,
+                y: vert3.y + stepX,
+                z: vert3.z,
             }
 
             newVertexes.push(vert);
@@ -512,6 +523,8 @@ function subdevideGeometry(geo, power) {
     let counter = dens - 1;
 
     for(let x = 0; x < ((dens - 1) * (dens - 1)) + (dens - 2); x++) {
+
+        if(x == 1) continue;
 
         if(x == counter) {
             counter += dens;
