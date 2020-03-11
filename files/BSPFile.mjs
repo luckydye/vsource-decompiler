@@ -329,6 +329,7 @@ export default class BSPFile extends BinaryFile {
 
                     const dispStartVert = dispInfo.DispVertStart.valueOf();
                     dispVerts = this.displacementverts.slice(dispStartVert, dispStartVert + vertexCount);
+                    dispVerts.reverse();
                 }
 
                 meshes[textureIndex] = meshes[textureIndex] || {
@@ -523,8 +524,6 @@ function subdevideGeometry(geo, power) {
     let counter = dens - 1;
 
     for(let x = 0; x < ((dens - 1) * (dens - 1)) + (dens - 2); x++) {
-
-        if(x == 1) continue;
 
         if(x == counter) {
             counter += dens;
