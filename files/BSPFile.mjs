@@ -398,9 +398,9 @@ export default class BSPFile extends BinaryFile {
                         const vec = dispVerts[i].vec.valueOf();
                         const alpha = dispVerts[i].alpha.valueOf();
 
-                        displace.x = vec[0] * dist;
-                        displace.y = vec[1] * dist;
-                        displace.z = vec[2] * dist;
+                        // displace.x = vec[0] * dist;
+                        // displace.y = vec[1] * dist;
+                        // displace.z = vec[2] * dist;
 
                         meshes[textureIndex].color.push([
                             0, 0, 0, alpha
@@ -504,17 +504,25 @@ function subdevideGeometry(geo, power) {
 
             const steps = (dens - 1);
     
-            const stepX = (lerp(1 - (y / steps), dist(vert0, vert1), dist(vert3, vert2))) / steps * x;
-
-            const stepY = (lerp((x / steps), dist(vert0, vert3), dist(vert1, vert2))) / steps * y;
+            const stepX = lerp(
+                (y / steps), 
+                (vert0.x - vert3.x), 
+                (vert1.x - vert2.x),
+            ) / steps * x;
+            
+            const stepY = lerp(
+                (x / steps), 
+                (vert0.y - vert1.y), 
+                (vert3.y - vert2.y),
+            ) / steps * y;
 
             // const stepZ = (lerp((y / dens), dist(vert0, vert1), dist(vert3, vert2)) / 2) / dens;
             // const zpos = vert0.z + (stepZ * x);
 
             const vert = {
-                x: vert3.x - stepY,
-                y: vert3.y + stepX,
-                z: vert3.z,
+                x: vert0.x + stepX,
+                y: vert0.y + stepY,
+                z: vert0.z,
             }
 
             newVertexes.push(vert);
