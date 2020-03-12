@@ -2,7 +2,7 @@
 
 import fs from 'fs';
 import path from 'path';
-import chalk from 'chalk';
+import { command, main } from './cli.mjs';
 
 import { Model } from '../source/ModelLoader.mjs';
 import { S3Texture } from '../files/S3Texture.mjs';
@@ -11,126 +11,97 @@ import MTLFile from '../files/MTLFile.mjs';
 import GLTFFile from '../files/GLTFFile.mjs';
 import GLBFile from '../files/GLBFile.mjs';
 
-global.log = (...str) => {
-    console.log('[INFO]', ...str);
-}
+command('prop', {
+    usage: "prop <prop name> [<resource_path: csgo>] [<ouput_path>]",
+    description: "Decompile CS:GO models from mdl to gltf format.",
 
-global.error = (...str) => {
-    console.log(chalk.red('[ERROR]', ...str));
-}
-
-const Commands = {
-
-    prop: {
-        usage: "prop <prop name> [<resource_path: csgo>] [<ouput_path>]",
-        description: "Decompile CS:GO models from mdl to gltf format.",
-
-        async execute(propname, resourcePath = "csgo/", outputFilePath) {
-            if(!propname) {
-                error('Provide a prop file.');
-                return;
-            }
-
-            if(resourcePath && fs.existsSync(path.resolve(resourcePath))) {
-                Model.resourceRoot = resourcePath;
-            } else if(resourcePath) {
-                error(`Resource folder "${resourcePath}" not found.`);
-                return;
-            }
-
-            log('Loading prop.');
-    
-            const model = new Model();
-            const propMeshes = await model.loadProp(propname + '.mdl');
-
-            for(let propData of propMeshes) {
-
-                const propGeometry = {
-                    name: propname + '_' + propMeshes.indexOf(propData),
-                    vertecies: propData.vertecies,
-                    uvs: propData.uvs,
-                    normals: propData.normals,
-                    indices: propData.indices,
-                    material: propData.material,
-                    scale: [0.0125, 0.0125, 0.0125],
-                    origin: [0, 0, 0],
-                    position: [0, 0, 0],
-                    rotation: [0, 0, 0],
-                }
-    
-                model.geometry.add(propGeometry);
-            }
-
-            log('Prop decompiled.');
-            
-            const exportFileName = outputFilePath ? outputFilePath : propname;
-            const gltfFile = GLTFFile.fromGeometry(model.geometry);
-            fs.writeFileSync(exportFileName + '.gltf', gltfFile.toString(), 'utf8');
-
-            log('Saved prop to file ' + exportFileName + '.gltf');
-
-            return true;
+    async execute(propname, resourcePath = "csgo/", outputFilePath) {
+        if(!propname) {
+            error('Provide a prop file.');
+            return;
         }
-    },
 
-    map: {
-        usage: 'decompile <map_name> [<resource_path: csgo>] [<ouput_path>]',
-        description: 'Decompile CS:GO maps from bsp to gltf format.',
-
-        async execute(mapName, resourcePath = "csgo/", outputFilePath) {
-            if(!mapName) {
-                error('Provide a map file.');
-                return;
-            }
-
-            if(resourcePath && fs.existsSync(path.resolve(resourcePath))) {
-                Model.resourceRoot = resourcePath;
-            } else if(resourcePath) {
-                error(`Resource folder "${resourcePath}" not found.`);
-                return;
-            }
-    
-            const model = new Model();
-            await model.loadMap(mapName);
-
-            log(mapName, 'decompiled.');
-
-            const exportFileName = outputFilePath ? outputFilePath : mapName;
-            
-            // GLB file export:
-            // const gltfFile = GLBFile.fromGeometry(model.geometry);
-            // const arrayBuffer = gltfFile.toBinary();
-            // const bin = Buffer.from(arrayBuffer);
-            // const test = GLBFile.fromFile(arrayBuffer);
-            // console.log(test);
-            // fs.writeFileSync(exportFileName + '.glb', bin, 'binary');
-
-            const gltfFile = GLTFFile.fromGeometry(model.geometry);
-            fs.writeFileSync(exportFileName + '.gltf', gltfFile.toString(), 'utf8');
-
-            log('Saved map to file ' + exportFileName + '.gltf');
-    
-            return true;
+        if(resourcePath && fs.existsSync(path.resolve(resourcePath))) {
+            Model.resourceRoot = resourcePath;
+        } else if(resourcePath) {
+            error(`Resource folder "${resourcePath}" not found.`);
+            return;
         }
+
+        log('Loading prop.');
+
+        const model = new Model();
+        const propMeshes = await model.loadProp(propname + '.mdl');
+
+        for(let propData of propMeshes) {
+
+            const propGeometry = {
+                name: propname + '_' + propMeshes.indexOf(propData),
+                vertecies: propData.vertecies,
+                uvs: propData.uvs,
+                normals: propData.normals,
+                indices: propData.indices,
+                material: propData.material,
+                scale: [0.0125, 0.0125, 0.0125],
+                origin: [0, 0, 0],
+                position: [0, 0, 0],
+                rotation: [0, 0, 0],
+            }
+
+            model.geometry.add(propGeometry);
+        }
+
+        log('Prop decompiled.');
+        
+        const exportFileName = outputFilePath ? outputFilePath : propname;
+        const gltfFile = GLTFFile.fromGeometry(model.geometry);
+        fs.writeFileSync(exportFileName + '.gltf', gltfFile.toString(), 'utf8');
+
+        log('Saved prop to file ' + exportFileName + '.gltf');
+
+        return true;
     }
+});
 
-}
+command('map', {
+    usage: 'decompile <map_name> [<resource_path: csgo>] [<ouput_path>]',
+    description: 'Decompile CS:GO maps from bsp to gltf format.',
 
-async function main(command, args) {
-    if(Commands[command]) {
-        const result = await Commands[command].execute(...args);
-        if(!result && Commands[command].usage) {
-            log(Commands[command].description);
-            log(`Usage: ${chalk.green(Commands[command].usage)}`);
+    async execute(mapName, resourcePath = "csgo/", outputFilePath) {
+        if(!mapName) {
+            error('Provide a map file.');
+            return;
         }
-    } else {
-        log('Commands:', chalk.green(Object.keys(Commands).join(", ")));
+
+        if(resourcePath && fs.existsSync(path.resolve(resourcePath))) {
+            Model.resourceRoot = resourcePath;
+        } else if(resourcePath) {
+            error(`Resource folder "${resourcePath}" not found.`);
+            return;
+        }
+
+        const model = new Model();
+        await model.loadMap(mapName);
+
+        log(mapName, 'decompiled.');
+
+        const exportFileName = outputFilePath ? outputFilePath : mapName;
+        
+        // GLB file export:
+        // const gltfFile = GLBFile.fromGeometry(model.geometry);
+        // const arrayBuffer = gltfFile.toBinary();
+        // const bin = Buffer.from(arrayBuffer);
+        // const test = GLBFile.fromFile(arrayBuffer);
+        // console.log(test);
+        // fs.writeFileSync(exportFileName + '.glb', bin, 'binary');
+
+        const gltfFile = GLTFFile.fromGeometry(model.geometry);
+        fs.writeFileSync(exportFileName + '.gltf', gltfFile.toString(), 'utf8');
+
+        log('Saved map to file ' + exportFileName + '.gltf');
+
+        return true;
     }
-}
+});
 
-const command = process.argv.slice(2)[0];
-const args = process.argv.slice(3);
-
-main(command, args);
-
-export default Commands;
+main();
