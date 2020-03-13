@@ -329,7 +329,6 @@ export default class BSPFile extends BinaryFile {
 
                     const dispStartVert = dispInfo.DispVertStart.valueOf();
                     dispVerts = this.displacementverts.slice(dispStartVert, dispStartVert + vertexCount);
-                    dispVerts.reverse();
                 }
 
                 meshes[textureIndex] = meshes[textureIndex] || {
@@ -398,9 +397,9 @@ export default class BSPFile extends BinaryFile {
                         const vec = dispVerts[i].vec.valueOf();
                         const alpha = dispVerts[i].alpha.valueOf();
 
-                        // displace.x = vec[0] * dist;
-                        // displace.y = vec[1] * dist;
-                        // displace.z = vec[2] * dist;
+                        displace.x = vec[0] * dist;
+                        displace.y = vec[1] * dist;
+                        displace.z = vec[2] * dist;
 
                         meshes[textureIndex].color.push([
                             0, 0, 0, alpha
@@ -530,15 +529,15 @@ function subdevideGeometry(geo, power) {
         }
 
         faces.push([
-            x,
+            x + dens,
             x + 1,
-            x + dens
+            x,
         ]);
 
         faces.push([
-            x + 1,
+            x + dens,
             x + dens + 1,
-            x + dens
+            x + 1,
         ]);
     }
 
