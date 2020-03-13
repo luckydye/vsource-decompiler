@@ -487,6 +487,14 @@ function lerp(t, value1, value2) {
     return value1 + (value2 - value1) * t;
 }
 
+function lerp3D(t, vec1, vec2) {
+    return {
+        x: lerp(t, vec1.x, vec2.x),
+        y: lerp(t, vec1.y, vec2.y),
+        z: lerp(t, vec1.z, vec2.z)
+    }
+}
+
 function subdevideGeometry(geo, power) {
 
     const vert0 = geo.vertices[0];
@@ -499,33 +507,16 @@ function subdevideGeometry(geo, power) {
     const faces = [];
     const newVertexes = [];
 
-    for(let x = 0; x < dens; x++) {
-        for(let y = 0; y < dens; y++) {
-
+    for(let y = 0; y < dens; y++) {
+        for(let x = 0; x < dens; x++) {
             const steps = (dens - 1);
-    
-            const stepX = lerp(
-                (y / steps), 
-                (vert0.x - vert3.x), 
-                (vert1.x - vert2.x),
-            ) / steps * x;
-            
-            const stepY = lerp(
-                (x / steps), 
-                (vert0.y - vert1.y), 
-                (vert3.y - vert2.y),
-            ) / steps * y;
 
-            // const stepZ = (lerp((y / dens), dist(vert0, vert1), dist(vert3, vert2)) / 2) / dens;
-            // const zpos = vert0.z + (stepZ * x);
+            // x = y
+            // y = x
 
-            const vert = {
-                x: vert0.x + stepX,
-                y: vert0.y + stepY,
-                z: vert0.z,
-            }
-
-            newVertexes.push(vert);
+            // left and right
+            const newVert = lerp3D(x / steps, lerp3D(y / steps, vert0, vert1), lerp3D(y / steps, vert3, vert2));
+            newVertexes.push(newVert);
         }
     }
 
