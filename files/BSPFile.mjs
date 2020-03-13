@@ -342,8 +342,26 @@ export default class BSPFile extends BinaryFile {
                 };
     
                 switch(textureFlag) {
+                    // not draw stuff:
+                    case TextureFlags.SURF_SKY2D: continue;
+                    case TextureFlags.SURF_SKY: continue;
+                    case TextureFlags.SURF_NOPORTAL: continue;
+                    case TextureFlags.SURF_TRIGGER: continue;
+                    case TextureFlags.SURF_NODRAW: continue;
+                    case TextureFlags.SURF_HINT: continue;
+                    case TextureFlags.SURF_SKIP: continue;
+                    case TextureFlags.SURF_HITBOX: continue;
+                    // draw stuff:
                     case 0: break;
+                    case TextureFlags.SURF_LIGHT: break;
+                    case TextureFlags.SURF_WARP: break;
+                    case TextureFlags.SURF_TRANS: break;
+                    case TextureFlags.SURF_NOLIGHT: break;
                     case TextureFlags.SURF_BUMPLIGHT: break;
+                    case TextureFlags.SURF_NOSHADOWS: break;
+                    case TextureFlags.SURF_NODECALS: break;
+                    case TextureFlags.SURF_NOCHOP: break;
+
                     default: continue;
                 }
                 
@@ -352,9 +370,9 @@ export default class BSPFile extends BinaryFile {
                 const faceSurfedges = surfedges.slice(face.firstedge.data, face.firstedge.data + face.numedges.data);
     
                 const faceEdges = faceSurfedges.map(surfEdge => {
-                    let edge = edges[Math.abs(surfEdge.edge.data)].v.data;
+                    const edge = edges[Math.abs(surfEdge.edge.data)].v.data;
                     if(surfEdge.edge.data < 0) {
-                        edge = edge.reverse();
+                        edge.reverse();
                     }
                     return edge;
                 });
@@ -378,7 +396,7 @@ export default class BSPFile extends BinaryFile {
                 
                 // apply displacements if exist
                 if(dispInfo && dispPower > 0) {
-                    geo = subdevideGeometry(geo, dispPower);
+                    geo = remesh4SidedGeometry(geo, dispPower);
                 }
 
                 // vertexes and indexes
@@ -494,8 +512,7 @@ function lerp3D(t, vec1, vec2) {
     }
 }
 
-function subdevideGeometry(geo, power) {
-
+function remesh4SidedGeometry(geo, power) {
     const vert0 = geo.vertices[0];
     const vert1 = geo.vertices[1];
     const vert2 = geo.vertices[2];
@@ -506,20 +523,16 @@ function subdevideGeometry(geo, power) {
     const faces = [];
     const newVertexes = [];
 
+    const steps = dens - 1;
+
     for(let y = 0; y < dens; y++) {
         for(let x = 0; x < dens; x++) {
-            const steps = (dens - 1);
-
-            // x = y
-            // y = x
-
-            // left and right
             const newVert = lerp3D(x / steps, lerp3D(y / steps, vert0, vert1), lerp3D(y / steps, vert3, vert2));
             newVertexes.push(newVert);
         }
     }
 
-    let counter = dens - 1;
+    let counter = steps;
 
     for(let x = 0; x < ((dens - 1) * (dens - 1)) + (dens - 2); x++) {
 
