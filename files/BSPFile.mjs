@@ -296,12 +296,18 @@ export default class BSPFile extends BinaryFile {
 
         const meshes = [];
 
-        const convertModelToMesh = (model, position) => {
+        const convertModelToMesh = (model, position, rotation) => {
 
             const origin = [
                 model.origin.data[0] + position[0],
                 model.origin.data[1] + position[1],
                 model.origin.data[2] + position[2]
+            ]
+
+            const angels = [
+                rotation[0],
+                rotation[1],
+                rotation[2],
             ]
     
             const firstFace = model.firstface;
@@ -326,6 +332,7 @@ export default class BSPFile extends BinaryFile {
                     uvs: [],
                     normals: [],
                     material: textureIndex,
+                    angles: angels,
                     currentVertexIndex: 0,
                 };
     
@@ -499,7 +506,7 @@ export default class BSPFile extends BinaryFile {
 
                         models[modelIndex] = null;
 
-                        convertModelToMesh(entityModel, origin);
+                        convertModelToMesh(entityModel, origin, angles);
                     }
 
                     break;
@@ -510,7 +517,7 @@ export default class BSPFile extends BinaryFile {
         
         for(let model of models) {
             if(model) {
-                convertModelToMesh(model, [0, 0, 0]);
+                convertModelToMesh(model, [0, 0, 0], [0, 0, 0]);
             }
         }
 

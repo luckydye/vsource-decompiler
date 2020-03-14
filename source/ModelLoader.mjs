@@ -6,28 +6,9 @@ import VirtualFileSystem from './VirtualFileSystem.mjs';
 const fileSystem = new VirtualFileSystem();
 const propTypes = new Map();
 
-function transformPropGeometry(prop) {
-    const propGeometry = {
-        name: prop.name,
-        vertecies: prop.vertecies,
-        uvs: prop.uvs,
-        normals: prop.normals,
-        indices: prop.indices,
-        material: prop.material,
-        scale: [ 1, 1, 1 ],
-        origin: [ 0, 0, 0 ],
-        position: [
-            prop.origin[1],
-            prop.origin[2],
-            prop.origin[0],
-        ],
-        rotation: [
-            prop.angles[0],
-            prop.angles[1],
-            prop.angles[2],
-        ],
-    }
-    return propGeometry;
+function getModelNameFromPath(modelPath) {
+    const parts = modelPath.split(/\/|\\/g);
+    return parts[parts.length-1].replace(/\\+|\/+/g, "_");
 }
 
 export class Model {
@@ -96,6 +77,8 @@ export class Model {
             return textures.get(tex);
         }
 
+        log('Load map geometry...');
+
         const meshes = bsp.convertToMesh();
 
         for(let mesh of meshes) {
@@ -104,7 +87,7 @@ export class Model {
             const material = getMapTexture(mesh.material);
 
             this.geometry.map.push({
-                name: mapName + "_" + meshes.indexOf(mesh),
+                name: meshes.indexOf(mesh) + "_" + mapName,
                 color: mesh.color,
                 vertecies: mesh.vertecies,
                 uvs: mesh.uvs,
@@ -114,13 +97,15 @@ export class Model {
                 scale: [1, 1, 1],
                 origin: [0, 0, 0],
                 position: [0, 0, 0],
-                rotation: [0, 0, 0],
+                rotation: mesh.angles,
             });
         }
 
         log('Load prop_dynamic ...');
 
+        let prop_id = 0;
         for(let prop of bsp.props) {
+            prop_id++;
 
             const modelMeshes = await this.loadProp(prop.model).catch(err => {
                 console.log('');
@@ -133,7 +118,7 @@ export class Model {
 
             for(let propData of modelMeshes) {
                 const propGeometry = transformPropGeometry({
-                    name: prop.model.replace(/\\+|\/+/g, "_"),
+                    name: prop_id + "_" + getModelNameFromPath(prop.model),
                     vertecies: propData.vertecies,
                     uvs: propData.uvs,
                     normals: propData.normals,
@@ -148,13 +133,14 @@ export class Model {
         }
 
         log('Load props_static ...');
-
+        
+        prop_id = 0;
         await this.loadMapProps(bsp.gamelumps.sprp, (type, prop, propMeshes) => {
-
+            prop_id++;
+            
             for(let propData of propMeshes) {
-
                 const propGeometry = transformPropGeometry({
-                    name: type.name.replace(/\\+|\/+/g, "_") + '_' + propMeshes.indexOf(propData),
+                    name: prop_id + '_' + getModelNameFromPath(type.name),
                     vertecies: propData.vertecies,
                     uvs: propData.uvs,
                     normals: propData.normals,
@@ -360,4 +346,36 @@ export class Model {
         }
         return load();
     }
+}
+
+function transformPropGeometry(prop) {
+
+    // coord conversion: y ; z ; x
+    
+    // prop.angles: y(0) ; z(1) ; x(2)
+    const anglesXYZ = [
+        prop.angles[2],
+        prop.angles[0],
+        prop.angles[1]
+    ];
+
+    const originXYZ = [
+        prop.origin[1],
+        prop.origin[2],
+        prop.origin[0],
+    ];
+
+    const propGeometry = {
+        name: prop.name,
+        vertecies: prop.vertecies,
+        uvs: prop.uvs,
+        normals: prop.normals,
+        indices: prop.indices,
+        material: prop.material,
+        scale: [ 1, 1, 1 ],
+        origin: [ 0, 0, 0 ],
+        position: originXYZ,
+        rotation: anglesXYZ,
+    }
+    return propGeometry;
 }
