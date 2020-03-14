@@ -134,7 +134,7 @@ export class BinaryFile {
     static unserialize(binary, byteOffset = 0, struct) {
 
         if(binary.byteLength - byteOffset < 1) {
-            throw new Error('File to small to unserialize');
+            throw new Error('Buffer to small to unserialize');
         }
 
         const isDataView = binary instanceof Buffer || binary instanceof DataView;
@@ -174,23 +174,25 @@ export class BinaryFile {
     static unserializeArray(binary, byteOffset = 0, struct, count = 0) {
         const structs = [];
 
-        let bytesPerElement = 0;
+        if(binary.byteLength - byteOffset > 0) {
+            let bytesPerElement = 0;
 
-        if(count === 0) {
-            const structData = this.unserialize(binary, byteOffset, struct);
-            byteOffset = structData.byteOffset;
-            bytesPerElement = structData.byteOffset;
-            structs.push(structData.data);
-
-            count = (binary.byteLength / bytesPerElement) - 1;
-        }
-        
-        for(let i = 0; i < count; i++) {
-            const byteStartOffset = byteOffset;
-            const structData = this.unserialize(binary, byteOffset, struct);
-            byteOffset = structData.byteOffset;
-            structData.data.byteOffset = byteStartOffset;
-            structs.push(structData.data);
+            if(count === 0) {
+                const structData = this.unserialize(binary, byteOffset, struct);
+                byteOffset = structData.byteOffset;
+                bytesPerElement = structData.byteOffset;
+                structs.push(structData.data);
+    
+                count = (binary.byteLength / bytesPerElement) - 1;
+            }
+            
+            for(let i = 0; i < count; i++) {
+                const byteStartOffset = byteOffset;
+                const structData = this.unserialize(binary, byteOffset, struct);
+                byteOffset = structData.byteOffset;
+                structData.data.byteOffset = byteStartOffset;
+                structs.push(structData.data);
+            }
         }
 
         return structs;

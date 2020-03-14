@@ -50,11 +50,6 @@ const type = {
     MAT4: new Type("MAT4", 16),
 }
 
-function rotationToQuaternion(x, y, z) {
-    const q = glmatrix.quat.fromEuler(glmatrix.quat.create(), x, y, z);
-    return [ q[0], q[1], q[2], q[3] ];
-}
-
 export default class GLTFFile extends TextFile {
 
     static fromGeometry(geometry = {}) {
@@ -458,7 +453,7 @@ export default class GLTFFile extends TextFile {
 
         mesh = mesh || this.createObjectMesh(object);
 
-        const qrotation = rotationToQuaternion(
+        const q = glmatrix.quat.fromEuler(glmatrix.quat.create(), 
             object.rotation[0],
             object.rotation[1],
             object.rotation[2]
@@ -474,10 +469,11 @@ export default class GLTFFile extends TextFile {
                 object.scale[2]
             ],
             rotation: [
-                qrotation[0],
-                qrotation[1],
-                qrotation[2],
-                qrotation[3],
+                // blender conversion: swap z and y
+                q[0],
+                q[2],
+                q[1],
+                q[3],
             ],
             translation: object.position,
         });
