@@ -446,7 +446,7 @@ export default class BSPFile extends BinaryFile {
                         displace.z = vec[2] * dist;
 
                         meshes[textureIndex].color.push([
-                            0, 0, 0, alpha
+                            1, 1, 1, alpha
                         ]);
                     } else {
                         meshes[textureIndex].color.push([

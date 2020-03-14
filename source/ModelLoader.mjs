@@ -48,6 +48,19 @@ export class Model {
         };
     }
 
+    async loadPakfile(mapName) {
+        const mapPath = `maps/${mapName}.bsp`;
+        log('Loading map', mapPath);
+
+        const map = await fileSystem.getFile(mapPath);
+        const bsp = BSPFile.fromDataArray(await map.arrayBuffer());
+
+        log('Reading pakfile...');
+        this.pakfile = Buffer.from(bsp.pakfile.buffer);
+        
+        return this.pakfile;
+    }
+
     async loadMap(mapName) {
         this.name = mapName;
 
@@ -58,7 +71,8 @@ export class Model {
         const bsp = BSPFile.fromDataArray(await map.arrayBuffer());
 
         log('Reading pakfile...');
-        fileSystem.attatchPakfile(Buffer.from(bsp.pakfile.buffer));
+        this.pakfile = Buffer.from(bsp.pakfile.buffer);
+        fileSystem.attatchPakfile(this.pakfile);
 
         log('Load map textures...');
 
@@ -103,8 +117,6 @@ export class Model {
                 rotation: [0, 0, 0],
             });
         }
-
-        return;
 
         log('Load prop_dynamic ...');
 

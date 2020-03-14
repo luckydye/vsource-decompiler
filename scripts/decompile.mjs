@@ -64,7 +64,7 @@ command('prop', {
 });
 
 command('map', {
-    usage: 'decompile <map_name> [<resource_path: csgo>] [<ouput_path>]',
+    usage: 'map <map_name> [<resource_path: csgo>] [<ouput_path>]',
     description: 'Decompile CS:GO maps from bsp to gltf format.',
 
     async execute(mapName, resourcePath = "csgo/", outputFilePath) {
@@ -99,6 +99,38 @@ command('map', {
         fs.writeFileSync(exportFileName + '.gltf', gltfFile.toString(), 'utf8');
 
         log('Saved map to file ' + exportFileName + '.gltf');
+
+        return true;
+    }
+});
+
+command('pak', {
+    usage: 'pak <map_name> [<resource_path: csgo>] [<ouput_path>]',
+    description: 'Extract pakfile from map bsp.',
+
+    async execute(mapName, resourcePath = "csgo/", outputFilePath) {
+        if(!mapName) {
+            error('Provide a map file.');
+            return;
+        }
+
+        if(resourcePath && fs.existsSync(path.resolve(resourcePath))) {
+            Model.resourceRoot = resourcePath;
+        } else if(resourcePath) {
+            error(`Resource folder "${resourcePath}" not found.`);
+            return;
+        }
+
+        const model = new Model();
+        const pakfile = await model.loadPakfile(mapName);
+
+        log(mapName, 'pakfile extracted.');
+
+        const exportFileName = outputFilePath ? outputFilePath : mapName;
+
+        fs.writeFileSync(exportFileName + '.zip', pakfile, 'binary');
+
+        log('Saved pakfile to ' + exportFileName + '.zip');
 
         return true;
     }

@@ -7,7 +7,7 @@ Spec: https://developer.valvesoftware.com/wiki/
 - glTF file writer  	                        ✓
 - read prop textures                            ✓
 - fix wrong prop orientation on some props      ✓
-- displacements
+- displacements                                 ✓
 - texture blends
 - texture displacement
 - 3d skybox placement
