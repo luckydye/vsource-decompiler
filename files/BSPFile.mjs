@@ -319,18 +319,6 @@ export default class BSPFile extends BinaryFile {
                 const textureFlag = textureInfo.flags.data;
                 const dispInfo = this.displacements[face.dispinfo.data];
 
-                let dispPower = 0, dispVerts = [];
-
-                if(dispInfo) {
-                    dispPower = dispInfo.power.valueOf();
-
-                    const powerSize = 1 << dispPower;
-                    const vertexCount = (powerSize + 1) * (powerSize + 1);
-
-                    const dispStartVert = dispInfo.DispVertStart.valueOf();
-                    dispVerts = this.displacementverts.slice(dispStartVert, dispStartVert + vertexCount);
-                }
-
                 meshes[textureIndex] = meshes[textureIndex] || {
                     indices: [],
                     vertecies: [],
@@ -380,8 +368,7 @@ export default class BSPFile extends BinaryFile {
                 const verts = [];
                 const indexes = [];
     
-                for(let edge of faceEdges) {
-                    let vertindices = edge;
+                for(let vertindices of faceEdges) {
                     verts.push(vertecies[vertindices[0]]);
                 }
 
@@ -393,9 +380,48 @@ export default class BSPFile extends BinaryFile {
                     vertices: verts,
                     indices: indexes
                 }
-                
-                // apply displacements if exist
-                if(dispInfo && dispPower > 0) {
+
+                // displacements
+                let dispStartVertex = null, 
+                    dispPower = 0, 
+                    dispVerts = [], 
+                    startPosition = null;
+
+                if(dispInfo) {
+                    dispPower = dispInfo.power.valueOf();
+                    startPosition = dispInfo.startPosition;
+
+                    const powerSize = 1 << dispPower;
+                    const vertexCount = (powerSize + 1) * (powerSize + 1);
+
+                    const dispStartVert = dispInfo.DispVertStart.valueOf();
+                    dispVerts = this.displacementverts.slice(dispStartVert, dispStartVert + vertexCount);
+
+                    for(let vert of geo.vertices) {
+                        const x = vert.x.valueOf();
+                        const y = vert.y.valueOf();
+                        const z = vert.z.valueOf();
+
+                        const dx = startPosition.data[0].valueOf();
+                        const dy = startPosition.data[1].valueOf();
+                        const dz = startPosition.data[2].valueOf();
+
+                        if (x == dx && y == dy && z == dz) {
+
+                            dispStartVertex = geo.vertices.indexOf(vert);
+                            break;
+                        }
+                    }
+
+                    dispStartVertex = dispStartVertex || 0;
+
+                    const sortedVerts = [];
+                    for(let i = dispStartVertex; i < 4 + dispStartVertex; i++) {
+                        sortedVerts.push(geo.vertices[i % 4]);
+                    }
+
+                    geo.vertices = sortedVerts;
+
                     geo = remesh4SidedGeometry(geo, dispPower);
                 }
 
