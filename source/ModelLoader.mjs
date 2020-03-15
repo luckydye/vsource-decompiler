@@ -103,10 +103,7 @@ export class Model {
 
         log('Load prop_dynamic ...');
 
-        let prop_id = 0;
         for(let prop of bsp.props) {
-            prop_id++;
-
             const modelMeshes = await this.loadProp(prop.model).catch(err => {
                 console.log('');
                 error('Failed loading prop_dynamic: ' + prop.model);
@@ -118,7 +115,7 @@ export class Model {
 
             for(let propData of modelMeshes) {
                 const propGeometry = transformPropGeometry({
-                    name: prop_id + "_" + getModelNameFromPath(prop.model),
+                    name: getModelNameFromPath(prop.model) + '_' + modelMeshes.indexOf(propData),
                     vertecies: propData.vertecies,
                     uvs: propData.uvs,
                     normals: propData.normals,
@@ -134,13 +131,10 @@ export class Model {
 
         log('Load props_static ...');
         
-        prop_id = 0;
         await this.loadMapProps(bsp.gamelumps.sprp, (type, prop, propMeshes) => {
-            prop_id++;
-            
             for(let propData of propMeshes) {
                 const propGeometry = transformPropGeometry({
-                    name: prop_id + '_' + getModelNameFromPath(type.name),
+                    name: getModelNameFromPath(type.name) + '_' + propMeshes.indexOf(propData),
                     vertecies: propData.vertecies,
                     uvs: propData.uvs,
                     normals: propData.normals,
@@ -354,9 +348,9 @@ function transformPropGeometry(prop) {
     
     // prop.angles: y(0) ; z(1) ; x(2)
     const anglesXYZ = [
-        prop.angles[2],
         prop.angles[0],
-        prop.angles[1]
+        -prop.angles[2],
+        prop.angles[1],
     ];
 
     const originXYZ = [

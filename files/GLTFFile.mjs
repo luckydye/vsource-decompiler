@@ -1,10 +1,10 @@
 import { TextFile } from "./TextFile.mjs";
 import { S3Texture } from "./S3Texture.mjs";
-import glmatrix from 'gl-matrix';
 
 // https://github.com/KhronosGroup/glTF/tree/master/specification/2.0#gltf-basics
 // https://github.com/KhronosGroup/glTF-Tutorials/blob/master/gltfTutorial/gltfTutorial_005_BuffersBufferViewsAccessors.md
 
+// type definitions
 class ComponentType extends Number {
     
     get byteLength() {
@@ -453,11 +453,7 @@ export default class GLTFFile extends TextFile {
 
         mesh = mesh || this.createObjectMesh(object);
 
-        const q = glmatrix.quat.fromEuler(glmatrix.quat.create(), 
-            object.rotation[0],
-            object.rotation[1],
-            object.rotation[2]
-        );
+        const quat = eulerDegreeToQuaternion(object.rotation);
 
         // node
         const nodeIndex = this.createNode({
@@ -469,11 +465,11 @@ export default class GLTFFile extends TextFile {
                 object.scale[2]
             ],
             rotation: [
-                // blender conversion: swap z and y
-                q[0],
-                q[2],
-                q[1],
-                q[3],
+                // blender import swaps z and y -,-
+                quat[0],
+                quat[2],
+                -quat[1],
+                quat[3],
             ],
             translation: object.position,
         });
@@ -492,4 +488,34 @@ export default class GLTFFile extends TextFile {
     toString() {
         return JSON.stringify(this.asset, null, '\t');
     }
+}
+
+// helper functions
+
+function eulerDegreeToQuaternion([ roll, pitch, yaw ]) { // [ x, y, z ]
+
+    roll = roll * (Math.PI / 180);
+    pitch = pitch * (Math.PI / 180);
+    yaw = yaw * (Math.PI / 180);
+
+    // Abbreviations for the various angular functions
+    const cy = Math.cos(yaw * 0.5);
+    const sy = Math.sin(yaw * 0.5);
+    const cp = Math.cos(pitch * 0.5);
+    const sp = Math.sin(pitch * 0.5);
+    const cr = Math.cos(roll * 0.5);
+    const sr = Math.sin(roll * 0.5);
+
+    let q = {};
+    q.w = cy * cp * cr + sy * sp * sr;
+    q.x = cy * cp * sr - sy * sp * cr;
+    q.y = sy * cp * sr + cy * sp * cr;
+    q.z = sy * cp * cr - cy * sp * sr;
+
+    return [
+        Math.floor(q.x * 100000) / 100000, 
+        Math.floor(q.y * 100000) / 100000, 
+        Math.floor(q.z * 100000) / 100000, 
+        Math.floor(q.w * 100000) / 100000,
+    ];
 }
