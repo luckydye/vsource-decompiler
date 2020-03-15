@@ -48,7 +48,7 @@ command('prop', {
                 rotation: [0, 0, 0],
             }
 
-            model.geometry.add(propGeometry);
+            model.geometry.prop_static.push(propGeometry);
         }
 
         log('Prop decompiled.');

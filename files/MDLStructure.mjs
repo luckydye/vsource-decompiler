@@ -174,6 +174,22 @@ export const MDL = {
         localnode_name_index: 'int',
     },
 
+    mstudiobodyparts_t_49: {
+        name_offset: 'int',
+        model_count: 'int',
+        base: 'int',
+        model_offset: 'int',
+        // name: 'unsigned char',
+
+        idk: 'byte[16]',
+
+        models: 'mstudiomodel_t[model_count]',
+
+        ModelCommandIsUsed: 'bool',
+        EyeballOptionIsUsed : 'bool',
+        // theFlexFrames : 'flexframe_t?',
+    },
+
     mstudiobodyparts_t: {
         name_offset: 'int',
         model_count: 'int',
@@ -216,8 +232,8 @@ export const MDL = {
     mstudiomesh_t: {
         materialIndex: 'int',
         modelOffset: 'int',
-        vertexCount: 'int',
         vertexIndexStart: 'int',
+        vertexCount: 'int',
         flexCount: 'int',
         flexOffset: 'int',
         materialType: 'int',

@@ -24,7 +24,7 @@ export class Model {
     constructor() {
         this.geometry = {
             map: [],
-            props_static: [],
+            prop_static: [],
             prop_dynamic: [],
         };
     }
@@ -129,7 +129,7 @@ export class Model {
             }
         }
 
-        log('Load props_static ...');
+        log('Load prop_static ...');
         
         await this.loadMapProps(bsp.gamelumps.sprp, (type, prop, propMeshes) => {
             for(let propData of propMeshes) {
@@ -157,7 +157,7 @@ export class Model {
                     ]
                 });
     
-                this.geometry.props_static.push(propGeometry);
+                this.geometry.prop_static.push(propGeometry);
             }
         }).catch(err => {
             error(err);
@@ -315,12 +315,12 @@ export class Model {
                 }),
                 uvs: mesh.vertexindices.map(rv => {
                     const vert = geometry.uvs[rv];
-                    if(!vert) throw new Error('Vertex doesnt exist');
+                    if(!vert) throw new Error('UV doesnt exist');
                     return vert;
                 }),
                 normals: mesh.vertexindices.map(rv => {
                     const vert = geometry.normals[rv];
-                    if(!vert) throw new Error('Vertex doesnt exist');
+                    if(!vert) throw new Error('Normal doesnt exist');
                     return vert;
                 }),
             });
