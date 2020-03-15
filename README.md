@@ -31,3 +31,4 @@ models/props/cs_office/phone_p2.mdl (Unknown material. 'sprite')
 models/newcache/nc_bigtdoor/nc_bigtdoor.mdl (Resource File not found: newde_cache/ctsigns.vtf)
 models/newcache/nc_spawnfloor/nc_spawnfloor.mdl (Resource File not found: newde_cache/ctfloor.vtf)
 models/newcache/nc_flatcar/nc_flatcar.mdl (RangeError: Offset is outside the bounds of the DataView)
+de_cache some skybox prop_static stuff
