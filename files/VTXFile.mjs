@@ -16,19 +16,20 @@ export default class VTXFile extends BinaryFile {
         vtx.bodyparts = parts;
         vtx.meshes = [];
 
-        let meshVertexOffset = 0;
+        let bodyVertexOffset = 0;
 
         for(let part of vtx.bodyparts) {
-            const modelOffset = bodyPartOffset + part.modelOffset.data;
+            const modelOffset = part.byteOffset + part.modelOffset.data;
             const models = this.unserializeArray(vtx.view, modelOffset, VTX.ModelHeader_t, part.modelCount.data);
 
+            let bodyVertexCount = 0;
+
             for(let mdl of models) {
-                const lodOffset = modelOffset + mdl.lodOffset.data;
+                const lodOffset = mdl.byteOffset + mdl.lodOffset.data;
                 const lods = this.unserializeArray(vtx.view, lodOffset, VTX.ModelLODHeader_t, mdl.lodCount.data);
 
-                
                 for(let lod of lods) {
-                    const meshOffset = lodOffset + lod.meshOffset.data;
+                    const meshOffset = lod.byteOffset + lod.meshOffset.data;
                     const meshes = this.unserializeArray(vtx.view, meshOffset, VTX.MeshHeader_t, lod.numMeshes.data);
 
                     for(let mesh of meshes) {
@@ -36,12 +37,13 @@ export default class VTXFile extends BinaryFile {
                         const stripGroups = this.unserializeArray(vtx.view, stripsOffset, VTX.StripGroupHeader_t, mesh.numStripGroups.data);
 
                         for(let stripGroup of stripGroups) {
-                            const indexOffset = stripGroup.byteOffset + stripGroup.indexOffset.data;
-                            const indexCount = stripGroup.numIndices.data;
+                            
+                            const indexOffset = stripGroup.byteOffset + stripGroup.indexOffset.valueOf();
+                            const vertOffset = stripGroup.byteOffset + stripGroup.vertOffset.valueOf();
 
-                            const vertOffset = stripGroup.byteOffset + stripGroup.vertOffset.data;
-                            const vertexCount = stripGroup.numVerts.data;
-        
+                            const indexCount = stripGroup.numIndices.valueOf();
+                            const vertexCount = stripGroup.numVerts.valueOf();
+
                             const indices = this.unserializeArray(vtx.view, indexOffset, { index: 'unsigned short' }, indexCount);
                             const vertecies = this.unserializeArray(vtx.view, vertOffset, VTX.Vertex_t, vertexCount);
 
@@ -49,11 +51,11 @@ export default class VTXFile extends BinaryFile {
                             vtx.meshes.push({
                                 indexCount: indexCount,
                                 vertexCount: vertexCount,
-                                indices: indices.map(i => i.index.data),
-                                vertexindices: vertecies.map(v => v.origMeshVertID.data + meshVertexOffset),
+                                indices: indices.map(i => i.index.valueOf()),
+                                vertexindices: vertecies.map(v => v.origMeshVertID.valueOf() + bodyVertexOffset),
                             });
 
-                            meshVertexOffset += vertexCount;
+                            bodyVertexCount += vertexCount;
                         }
                     }
 
@@ -61,6 +63,8 @@ export default class VTXFile extends BinaryFile {
                     break;
                 }
             }
+
+            bodyVertexOffset += bodyVertexCount;
         }
 
         return vtx;
