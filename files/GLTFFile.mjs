@@ -367,34 +367,45 @@ export default class GLTFFile extends TextFile {
             return existingMaterial;
         }
 
-        const textureImage = S3Texture.fromDataArray(
-            baseTexture.imageData, 
-            baseTexture.format.type,
-            baseTexture.format.width, 
-            baseTexture.format.height
-        );
-        const ddsBuffer = textureImage.toDDS();
+        let texture = null, reflectivity = 0;
 
-        const texture = this.createTexture(ddsBuffer, {
-            name: materialName + "_texture.dds",
-        });
+        if(baseTexture) {
+            const textureImage = S3Texture.fromDataArray(
+                baseTexture.imageData, 
+                baseTexture.format.type,
+                baseTexture.format.width, 
+                baseTexture.format.height
+            );
+            const ddsBuffer = textureImage.toDDS();
+    
+            texture = this.createTexture(ddsBuffer, {
+                name: materialName + "_texture.dds",
+            });
 
-        return this.createMaterial({
+            reflectivity = 1 - ((baseTexture.reflectivity[0] +
+                                baseTexture.reflectivity[1] +
+                                baseTexture.reflectivity[2]) / 3);
+        }
+
+        const matOptions = {
             name: materialName,
             doubleSided: true,
             alphaMode: translucent ? "MASK" : "OPAQUE",
             pbrMetallicRoughness: {
                 baseColorFactor: [ 1, 1, 1, 1 ],
-                baseColorTexture: {
-                    index: texture,
-                    texCoord: 0
-                },
                 metallicFactor: 0,
-                roughnessFactor: 1 - ((baseTexture.reflectivity[0] +
-                                       baseTexture.reflectivity[1] +
-                                       baseTexture.reflectivity[2]) / 3)
+                roughnessFactor: reflectivity
             }
-        });
+        };
+
+        if(texture) {
+            matOptions.pbrMetallicRoughness.baseColorTexture = {
+                index: texture,
+                texCoord: 0
+            };
+        }
+
+        return this.createMaterial(matOptions);
     }
 
     getMaterialByName(name) {

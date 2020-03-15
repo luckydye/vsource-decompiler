@@ -64,6 +64,7 @@ export class Model {
         for(let texture of bsp.textures) {
             const mat = await this.loadMaterial(texture.toLocaleLowerCase()).catch(err => {
                 error(err);
+                log(texture);
             });
 
             if(mat) {
@@ -280,21 +281,40 @@ export class Model {
         const lightmapped = vmt.data.lightmappedgeneric;
         const unlit = vmt.data.unlitgeneric;
         const world = vmt.data.worldvertextransition;
+        const water = vmt.data.water;
+        const refract = vmt.data.refract;
+        const lightmapped_4wayblend = vmt.data.lightmapped_4wayblend;
+        const unlittwotexture = vmt.data.unlittwotexture;
+        const splinerope = vmt.data.splinerope;
+        const modulate = vmt.data.modulate;
+        const decalmodulate = vmt.data.decalmodulate;
 
-        const shader = vertexlit || lightmapped || unlit || world;
+        const shader =  vertexlit || 
+                        lightmapped || 
+                        unlit || 
+                        world || 
+                        water ||
+                        refract || 
+                        lightmapped_4wayblend || 
+                        unlittwotexture || 
+                        splinerope || 
+                        modulate || 
+                        decalmodulate;
+
         if(!shader) {
+            console.log(vmt.data);
             throw new Error('Unknown material.');
         }
 
         const texture = shader['$basetexture'];
 
-        if(!texture) {
-            throw new Error('Missing texture.');
-        }
+        let vtf = null;
 
-        const vtfFile = await fileSystem.getFile(texture.replace('.vtf', '') + '.vtf');
-        const vtf = VTFFile.fromDataArray(await vtfFile.arrayBuffer());
-        vtf.name = texture;
+        if(texture) {
+            const vtfFile = await fileSystem.getFile(texture.replace('.vtf', '') + '.vtf');
+            vtf = VTFFile.fromDataArray(await vtfFile.arrayBuffer());
+            vtf.name = texture;
+        }
 
         return {
             name: materialName,
