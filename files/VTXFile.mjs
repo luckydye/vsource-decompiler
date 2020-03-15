@@ -16,13 +16,11 @@ export default class VTXFile extends BinaryFile {
         vtx.bodyparts = parts;
         vtx.meshes = [];
 
-        let bodyVertexOffset = 0;
+        let meshVertexOffset = 0;
 
         for(let part of vtx.bodyparts) {
             const modelOffset = part.byteOffset + part.modelOffset.data;
             const models = this.unserializeArray(vtx.view, modelOffset, VTX.ModelHeader_t, part.modelCount.data);
-
-            let bodyVertexCount = 0;
 
             for(let mdl of models) {
                 const lodOffset = mdl.byteOffset + mdl.lodOffset.data;
@@ -35,6 +33,8 @@ export default class VTXFile extends BinaryFile {
                     for(let mesh of meshes) {
                         const stripsOffset = mesh.byteOffset + mesh.stripGroupHeaderOffset.data;
                         const stripGroups = this.unserializeArray(vtx.view, stripsOffset, VTX.StripGroupHeader_t, mesh.numStripGroups.data);
+
+                        let meshVertexCount = 0;
 
                         for(let stripGroup of stripGroups) {
                             
@@ -52,19 +52,19 @@ export default class VTXFile extends BinaryFile {
                                 indexCount: indexCount,
                                 vertexCount: vertexCount,
                                 indices: indices.map(i => i.index.valueOf()),
-                                vertexindices: vertecies.map(v => v.origMeshVertID.valueOf() + bodyVertexOffset),
+                                vertexindices: vertecies.map(v => v.origMeshVertID.valueOf() + meshVertexOffset),
                             });
 
-                            bodyVertexCount += vertexCount;
+                            meshVertexCount += vertexCount;
                         }
+
+                        meshVertexOffset += meshVertexCount;
                     }
 
                     // only read the first lod of every prop
                     break;
                 }
             }
-
-            bodyVertexOffset += bodyVertexCount;
         }
 
         return vtx;
