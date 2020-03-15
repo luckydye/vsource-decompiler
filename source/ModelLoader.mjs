@@ -298,7 +298,7 @@ export class Model {
 
         return {
             name: materialName,
-            translucent: shader['$translucent'],
+            translucent: shader['$translucent'] || shader['$alphatest'],
             texture: vtf,
             material: vmt,
         }

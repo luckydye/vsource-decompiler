@@ -42,7 +42,7 @@ command('prop', {
                 normals: propData.normals,
                 indices: propData.indices,
                 material: propData.material,
-                scale: [0.0125, 0.0125, 0.0125],
+                scale: [1, 1, 1],
                 origin: [0, 0, 0],
                 position: [0, 0, 0],
                 rotation: [0, 0, 0],
