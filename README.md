@@ -32,3 +32,7 @@ models/newcache/nc_bigtdoor/nc_bigtdoor.mdl (Resource File not found: newde_cach
 models/newcache/nc_spawnfloor/nc_spawnfloor.mdl (Resource File not found: newde_cache/ctfloor.vtf)
 models/newcache/nc_flatcar/nc_flatcar.mdl (RangeError: Offset is outside the bounds of the DataView)
 de_cache some skybox prop_static stuff
+
+// ######
+
+Decompile Apex Legends VPKs?
