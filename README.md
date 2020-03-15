@@ -10,5 +10,5 @@ Spec: https://developer.valvesoftware.com/wiki/
 - displacements                                 ✓
 - texture blends
 - texture displacement
-- 3d skybox placement
-- fix prop positioning (eg. de_nuke)
+- 3d skybox placement                           ✓
+- fix prop positioning (eg. de_nuke)            ✓

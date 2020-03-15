@@ -24,6 +24,8 @@ export class Model {
     constructor() {
         this.geometry = {
             map: [],
+            lights: [],
+            sky_camera: [],
             prop_static: [],
             prop_dynamic: [],
         };
@@ -79,6 +81,36 @@ export class Model {
 
         log('Load map geometry...');
 
+        // sky_camera
+        if(bsp.skyCamera) {
+            this.geometry.sky_camera.scale = [
+                bsp.skyCamera.scale,
+                bsp.skyCamera.scale,
+                bsp.skyCamera.scale,
+            ];
+            this.geometry.sky_camera.position = [
+                bsp.skyCamera.origin[1],
+                bsp.skyCamera.origin[2],
+                bsp.skyCamera.origin[0],
+            ];
+            this.geometry.sky_camera.rotation = [
+                bsp.skyCamera.angles[0],
+                -bsp.skyCamera.angles[2],
+                bsp.skyCamera.angles[1],
+            ];
+        }
+
+        // lights
+        for(let light of bsp.lights) {
+            this.geometry.lights.push(transformPropGeometry({
+                name: bsp.lights.indexOf(light) + "_light",
+                scale: [1, 1, 1],
+                origin: light.origin,
+                angles: [0, 0, 0],
+            }));
+        }
+
+        // brushes
         const meshes = bsp.convertToMesh();
 
         for(let mesh of meshes) {

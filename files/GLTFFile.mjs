@@ -62,6 +62,9 @@ export default class GLTFFile extends TextFile {
 
                 const parent = gltf.createNode({
                     name: key,
+                    translation: geometryList.position || [0, 0, 0],
+                    rotation: eulerDegreeToQuaternion(geometryList.rotation || [0, 0, 0]),
+                    scale: geometryList.scale || [1, 1, 1],
                     children: []
                 });
 
@@ -80,9 +83,7 @@ export default class GLTFFile extends TextFile {
                         materials: [ ... ]
                     */
 
-                    if(geo.vertecies.length > 0) {
-                        gltf.addObject(geo, parent);
-                    }
+                    gltf.addObject(geo, parent);
                 }
             }
         }
@@ -451,7 +452,9 @@ export default class GLTFFile extends TextFile {
             }
         }
 
-        mesh = mesh || this.createObjectMesh(object);
+        if(object.vertecies && object.vertecies.length > 0) {
+            mesh = mesh || this.createObjectMesh(object);
+        }
 
         const quat = eulerDegreeToQuaternion(object.rotation);
 

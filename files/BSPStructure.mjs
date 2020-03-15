@@ -96,7 +96,8 @@ export const BSP = {
         view_width_view_height: 'int, int'
     },
     dmodel_t: {
-        mins_maxs: 'vector, vector',
+        mins: 'vector',
+        maxs: 'vector',
         origin: 'vector',
         headnode: 'int',
         firstface: 'int',
@@ -204,6 +205,20 @@ export const BSP = {
 
         UniformScale: 'float',
     }
+}
+
+export const Entity = {
+    sky_camera: 'sky_camera',
+    prop_dynamic: 'prop_dynamic',
+    prop_physics_multiplayer: 'prop_physics_multiplayer',
+    info_player_terrorist: 'info_player_terrorist',
+    info_player_counterterrorist: 'info_player_counterterrorist',
+    keyframe_rope: 'keyframe_rope',
+    move_rope: 'move_rope',
+    prop_door_rotating: 'prop_door_rotating',
+    light_spot: 'light_spot',
+    light: 'light',
+    info_particle_system: 'info_particle_system',
 }
 
 export const TextureFlags = {

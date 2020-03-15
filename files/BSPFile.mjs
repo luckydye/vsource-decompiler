@@ -1,6 +1,6 @@
 import { BinaryFile } from './BinaryFile.mjs';
 import pex from 'pex-geom';
-import { BSP, TextureFlags, LumpTypes } from './BSPStructure.mjs';
+import { BSP, TextureFlags, LumpTypes, Entity } from './BSPStructure.mjs';
 
 export default class BSPFile extends BinaryFile {
 
@@ -252,14 +252,37 @@ export default class BSPFile extends BinaryFile {
         bsp.entities = BSPFile.unserializeVMFString(entitiesString);
 
         bsp.props = [];
+        bsp.lights = [];
+        bsp.skyCamera = null;
 
         for(let entity of bsp.entities) {
             switch(entity.classname) {
-                case 'prop_dynamic':
+
+                case Entity.prop_dynamic:
                     bsp.props.push(entity);
                     break;
-                default:
-                    continue;
+
+                case Entity.sky_camera:
+                    bsp.skyCamera = entity;
+                    break;
+
+                case Entity.light_spot:
+                    bsp.lights.push(entity);
+                    break;
+
+                case Entity.light:
+                    bsp.lights.push(entity);
+                    break;
+
+                case Entity.prop_door_rotating:
+                    bsp.props.push(entity);
+                    break;
+
+                case Entity.prop_physics_multiplayer:
+                    bsp.props.push(entity);
+                    break;
+
+                default: continue;
             }
         }
 
@@ -338,8 +361,6 @@ export default class BSPFile extends BinaryFile {
     
                 switch(textureFlag) {
                     // not draw stuff:
-                    case TextureFlags.SURF_SKY2D: continue;
-                    case TextureFlags.SURF_SKY: continue;
                     case TextureFlags.SURF_NOPORTAL: continue;
                     case TextureFlags.SURF_TRIGGER: continue;
                     case TextureFlags.SURF_NODRAW: continue;
@@ -348,6 +369,8 @@ export default class BSPFile extends BinaryFile {
                     case TextureFlags.SURF_HITBOX: continue;
                     // draw stuff:
                     case 0: break;
+                    case TextureFlags.SURF_SKY2D: break;
+                    case TextureFlags.SURF_SKY: break;
                     case TextureFlags.SURF_LIGHT: break;
                     case TextureFlags.SURF_WARP: break;
                     case TextureFlags.SURF_TRANS: break;
