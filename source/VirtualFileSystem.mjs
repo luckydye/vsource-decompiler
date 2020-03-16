@@ -19,7 +19,7 @@ export default class VirtualFileSystem {
                 filelist = this.indexFileTree(dir + '/' + file, filelist);
             } else {
                 const dirPath = dir.split(/\/|\\/g).slice(1);
-                const fileKey = dirPath.join("/") + "/" + file.toLocaleLowerCase();
+                const fileKey = dirPath.join("/").toLocaleLowerCase() + "/" + file.toLocaleLowerCase();
 
                 logFile.write(fileKey + '\n');
 
@@ -59,7 +59,7 @@ export default class VirtualFileSystem {
         for(let entry of entries) {
             logFile.write(entry + '\n');
 
-            this.fileRegistry[entry] = { 
+            this.fileRegistry[entry.toLocaleLowerCase()] = { 
                 file: entry, 
                 async arrayBuffer() {
                     return pakfile.files[entry].asNodeBuffer();

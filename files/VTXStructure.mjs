@@ -32,7 +32,7 @@ export const VTX = {
     MeshHeader_t: {
         numStripGroups: 'int',
         stripGroupHeaderOffset: 'int',
-        flags: 'char',
+        flags: 'byte',
     },
 
     StripGroupHeader_t: {
@@ -42,7 +42,7 @@ export const VTX = {
         indexOffset: 'int',
         numStrips: 'int',
         stripOffset: 'int',
-        flags: 'unsigned char',
+        flags: 'byte',
         skip: 'byte[8]',
     },
 
@@ -51,15 +51,15 @@ export const VTX = {
         indexOffset: 'int',
         numVerts: 'int',
         vertOffset: 'int',
-        numBones: 'int',
-        flags: 'unsigned char',
+        numBones: 'short',
+        flags: 'byte',
         numBoneStateChanges: 'int',
         boneStateChangeOffset: 'int',
     },
 
     Vertex_t: {
         boneWeightIndex: 'char[3]',
-        numBones: 'unsigned char',
+        numBones: 'byte',
         origMeshVertID: 'unsigned short',
         boneID: 'char[3]',
     },

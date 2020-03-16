@@ -343,7 +343,7 @@ export class Model {
 
         // textures and materials
         for(let tex of mdl.textures) {
-            const path = mdl.texturePaths[0];
+            const path = mdl.texturePaths[0].replace(/\\|\//g, '/');
             const materialName = path + tex.name.toString().replace(path, '');
             const mat = await this.loadMaterial(materialName);
             prop.materials.push(mat);

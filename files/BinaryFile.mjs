@@ -134,7 +134,7 @@ export class BinaryFile {
     static unserialize(binary, byteOffset = 0, struct) {
 
         if(binary.byteLength - byteOffset < 1) {
-            throw new Error('Buffer to small to unserialize');
+            throw new Error('Buffer too small to unserialize');
         }
 
         const isDataView = binary instanceof Buffer || binary instanceof DataView;
