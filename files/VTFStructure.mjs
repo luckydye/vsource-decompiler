@@ -24,7 +24,12 @@ export const VTF = {
         depth: 'unsigned short',
         padding2: 'unsigned char[3]',
         numResources: 'unsigned int',
-    },
+	},
+	resourceEntryInfo: {
+		tag: 'char[3]',
+		flags: 'byte',
+		offset: 'int',
+	}
 }
 
 export const IMAGE_FORMAT = {

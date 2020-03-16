@@ -53,7 +53,7 @@ command('prop', {
 
         log('Prop decompiled.');
         
-        const exportFileName = outputFilePath ? outputFilePath : propname;
+        const exportFileName = (outputFilePath ? outputFilePath : propname).replace(/\/|\\/g, '_');
         const gltfFile = GLTFFile.fromGeometry(model.geometry);
         fs.writeFileSync(exportFileName + '.gltf', gltfFile.toString(), 'utf8');
 

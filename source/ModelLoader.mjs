@@ -288,6 +288,7 @@ export class Model {
         const splinerope = vmt.data.splinerope;
         const modulate = vmt.data.modulate;
         const decalmodulate = vmt.data.decalmodulate;
+        const sprite = vmt.data.sprite;
 
         const shader =  vertexlit || 
                         lightmapped || 
@@ -299,7 +300,8 @@ export class Model {
                         unlittwotexture || 
                         splinerope || 
                         modulate || 
-                        decalmodulate;
+                        decalmodulate || 
+                        sprite
 
         if(!shader) {
             console.log(vmt.data);
@@ -307,6 +309,7 @@ export class Model {
         }
 
         const texture = shader['$basetexture'];
+        const surface = shader['$surfaceprop'];
 
         let vtf = null;
 
@@ -340,7 +343,8 @@ export class Model {
 
         // textures and materials
         for(let tex of mdl.textures) {
-            const materialName = tex.name.toString();
+            const path = mdl.texturePaths[0];
+            const materialName = path + tex.name.toString().replace(path, '');
             const mat = await this.loadMaterial(materialName);
             prop.materials.push(mat);
         }

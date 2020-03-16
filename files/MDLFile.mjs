@@ -69,14 +69,14 @@ export default class MDLFile extends BinaryFile {
         }
 
         // texture paths
-        // for(let i = 0; i < mdl.header.texturePathCount; i++) {
-        //     const texPathOffset = this.unserialize(mdl.view, mdl.header.texturePathOffset, { offset: 'int' });
-        //     const texPathString = this.unserialize(mdl.view, texPathOffset.data.offset, {
-        //         path: `unsigned char`,
-        //     }).data;
+        for(let i = 0; i < mdl.header.texturePathCount; i++) {
+            const texPathOffset = this.unserialize(mdl.view, mdl.header.texturePathOffset, { offset: 'int' });
+            const texPathString = this.unserialize(mdl.view, texPathOffset.data.offset, {
+                path: `unsigned char`,
+            }).data;
 
-        //     mdl.texturePaths.push(texPathString.path.toString());
-        // }
+            mdl.texturePaths.push(texPathString.path.toString());
+        }
 
         // skins
         // for(let i = 0; i < mdl.header.skinfamily_count; i++) {

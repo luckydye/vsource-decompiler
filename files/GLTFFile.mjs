@@ -398,7 +398,7 @@ export default class GLTFFile extends TextFile {
             }
         };
 
-        if(texture) {
+        if(texture != null) {
             matOptions.pbrMetallicRoughness.baseColorTexture = {
                 index: texture,
                 texCoord: 0
