@@ -18,7 +18,6 @@ Spec: https://developer.valvesoftware.com/wiki/
 ## Buggy todo list:
 
 Props:
-Displacements start index null for some
 
 _autocombine_metal_pipe_603.mdl_0 (nuke, orientation)
 de_cache some skybox prop_static stuff
@@ -36,4 +35,3 @@ Materials and Textures
     - Set the Color-Space of the image in the material to "No-Color" or "Raw".
 
 2. Some Props may not decompile properly
-
