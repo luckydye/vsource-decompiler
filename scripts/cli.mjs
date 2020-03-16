@@ -8,6 +8,10 @@ global.error = (...str) => {
     console.log(chalk.red('[ERROR]', ...str));
 }
 
+global.warn = (...str) => {
+    console.log(chalk.yellow('[WARN]', ...str));
+}
+
 const Commands = {};
 
 export function command(name, options) {

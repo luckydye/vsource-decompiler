@@ -427,20 +427,23 @@ export default class BSPFile extends BinaryFile {
                     const dispStartVert = dispInfo.DispVertStart.valueOf();
                     dispVerts = this.displacementverts.slice(dispStartVert, dispStartVert + vertexCount);
 
+                    const dx = Math.round(startPosition.data[0].valueOf());
+                    const dy = Math.round(startPosition.data[1].valueOf());
+                    const dz = Math.round(startPosition.data[2].valueOf());
+
                     for(let vert of geo.vertices) {
-                        const x = vert.x.valueOf();
-                        const y = vert.y.valueOf();
-                        const z = vert.z.valueOf();
-
-                        const dx = startPosition.data[0].valueOf();
-                        const dy = startPosition.data[1].valueOf();
-                        const dz = startPosition.data[2].valueOf();
-
-                        if (x == dx && y == dy && z == dz) {
-
+                        if (
+                            Math.round(vert.x.valueOf()) == dx && 
+                            Math.round(vert.y.valueOf()) == dy && 
+                            Math.round(vert.z.valueOf()) == dz
+                        ) {
                             dispStartVertex = geo.vertices.indexOf(vert);
                             break;
                         }
+                    }
+
+                    if(dispStartVertex == null) {
+                        warn('Could not decode displacements correctly.');
                     }
 
                     dispStartVertex = dispStartVertex || 0;
