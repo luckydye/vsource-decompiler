@@ -309,16 +309,24 @@ export class Model {
         }
 
         const texture = shader['$basetexture'];
+        const texture2 = shader['$basetexture2'];
         const surface = shader['$surfaceprop'];
         const bumpmap = shader['$bumpmap'];
 
         let textureVtf = null;
+        let texture2Vtf = null;
         let bumpmapVtf = null;
 
         if(texture) {
             const vtfFile = await fileSystem.getFile(texture.replace('.vtf', '') + '.vtf');
             textureVtf = VTFFile.fromDataArray(await vtfFile.arrayBuffer());
             textureVtf.name = texture;
+        }
+
+        if(texture2) {
+            const vtfFile = await fileSystem.getFile(texture2.replace('.vtf', '') + '.vtf');
+            texture2Vtf = VTFFile.fromDataArray(await vtfFile.arrayBuffer());
+            texture2Vtf.name = texture2;
         }
 
         if(bumpmap) {
@@ -331,6 +339,7 @@ export class Model {
             name: materialName,
             translucent: shader['$translucent'] || shader['$alphatest'],
             texture: textureVtf,
+            texture2: texture2Vtf,
             bumpmap: bumpmapVtf,
             material: vmt,
         }
@@ -353,7 +362,12 @@ export class Model {
         // textures and materials
         for(let tex of mdl.textures) {
             const path = mdl.texturePaths[0].replace(/\\|\//g, '/');
-            const materialName = path + tex.name.toString().replace(path, '');
+            let materialName = tex.name.toString().replace(path, '');
+
+            if(materialName.split("/").length < 2) {
+                materialName = path + materialName;
+            }
+
             const mat = await this.loadMaterial(materialName);
             prop.materials.push(mat);
         }

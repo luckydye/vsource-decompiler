@@ -359,6 +359,7 @@ export default class GLTFFile extends TextFile {
         const materialName = objectMaterial.name.toString().replace(/\//g, "_");
 
         const baseTexture = objectMaterial.texture;
+        const baseTexture2 = objectMaterial.texture2;
         const bumpmapTexture = objectMaterial.bumpmap;
         const translucent = objectMaterial.translucent;
 
@@ -369,6 +370,7 @@ export default class GLTFFile extends TextFile {
         }
 
         let texture = null, 
+            texture2 = null, 
             bumpmap = null, 
             reflectivity = 0;
 
@@ -404,6 +406,20 @@ export default class GLTFFile extends TextFile {
             });
         }
 
+        if(baseTexture2) {
+            const textureImage = S3Texture.fromDataArray(
+                baseTexture2.imageData, 
+                baseTexture2.format.type,
+                baseTexture2.format.width, 
+                baseTexture2.format.height
+            );
+            const ddsBuffer = textureImage.toDDS();
+    
+            texture2 = this.createTexture(ddsBuffer, {
+                name: materialName + "_normal_texture2.dds",
+            });
+        }
+
         const matOptions = {
             name: materialName,
             doubleSided: true,
@@ -418,6 +434,13 @@ export default class GLTFFile extends TextFile {
         if(texture != null) {
             matOptions.pbrMetallicRoughness.baseColorTexture = {
                 index: texture,
+                texCoord: 0
+            };
+        }
+
+        if(texture2 != null) {
+            matOptions.occlusionTexture = {
+                index: texture2,
                 texCoord: 0
             };
         }
