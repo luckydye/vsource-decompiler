@@ -10,8 +10,8 @@ A BSP library to read Source .bsp map files and convert into .gltf or .obj.
 - fix prop positioning (eg. de_nuke)            ✓
 - normal maps                                   ✓
 - bump maps                                     ✓
+- texture blends                                (✓)
 - texture transforms
-- texture blends
 - decals / sprites
 
 ## Buggy todo list:
@@ -32,3 +32,6 @@ Decompile Apex Legends VPKs?
     - Use a MixRGB node and multiply the image with the alpha layer as the factor.
 
 2. Some Props may not decompile properly
+
+3. Blend Textures
+    - If a material has a blend texture, the second texture is included as a "OCCLUSION" Texture and has to be menually mixed with the base texture. Use the Alpha of the Vertex Color to blend the textures through the Mix Vertex Color Node.
