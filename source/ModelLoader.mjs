@@ -310,19 +310,28 @@ export class Model {
 
         const texture = shader['$basetexture'];
         const surface = shader['$surfaceprop'];
+        const bumpmap = shader['$bumpmap'];
 
-        let vtf = null;
+        let textureVtf = null;
+        let bumpmapVtf = null;
 
         if(texture) {
             const vtfFile = await fileSystem.getFile(texture.replace('.vtf', '') + '.vtf');
-            vtf = VTFFile.fromDataArray(await vtfFile.arrayBuffer());
-            vtf.name = texture;
+            textureVtf = VTFFile.fromDataArray(await vtfFile.arrayBuffer());
+            textureVtf.name = texture;
+        }
+
+        if(bumpmap) {
+            const vtfFile = await fileSystem.getFile(bumpmap.replace('.vtf', '') + '.vtf');
+            bumpmapVtf = VTFFile.fromDataArray(await vtfFile.arrayBuffer());
+            bumpmapVtf.name = bumpmap;
         }
 
         return {
             name: materialName,
             translucent: shader['$translucent'] || shader['$alphatest'],
-            texture: vtf,
+            texture: textureVtf,
+            bumpmap: bumpmapVtf,
             material: vmt,
         }
     }

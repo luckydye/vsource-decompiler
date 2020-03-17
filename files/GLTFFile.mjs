@@ -359,6 +359,7 @@ export default class GLTFFile extends TextFile {
         const materialName = objectMaterial.name.toString().replace(/\//g, "_");
 
         const baseTexture = objectMaterial.texture;
+        const bumpmapTexture = objectMaterial.bumpmap;
         const translucent = objectMaterial.translucent;
 
         const existingMaterial = this.getMaterialByName(materialName);
@@ -367,7 +368,9 @@ export default class GLTFFile extends TextFile {
             return existingMaterial;
         }
 
-        let texture = null, reflectivity = 0;
+        let texture = null, 
+            bumpmap = null, 
+            reflectivity = 0;
 
         if(baseTexture) {
             const textureImage = S3Texture.fromDataArray(
@@ -387,6 +390,20 @@ export default class GLTFFile extends TextFile {
                                 baseTexture.reflectivity[2]) / 3);
         }
 
+        if(bumpmapTexture) {
+            const textureImage = S3Texture.fromDataArray(
+                bumpmapTexture.imageData, 
+                bumpmapTexture.format.type,
+                bumpmapTexture.format.width, 
+                bumpmapTexture.format.height
+            );
+            const ddsBuffer = textureImage.toDDS();
+    
+            bumpmap = this.createTexture(ddsBuffer, {
+                name: materialName + "_normal_texture.dds",
+            });
+        }
+
         const matOptions = {
             name: materialName,
             doubleSided: true,
@@ -403,6 +420,14 @@ export default class GLTFFile extends TextFile {
                 index: texture,
                 texCoord: 0
             };
+        }
+
+        if(bumpmap != null) {
+            matOptions.normalTexture = {
+                scale: 1,
+                index: bumpmap,
+                texCoord: 0
+            }
         }
 
         return this.createMaterial(matOptions);
