@@ -8,10 +8,11 @@ A BSP library to read Source .bsp map files and convert into .gltf or .obj.
 - displacements                                 ✓
 - 3d skybox placement                           ✓
 - fix prop positioning (eg. de_nuke)            ✓
+- normal maps                                   ✓
+- bump maps                                     ✓
+- texture transforms
 - texture blends
-- texture displacement
-- normal maps
-- bump maps
+- decals / sprites
 
 ## Buggy todo list:
 
