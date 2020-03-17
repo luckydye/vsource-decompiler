@@ -1,7 +1,5 @@
 A BSP library to read Source .bsp map files and convert into .gltf or .obj.
 
-Spec: https://developer.valvesoftware.com/wiki/
-
 ## Todo
 
 - glTF file writer  	                        ✓
@@ -29,9 +27,7 @@ Decompile Apex Legends VPKs?
 
 ## Known Issues:
 
-Materials and Textures
-
 1. Sometimes the color of the textures becoms black because of the alpha layer in the image.
-    - Set the Color-Space of the image in the material to "No-Color" or "Raw".
+    - Use a MixRGB node and multiply the image with the alpha layer as the factor.
 
 2. Some Props may not decompile properly
