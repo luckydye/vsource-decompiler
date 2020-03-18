@@ -18,9 +18,9 @@ A BSP library to read Source .bsp map files and convert into .gltf or .obj.
 
 Props:
 
-_autocombine_metal_pipe_603.mdl_0 (nuke, orientation)
-de_cache some skybox prop_static stuff
-claypot03.mdl.001 (Index/Vertex Error)
+- _autocombine_metal_pipe_603.mdl_0 (nuke, orientation)
+- de_cache some skybox prop_static stuff
+- claypot03.mdl.001 (Index/Vertex Error)
 
 ## Other Ideas
 
