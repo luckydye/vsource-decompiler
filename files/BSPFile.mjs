@@ -530,10 +530,23 @@ export default class BSPFile extends BinaryFile {
                         const modelIndex = parseInt(model.substring(1));
                         const entityModel = models[modelIndex];
 
+                        // remove entity model from model array
                         models[modelIndex] = null;
 
                         convertModelToMesh(entityModel, origin, angles);
                     }
+
+                    break;
+                case 'func_illusionary':
+                    // face from world geometry
+
+                    break;
+                case 'func_detail':
+                    // face from world geometry
+
+                    break;
+                case 'func_breakable':
+                    // face from world geometry
 
                     break;
                 default:

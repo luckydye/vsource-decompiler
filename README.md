@@ -22,6 +22,15 @@ Props:
 - de_cache some skybox prop_static stuff
 - claypot03.mdl.001 (Index/Vertex Error)
 
+Decompile things:
+
+info_overlay
+func_illusionary
+func_detail
+func_breakable
+
+Prop Uniform Scale?
+
 ## Other Ideas
 
 Decompile Apex Legends VPKs?
