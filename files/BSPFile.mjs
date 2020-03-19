@@ -153,7 +153,7 @@ export default class BSPFile extends BinaryFile {
                             }
                             return v;
                         })
-        
+
                         if(value.length > 1) {
                             blocks[blockIndex][key] = value;
                         } else {
@@ -180,7 +180,7 @@ export default class BSPFile extends BinaryFile {
 
         const propLeafs = this.unserialize(buffer, byteOffset, BSPFile.STRUCT.StaticPropLeafLump_t);
         byteOffset = propLeafs.byteOffset;
-        
+
         const entries = this.parseBytes(buffer, byteOffset, 'int');
         byteOffset = entries.byteOffset;
 
@@ -229,17 +229,17 @@ export default class BSPFile extends BinaryFile {
         bsp.edges = this.unserializeArray(lumps[LumpTypes.EDGES], 0, this.STRUCT.dedge_t);
         bsp.surfedges = this.unserializeArray(lumps[LumpTypes.SURFEDGES], 0, { edge: 'int' });
         bsp.vertecies = this.unserializeArray(lumps[LumpTypes.VERTEXES], 0, this.STRUCT.vertex);
-        
+
         // textures
         bsp.texinfo = this.unserializeArray(lumps[LumpTypes.TEXINFO], 0, this.STRUCT.texinfo_t);
         bsp.texdata = this.unserializeArray(lumps[LumpTypes.TEXDATA], 0, this.STRUCT.dtexdata_t);
         bsp.texdatastringtable = this.unserializeArray(lumps[LumpTypes.TEXDATA_STRING_TABLE], 0, { tex: 'int' });
         bsp.textures = this.unserializeTextureDataLump(lumps[LumpTypes.TEXDATA_STRING_DATA], bsp.texdatastringtable);
-        
+
         // brushes
         // bsp.brushes = this.unserializeArray(lumps[LumpTypes.BRUSHES], 0, this.STRUCT.dbrush_t);
         // bsp.brushsides = this.unserializeArray(lumps[LumpTypes.BRUSHSIDES], 0, this.STRUCT.dbrushside_t);
-        
+
         // displacements
         log('Decompile displacements...');
 
@@ -256,30 +256,20 @@ export default class BSPFile extends BinaryFile {
         bsp.skyCamera = null;
 
         for(let entity of bsp.entities) {
-            switch(entity.classname) {
 
-                case Entity.prop_dynamic:
-                    bsp.props.push(entity);
-                    break;
+            if(entity.model && entity.model[0] !== '*' && entity.model.match('\.mdl')) {
+                bsp.props.push(entity);
+            }
+
+            switch(entity.classname) {
 
                 case Entity.sky_camera:
                     bsp.skyCamera = entity;
                     break;
 
                 case Entity.light_spot:
-                    bsp.lights.push(entity);
-                    break;
-
                 case Entity.light:
                     bsp.lights.push(entity);
-                    break;
-
-                case Entity.prop_door_rotating:
-                    bsp.props.push(entity);
-                    break;
-
-                case Entity.prop_physics_multiplayer:
-                    bsp.props.push(entity);
                     break;
 
                 default: continue;
@@ -332,16 +322,16 @@ export default class BSPFile extends BinaryFile {
                 rotation[1],
                 rotation[2],
             ]
-    
+
             const firstFace = model.firstface;
             const faceCount = model.numfaces;
-    
+
             const faces = mapFaces.slice(firstFace, firstFace + faceCount);
-    
+
             for(let face of faces) {
-                
+
                 const plane = planes[face.planenum.data];
-                
+
                 const textureInfo = this.texinfo[face.texinfo.data];
                 const textureData = this.texdata[textureInfo.texdata.data];
                 const textureIndex = textureData.nameStringTableID.data;
@@ -358,7 +348,7 @@ export default class BSPFile extends BinaryFile {
                     angles: angels,
                     currentVertexIndex: 0,
                 };
-    
+
                 switch(textureFlag) {
                     // not draw stuff:
                     case TextureFlags.SURF_NOPORTAL: continue;
@@ -382,11 +372,11 @@ export default class BSPFile extends BinaryFile {
 
                     default: continue;
                 }
-                
+
                 const faces = face.side.data;
                 const normal = plane.normal.data;
                 const faceSurfedges = surfedges.slice(face.firstedge.data, face.firstedge.data + face.numedges.data);
-    
+
                 const faceEdges = faceSurfedges.map(surfEdge => {
                     const edge = edges[Math.abs(surfEdge.edge.data)].v.data;
                     if(surfEdge.edge.data < 0) {
@@ -394,10 +384,10 @@ export default class BSPFile extends BinaryFile {
                     }
                     return edge;
                 });
-    
+
                 const verts = [];
                 const indexes = [];
-    
+
                 for(let vertindices of faceEdges) {
                     verts.push(vertecies[vertindices[0]]);
                 }
@@ -412,9 +402,9 @@ export default class BSPFile extends BinaryFile {
                 }
 
                 // displacements
-                let dispStartVertex = null, 
-                    dispPower = 0, 
-                    dispVerts = [], 
+                let dispStartVertex = null,
+                    dispPower = 0,
+                    dispVerts = [],
                     startPosition = null;
 
                 if(dispInfo) {
@@ -433,8 +423,8 @@ export default class BSPFile extends BinaryFile {
 
                     for(let vert of geo.vertices) {
                         if (
-                            Math.round(vert.x.valueOf()) == dx && 
-                            Math.round(vert.y.valueOf()) == dy && 
+                            Math.round(vert.x.valueOf()) == dx &&
+                            Math.round(vert.y.valueOf()) == dy &&
                             Math.round(vert.z.valueOf()) == dz
                         ) {
                             dispStartVertex = geo.vertices.indexOf(vert);
@@ -489,12 +479,12 @@ export default class BSPFile extends BinaryFile {
 
                     meshes[textureIndex].vertecies.push([
                         y + origin[1] + displace.y,
-                        z + origin[2] + displace.z, 
-                        x + origin[0] + displace.x, 
+                        z + origin[2] + displace.z,
+                        x + origin[0] + displace.x,
                     ]);
 
                     const tv = textureInfo.textureVecs.data;
-                
+
                     meshes[textureIndex].uvs.push([
                         (tv[0][0] * x + tv[0][1] * y + tv[0][2] * z + tv[0][3]) / textureData.width_height_0,
                         (tv[1][0] * x + tv[1][1] * y + tv[1][2] * z + tv[1][3]) / textureData.width_height_1
@@ -502,13 +492,13 @@ export default class BSPFile extends BinaryFile {
 
                     meshes[textureIndex].normals.push([
                         -normal[1].valueOf(),
-                        -normal[2].valueOf(), 
+                        -normal[2].valueOf(),
                         -normal[0].valueOf()
                     ]);
 
                     i++;
                 }
-    
+
                 const currentVertexIndex = meshes[textureIndex].currentVertexIndex;
 
                 for(let index of geo.indices.flat()) {
@@ -520,40 +510,22 @@ export default class BSPFile extends BinaryFile {
         }
 
         for(let entity of entities) {
-            switch(entity.classname) {
-                case 'func_brush':
-                    const model = entity.model;
-                    const origin = entity.origin || [0, 0, 0];
-                    const angles = entity.angles || [0, 0, 0];
+            const model = entity.model;
 
-                    if(model && model[0] == '*') {
-                        const modelIndex = parseInt(model.substring(1));
-                        const entityModel = models[modelIndex];
+            if(model && model[0] == '*') {
+                const origin = entity.origin || [0, 0, 0];
+                const angles = entity.angles || [0, 0, 0];
 
-                        // remove entity model from model array
-                        models[modelIndex] = null;
+                const modelIndex = parseInt(model.substring(1));
+                const entityModel = models[modelIndex];
 
-                        convertModelToMesh(entityModel, origin, angles);
-                    }
+                // remove entity model from model array
+                models[modelIndex] = null;
 
-                    break;
-                case 'func_illusionary':
-                    // face from world geometry
-
-                    break;
-                case 'func_detail':
-                    // face from world geometry
-
-                    break;
-                case 'func_breakable':
-                    // face from world geometry
-
-                    break;
-                default:
-                    continue;
+                convertModelToMesh(entityModel, origin, angles);
             }
         }
-        
+
         for(let model of models) {
             if(model) {
                 convertModelToMesh(model, [0, 0, 0], [0, 0, 0]);

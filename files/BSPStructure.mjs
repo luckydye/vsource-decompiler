@@ -219,6 +219,12 @@ export const Entity = {
     light_spot: 'light_spot',
     light: 'light',
     info_particle_system: 'info_particle_system',
+    info_overlay: 'info_overlay',
+    func_detail: 'func_detail',
+    func_breakable: 'func_breakable',
+    func_illusionary: 'func_illusionary',
+    func_brush: 'func_brush',
+    env_sprite: 'env_sprite',
 }
 
 export const TextureFlags = {
