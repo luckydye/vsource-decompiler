@@ -307,14 +307,14 @@ export default class BSPFile extends BinaryFile {
         const models = this.models;
         const entities = this.entities;
 
-        const meshes = [];
-
         const convertModelToMesh = (model, position, rotation) => {
 
+            const meshes = [];
+
             const origin = [
-                model.origin.data[0] + position[0],
                 model.origin.data[1] + position[1],
-                model.origin.data[2] + position[2]
+                model.origin.data[2] + position[2],
+                model.origin.data[0] + position[0],
             ]
 
             const angels = [
@@ -346,6 +346,7 @@ export default class BSPFile extends BinaryFile {
                     normals: [],
                     material: textureIndex,
                     angles: angels,
+                    position: origin,
                     currentVertexIndex: 0,
                 };
 
@@ -478,9 +479,9 @@ export default class BSPFile extends BinaryFile {
                     }
 
                     meshes[textureIndex].vertecies.push([
-                        y + origin[1] + displace.y,
-                        z + origin[2] + displace.z,
-                        x + origin[0] + displace.x,
+                        y + displace.y,
+                        z + displace.z,
+                        x + displace.x,
                     ]);
 
                     const tv = textureInfo.textureVecs.data;
@@ -507,7 +508,17 @@ export default class BSPFile extends BinaryFile {
 
                 meshes[textureIndex].currentVertexIndex += geo.vertices.length;
             }
+
+            return meshes;
         }
+
+        const modelsGeometry = [];
+
+        const worldSpawn = entities[0];
+        const worldModel = models[0];
+
+        const meshArray = convertModelToMesh(worldModel, [0, 0, 0], [0, 0, 0]);
+        modelsGeometry.push(...meshArray);
 
         for(let entity of entities) {
             const model = entity.model;
@@ -522,17 +533,12 @@ export default class BSPFile extends BinaryFile {
                 // remove entity model from model array
                 models[modelIndex] = null;
 
-                convertModelToMesh(entityModel, origin, angles);
+                const meshArray = convertModelToMesh(entityModel, origin, angles);
+                modelsGeometry.push(...meshArray);
             }
         }
 
-        for(let model of models) {
-            if(model) {
-                convertModelToMesh(model, [0, 0, 0], [0, 0, 0]);
-            }
-        }
-
-        return meshes;
+        return modelsGeometry;
     }
 
 }

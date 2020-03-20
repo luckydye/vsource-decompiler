@@ -129,7 +129,7 @@ export class Model {
                 material: material,
                 scale: [1, 1, 1],
                 origin: [0, 0, 0],
-                position: [0, 0, 0],
+                position: mesh.position,
                 rotation: mesh.angles,
             });
         }

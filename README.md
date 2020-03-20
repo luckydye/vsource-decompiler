@@ -16,20 +16,8 @@ A BSP library to read Source .bsp map files and convert into .gltf or .obj.
 
 ## Buggy todo list:
 
-Props:
-
 - _autocombine_metal_pipe_603.mdl_0 (nuke, orientation)
-- de_cache some skybox prop_static stuff
 - claypot03.mdl.001 (Index/Vertex Error)
-
-Decompile things:
-
-info_overlay
-func_illusionary
-func_detail
-func_breakable
-
-Prop Uniform Scale?
 
 ## Other Ideas
 
