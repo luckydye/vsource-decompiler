@@ -50,6 +50,14 @@ export default class VirtualFileSystem {
         this.fileRegistry = {};
     }
 
+    setRoot(root) {
+        this.root = root;
+    }
+
+    getRoot() {
+        return this.root;
+    }
+
     attatchPakfile(pakfileBuffer) {
         const pakfile = new Zip(pakfileBuffer);
         this.pakfile = pakfile;

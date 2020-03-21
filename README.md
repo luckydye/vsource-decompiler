@@ -12,7 +12,6 @@ A BSP library to read Source .bsp map files and convert into .gltf or .obj.
 - bump maps                                     ✓
 - texture blends                                (✓)
 - texture transforms
-- decals / sprites
 
 ## Buggy todo list:
 
@@ -32,3 +31,5 @@ Decompile Apex Legends VPKs?
 
 3. Blend Textures
     - If a material has a blend texture, the second texture is included as a "OCCLUSION" Texture and has to be menually mixed with the base texture. Use the Alpha of the Vertex Color to blend the textures through the Mix Vertex Color Node.
+
+4. Some Props convert with a wrong orientation. This can be fixed manually in blender.

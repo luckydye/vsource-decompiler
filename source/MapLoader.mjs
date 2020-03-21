@@ -1,27 +1,18 @@
-import { VVDFile, BSPFile, VPKFile, MDLFile, VMTFile, VTFFile, VTXFile } from '../index.mjs';
-
 import chalk from 'chalk';
-import VirtualFileSystem from './VirtualFileSystem.mjs';
+import { BSPFile } from '../index.mjs';
+import PropLoader from './PropLoader.mjs';
+import MaterialLoader from './MaterialLoader.mjs';
 
-const fileSystem = new VirtualFileSystem();
 const propTypes = new Map();
 
-function getModelNameFromPath(modelPath) {
-    const parts = modelPath.split(/\/|\\/g);
-    return parts[parts.length-1].replace(/\\+|\/+/g, "_");
-}
+export default class MapLoader {
 
-export class Model {
+    constructor(fileSystem) {
+        this.fileSystem = fileSystem;
 
-    static get resourceRoot() {
-        return fileSystem.root;
-    }
+        this.propLoader = new PropLoader(fileSystem);
+        this.materialLoader = new MaterialLoader(fileSystem);
 
-    static set resourceRoot(val) {
-        fileSystem.root = val;
-    }
-
-    constructor() {
         this.geometry = {
             map: [],
             lights: [],
@@ -31,20 +22,9 @@ export class Model {
         };
     }
 
-    async loadPakfile(mapName) {
-        const mapPath = `maps/${mapName}.bsp`;
-        log('Loading map', mapPath);
-
-        const map = await fileSystem.getFile(mapPath);
-        const bsp = BSPFile.fromDataArray(await map.arrayBuffer());
-
-        log('Reading pakfile...');
-        this.pakfile = Buffer.from(bsp.pakfile.buffer);
-        
-        return this.pakfile;
-    }
-
     async loadMap(mapName) {
+        const fileSystem = this.fileSystem;
+        
         this.name = mapName;
 
         const mapPath = `maps/${mapName}.bsp`;
@@ -62,7 +42,7 @@ export class Model {
         const textures = new Map();
             
         for(let texture of bsp.textures) {
-            const mat = await this.loadMaterial(texture.toLocaleLowerCase()).catch(err => {
+            const mat = await this.materialLoader.loadMaterial(texture.toLocaleLowerCase()).catch(err => {
                 error(err);
                 log(texture);
             });
@@ -137,7 +117,7 @@ export class Model {
         log('Load prop_dynamic ...');
 
         for(let prop of bsp.props) {
-            const modelMeshes = await this.loadProp(prop.model).catch(err => {
+            const modelMeshes = await this.propLoader.loadProp(prop.model).catch(err => {
                 console.log('');
                 error('Failed loading prop_dynamic: ' + prop.model);
                 log(err);
@@ -197,6 +177,8 @@ export class Model {
         });
 
         log('Done loading map props.');
+
+        return this.geometry;
     }
     
     registerProp(prop) {
@@ -237,7 +219,7 @@ export class Model {
 
             for(let [_, propType] of propTypes) {
 
-                this.loadProp(propType.mdlPath).then(meshes => {
+                this.propLoader.loadProp(propType.mdlPath).then(meshes => {
                     for(let listener of propType.listeners) listener(meshes);
                     
                 }).catch(err => {
@@ -261,164 +243,11 @@ export class Model {
         })
     }
 
-    async loadMaterial(materialName) {
+}
 
-        if(materialName == undefined) {
-            throw new Error('Material name undefined.');
-        }
-
-        const vmtFile = await fileSystem.getFile(`${materialName}.vmt`);
-        let vmt = VMTFile.fromDataArray(await vmtFile.arrayBuffer());
-
-        const patch = vmt.data.patch;
-        
-        if(patch && patch.include) {
-            const vmtFile = await fileSystem.getFile(patch.include);
-            vmt = VMTFile.fromDataArray(await vmtFile.arrayBuffer());
-        }
-        
-        const vertexlit = vmt.data.vertexlitgeneric;
-        const lightmapped = vmt.data.lightmappedgeneric;
-        const unlit = vmt.data.unlitgeneric;
-        const world = vmt.data.worldvertextransition;
-        const water = vmt.data.water;
-        const refract = vmt.data.refract;
-        const lightmapped_4wayblend = vmt.data.lightmapped_4wayblend;
-        const unlittwotexture = vmt.data.unlittwotexture;
-        const splinerope = vmt.data.splinerope;
-        const modulate = vmt.data.modulate;
-        const decalmodulate = vmt.data.decalmodulate;
-        const sprite = vmt.data.sprite;
-
-        const shader =  vertexlit || 
-                        lightmapped || 
-                        unlit || 
-                        world || 
-                        water ||
-                        refract || 
-                        lightmapped_4wayblend || 
-                        unlittwotexture || 
-                        splinerope || 
-                        modulate || 
-                        decalmodulate || 
-                        sprite
-
-        if(!shader) {
-            console.log(vmt.data);
-            throw new Error('Unknown material.');
-        }
-
-        const texture = shader['$basetexture'];
-        const texture2 = shader['$basetexture2'];
-        const surface = shader['$surfaceprop'];
-        const bumpmap = shader['$bumpmap'];
-
-        let textureVtf = null;
-        let texture2Vtf = null;
-        let bumpmapVtf = null;
-
-        if(texture) {
-            const vtfFile = await fileSystem.getFile(texture.replace('.vtf', '') + '.vtf');
-            textureVtf = VTFFile.fromDataArray(await vtfFile.arrayBuffer());
-            textureVtf.name = texture;
-        }
-
-        if(texture2) {
-            const vtfFile = await fileSystem.getFile(texture2.replace('.vtf', '') + '.vtf');
-            texture2Vtf = VTFFile.fromDataArray(await vtfFile.arrayBuffer());
-            texture2Vtf.name = texture2;
-        }
-
-        if(bumpmap) {
-            const vtfFile = await fileSystem.getFile(bumpmap.replace('.vtf', '') + '.vtf');
-            bumpmapVtf = VTFFile.fromDataArray(await vtfFile.arrayBuffer());
-            bumpmapVtf.name = bumpmap;
-        }
-
-        return {
-            name: materialName,
-            translucent: shader['$translucent'] || shader['$alphatest'],
-            texture: textureVtf,
-            texture2: texture2Vtf,
-            bumpmap: bumpmapVtf,
-            material: vmt,
-        }
-    }
-
-    async loadProp(propType) {
-        
-        const mdlPath = propType;
-        const vddPath = propType.replace('.mdl', '.vvd');
-        const vtxPath = propType.replace('.mdl', '.dx90.vtx');
-
-        const prop = {
-            materials: [],
-        };
-
-        // mdl
-        const mdlFile = await fileSystem.getFile(mdlPath);
-        const mdl = MDLFile.fromDataArray(await mdlFile.arrayBuffer());
-
-        // textures and materials
-        for(let tex of mdl.textures) {
-            const path = mdl.texturePaths[0].replace(/\\|\//g, '/');
-            let materialName = tex.name.toString().replace(path, '');
-
-            if(materialName.split("/").length < 2) {
-                materialName = path + materialName;
-            }
-
-            const mat = await this.loadMaterial(materialName);
-            prop.materials.push(mat);
-        }
-
-        // geometry info
-        const vtxFile = await fileSystem.getFile(vtxPath);
-        const vtx = VTXFile.fromDataArray(await vtxFile.arrayBuffer());
-
-        const vvdFile = await fileSystem.getFile(vddPath);
-        const vvd = VVDFile.fromDataArray(await vvdFile.arrayBuffer());
-        const geometry = vvd.convertToMesh();
-
-        const propMeshes = [];
-        let meshIndex = 0;
-
-        for(let mesh of vtx.meshes) {
-            propMeshes.push({
-                material: prop.materials[meshIndex],
-                indices: mesh.indices,
-                vertecies: mesh.vertexindices.map(rv => {
-                    const vert = geometry.vertecies[rv];
-                    if(!vert) throw new Error('Vertex doesnt exist');
-                    return vert;
-                }),
-                uvs: mesh.vertexindices.map(rv => {
-                    const vert = geometry.uvs[rv];
-                    if(!vert) throw new Error('UV doesnt exist');
-                    return vert;
-                }),
-                normals: mesh.vertexindices.map(rv => {
-                    const vert = geometry.normals[rv];
-                    if(!vert) throw new Error('Normal doesnt exist');
-                    return vert;
-                }),
-            });
-
-            meshIndex++;
-        }
-
-        return propMeshes;
-    }
-
-    static loadVPK(vpkPath) {
-        const load = async () => {
-            const vpkFetch = await fileSystem.getFile(vpkPath);
-            const vpkData = await vpkFetch.arrayBuffer();
-            const vpk = VPKFile.fromDataArray(vpkData);
-            return vpk;
-        }
-        return load();
-    }
+function getModelNameFromPath(modelPath) {
+    const parts = modelPath.split(/\/|\\/g);
+    return parts[parts.length-1].replace(/\\+|\/+/g, "_");
 }
 
 function transformPropGeometry(prop) {

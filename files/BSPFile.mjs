@@ -1,6 +1,5 @@
 import { BinaryFile } from './BinaryFile.mjs';
-import pex from 'pex-geom';
-import { BSP, TextureFlags, LumpTypes, Entity } from './BSPStructure.mjs';
+import { BSP, Entity, LumpTypes, TextureFlags } from './BSPStructure.mjs';
 
 export default class BSPFile extends BinaryFile {
 

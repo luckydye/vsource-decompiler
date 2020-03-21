@@ -3,13 +3,13 @@
   "version": "1.0.0",
   "description": "A binary file library to read various binary files.",
   "main": "index.mjs",
-  "module": "index.mjs",
+  "module": "@uncut/file-format-lib",
   "bin": {
     "source": "scripts/decompile.mjs"
   },
   "scripts": {
     "decompile": "node scripts/decompile.mjs",
-    "test": "node scripts/validate.js"
+    "test": "node test/validate.js"
   },
   "repository": {
     "type": "git",
@@ -25,7 +25,7 @@
     "chalk": "^3.0.0",
     "gl-matrix": "^3.2.1",
     "gltf-validator": "^2.0.0-dev.3.2",
-    "node-zip": "^1.1.1",
-    "pex-gen": "^0.1.2"
+    "light-cli": "git+ssh://git@github.com/luckydye/light-cli.git",
+    "node-zip": "^1.1.1"
   }
 }
