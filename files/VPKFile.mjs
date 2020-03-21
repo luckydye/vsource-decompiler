@@ -1,4 +1,4 @@
-import { BinaryFile } from './BinaryFile.mjs';
+import { BinaryFile } from 'binary-file-lib';
 
 // https://developer.valvesoftware.com/wiki/VPK_File_Format#Conception
 

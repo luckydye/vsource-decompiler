@@ -1,4 +1,4 @@
-import { BinaryFile } from './BinaryFile.mjs';
+import { BinaryFile } from 'binary-file-lib';
 import { VTX } from './VTXStructure.mjs';
 
 export default class VTXFile extends BinaryFile {

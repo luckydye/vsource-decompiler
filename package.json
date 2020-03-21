@@ -1,15 +1,14 @@
 {
   "name": "vsource-decompiler",
   "version": "1.0.0",
-  "description": "A binary file library to read valve source binary files.",
+  "description": "A file library to read valve source binary files.",
   "main": "index.mjs",
   "module": "vsource-decompiler",
   "bin": {
     "source": "scripts/decompile.mjs"
   },
   "scripts": {
-    "decompile": "node scripts/decompile.mjs",
-    "test": "node test/validate.js"
+    "decompile": "node scripts/decompile.mjs"
   },
   "repository": {
     "type": "git",
@@ -22,9 +21,8 @@
   },
   "homepage": "https://github.com/luckydye/source-bsp-lib#readme",
   "dependencies": {
+    "binary-file-lib": "git+ssh://git@github.com/luckydye/binary-file-lib.git",
     "chalk": "^3.0.0",
-    "gl-matrix": "^3.2.1",
-    "gltf-validator": "^2.0.0-dev.3.2",
     "light-cli": "git+ssh://git@github.com/luckydye/light-cli.git",
     "node-zip": "^1.1.1"
   }

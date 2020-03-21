@@ -114,7 +114,7 @@ export default class MapLoader {
             });
         }
 
-        log('Load prop_dynamic ...');
+        log('Load entities ...');
 
         for(let prop of bsp.props) {
             const modelMeshes = await this.propLoader.loadProp(prop.model).catch(err => {
