@@ -1,9 +1,9 @@
 {
-  "name": "@uncut/file-format-lib",
+  "name": "vsource-decompiler",
   "version": "1.0.0",
-  "description": "A binary file library to read various binary files.",
+  "description": "A binary file library to read valve source binary files.",
   "main": "index.mjs",
-  "module": "@uncut/file-format-lib",
+  "module": "vsource-decompiler",
   "bin": {
     "source": "scripts/decompile.mjs"
   },
