@@ -74,7 +74,8 @@ export default class VirtualFileSystem {
     async attatchPakfile(pakfileBuffer) {
         this.pakfile = await Zip.loadAsync(pakfileBuffer);
 
-        const entries = Object.keys(this.pakfile.files);
+        const pakfile = this.pakfile;
+        const entries = Object.keys(pakfile.files);
 
         for(let entry of entries) {
             if(logFile) {
@@ -84,7 +85,7 @@ export default class VirtualFileSystem {
             this.fileRegistry[entry.toLocaleLowerCase()] = { 
                 file: entry, 
                 async arrayBuffer() {
-                    return this.pakfile.files[entry].asNodeBuffer();
+                    return (await pakfile.files[entry].async('uint8array')).buffer;
                 }
             };
         }
