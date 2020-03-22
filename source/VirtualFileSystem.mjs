@@ -1,22 +1,29 @@
-import fs from 'fs';
-import path from 'path';
 import Zip from 'jszip';
 
-if(fs.existsSync('filesystem.log')) {
-    fs.unlinkSync('filesystem.log');
-}
-const logFile = fs.createWriteStream('filesystem.log');
+let fs, path, logFile;
+
+const env = Buffer != undefined ? 'node' : 'browser';
 
 export default class VirtualFileSystem {
 
-    static indexFileTree(dir, filelist) {
+    static async indexFileTree(dir, filelist) {
         filelist = filelist || {};
+
+        fs = fs || await import('fs');
+        path = path || await import('path');
+
+        if(!logFile) {
+            if(fs.existsSync('filesystem.log')) {
+                fs.unlinkSync('filesystem.log');
+            }
+            logFile = fs.createWriteStream('filesystem.log');
+        }
 
         const files = fs.readdirSync(dir);
         
-        files.forEach(file => {
+        files.forEach(async file => {
             if (fs.statSync(dir + "/" + file).isDirectory()) {
-                filelist = this.indexFileTree(dir + '/' + file, filelist);
+                filelist = await this.indexFileTree(dir + '/' + file, filelist);
             } else {
                 const dirPath = dir.split(/\/|\\/g).slice(1);
                 const fileKey = dirPath.join("/").toLocaleLowerCase() + "/" + file.toLocaleLowerCase();
@@ -86,13 +93,12 @@ export default class VirtualFileSystem {
             for(let entry of fileSystemEntries) {
                 if(entry.match(resource)) {
                     return resolve(this.fileRegistry[entry]);
-                    break;
                 }
             }
 
             // index if not yet indexed
-            if(!this.indexed) {
-                this.fileRegistry = Object.assign(VirtualFileSystem.indexFileTree(this.root), this.fileRegistry);
+            if(!this.indexed && env === "node") {
+                this.fileRegistry = Object.assign(await VirtualFileSystem.indexFileTree(this.root), this.fileRegistry);
                 this.indexed = true;
 
                 const file = await this.getFile(resource);
