@@ -14,7 +14,7 @@ export default class PakLoader {
         const bsp = BSPFile.fromDataArray(await map.arrayBuffer());
 
         log('Reading pakfile...');
-        const pakfile = Buffer.from(bsp.pakfile.buffer);
+        const pakfile = new DataView(bsp.pakfile.buffer);
         
         return pakfile;
     }

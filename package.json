@@ -21,9 +21,9 @@
   },
   "homepage": "https://github.com/luckydye/source-bsp-lib#readme",
   "dependencies": {
-    "binary-file-lib": "git+ssh://git@github.com/luckydye/binary-file-lib.git",
+    "binary-file-lib": "file:../binary-file-lib",
     "chalk": "^3.0.0",
-    "light-cli": "git+ssh://git@github.com/luckydye/light-cli.git",
-    "node-zip": "^1.1.1"
+    "jszip": "^3.2.2",
+    "light-cli": "git+ssh://git@github.com/luckydye/light-cli.git"
   }
 }

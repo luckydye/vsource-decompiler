@@ -34,8 +34,7 @@ export default class MapLoader {
         const bsp = BSPFile.fromDataArray(await map.arrayBuffer());
 
         log('Reading pakfile...');
-        this.pakfile = Buffer.from(bsp.pakfile.buffer);
-        fileSystem.attatchPakfile(this.pakfile);
+        await fileSystem.attatchPakfile(bsp.pakfile.buffer);
 
         log('Load map textures...');
 

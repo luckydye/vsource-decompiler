@@ -1,6 +1,6 @@
 import fs from 'fs';
-import Zip from 'node-zip';
 import path from 'path';
+import Zip from 'jszip';
 
 if(fs.existsSync('filesystem.log')) {
     fs.unlinkSync('filesystem.log');
@@ -58,11 +58,10 @@ export default class VirtualFileSystem {
         return this.root;
     }
 
-    attatchPakfile(pakfileBuffer) {
-        const pakfile = new Zip(pakfileBuffer);
-        this.pakfile = pakfile;
+    async attatchPakfile(pakfileBuffer) {
+        this.pakfile = await Zip.loadAsync(pakfileBuffer);
 
-        const entries = Object.keys(pakfile.files);
+        const entries = Object.keys(this.pakfile.files);
 
         for(let entry of entries) {
             logFile.write(entry + '\n');
@@ -70,7 +69,7 @@ export default class VirtualFileSystem {
             this.fileRegistry[entry.toLocaleLowerCase()] = { 
                 file: entry, 
                 async arrayBuffer() {
-                    return pakfile.files[entry].asNodeBuffer();
+                    return this.pakfile.files[entry].asNodeBuffer();
                 }
             };
         }
@@ -81,19 +80,24 @@ export default class VirtualFileSystem {
 
         return new Promise(async (resolve, reject) => {
 
-            // index if not yet indexed
-            if(!this.indexed) {
-                this.fileRegistry = Object.assign(VirtualFileSystem.indexFileTree(this.root), this.fileRegistry);
-                this.indexed = true;
-            }
-
             // look in fileregistry
             const fileSystemEntries = Object.keys(this.fileRegistry);
 
             for(let entry of fileSystemEntries) {
                 if(entry.match(resource)) {
-                    resolve(this.fileRegistry[entry]);
+                    return resolve(this.fileRegistry[entry]);
                     break;
+                }
+            }
+
+            // index if not yet indexed
+            if(!this.indexed) {
+                this.fileRegistry = Object.assign(VirtualFileSystem.indexFileTree(this.root), this.fileRegistry);
+                this.indexed = true;
+
+                const file = await this.getFile(resource);
+                if(file) {
+                    resolve(file);
                 }
             }
 
