@@ -217,7 +217,7 @@ export default class BSPFile extends BinaryFile {
 
         const lumps = this.readLumpData(bsp.header.lumps, bsp.view);
 
-        log('decode lumps...');
+        console.log('decode lumps...');
 
         // models
         bsp.models = this.unserializeArray(lumps[LumpTypes.MODELS], 0, this.STRUCT.dmodel_t);
@@ -240,7 +240,7 @@ export default class BSPFile extends BinaryFile {
         // bsp.brushsides = this.unserializeArray(lumps[LumpTypes.BRUSHSIDES], 0, this.STRUCT.dbrushside_t);
 
         // displacements
-        log('Decompile displacements...');
+        console.log('Decompile displacements...');
 
         bsp.displacements = this.unserializeArray(lumps[LumpTypes.DISPINFO], 0, this.STRUCT.ddispinfo_t);
         bsp.displacementverts = this.unserializeArray(lumps[LumpTypes.DISP_VERTS], 0, this.STRUCT.dDispVert);
@@ -278,14 +278,14 @@ export default class BSPFile extends BinaryFile {
         // pakfile
         bsp.pakfile = lumps[LumpTypes.PAKFILE];
 
-        log('read gamelumps...');
+        console.log('read gamelumps...');
 
         // gamelumps
         const gamelumps = BSPFile.unserializeGameLumps(lumps[LumpTypes.GAME_LUMP], bsp.view);
 
         bsp.gamelumps = {};
 
-        log('decode gamelumps...');
+        console.log('decode gamelumps...');
 
         for(let lump of gamelumps) {
             if(lump.id == "sprp") {

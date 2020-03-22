@@ -2,7 +2,7 @@ import Zip from 'jszip';
 
 let fs, path, logFile;
 
-const env = Buffer != undefined ? 'node' : 'browser';
+const env = typeof Buffer != "undefined" ? 'node' : 'browser';
 
 export default class VirtualFileSystem {
 
@@ -28,7 +28,9 @@ export default class VirtualFileSystem {
                 const dirPath = dir.split(/\/|\\/g).slice(1);
                 const fileKey = dirPath.join("/").toLocaleLowerCase() + "/" + file.toLocaleLowerCase();
 
-                logFile.write(fileKey + '\n');
+                if(logFile) {
+                    logFile.write(fileKey + '\n');
+                }
 
                 filelist[fileKey] = { 
                     file: dir + '/' + file, 
@@ -71,7 +73,9 @@ export default class VirtualFileSystem {
         const entries = Object.keys(this.pakfile.files);
 
         for(let entry of entries) {
-            logFile.write(entry + '\n');
+            if(logFile) {
+                logFile.write(entry + '\n');
+            }
 
             this.fileRegistry[entry.toLocaleLowerCase()] = { 
                 file: entry, 
@@ -79,6 +83,22 @@ export default class VirtualFileSystem {
                     return this.pakfile.files[entry].asNodeBuffer();
                 }
             };
+        }
+    }
+
+    getTree() {
+        return {
+            name: 'root',
+            children: [
+                {
+                    name: 'x',
+                    children: []
+                },
+                {
+                    name: 'y',
+                    children: []
+                }
+            ]
         }
     }
 
