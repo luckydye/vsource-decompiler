@@ -4,6 +4,10 @@ let fs, path, logFile;
 
 const env = typeof Buffer != "undefined" ? 'node' : 'browser';
 
+const fileEndingTypeMap = {
+    'mdl': "model",
+};
+
 export default class VirtualFileSystem {
 
     static async indexFileTree(dir, filelist) {
@@ -87,19 +91,48 @@ export default class VirtualFileSystem {
     }
 
     getTree() {
-        return {
+        const files = Object.keys(this.fileRegistry);
+
+        const tree = {
             name: 'root',
-            children: [
-                {
-                    name: 'x',
-                    children: []
-                },
-                {
-                    name: 'y',
+            type: 'root',
+            children: []
+        };
+
+        const getFileType = file => {
+            const parts = file.split('.');
+            return fileEndingTypeMap[parts[parts.length-1]] || 'file';
+        }
+
+        const enterRecursive = (pathArray, currentLocation, currentPath = "") => {
+            
+            const locationName = pathArray.splice(0, 1)[0];
+            currentPath += "/" + locationName;
+
+            let location = currentLocation.children.find(child => child.name == locationName);
+
+            if(location == undefined) {
+                location = {
+                    name: locationName,
+                    path: currentPath,
+                    type: pathArray.length ? 'folder' : getFileType(locationName),
                     children: []
                 }
-            ]
+
+                currentLocation.children.push(location);
+            }
+
+            if(pathArray.length >= 1) {
+                enterRecursive(pathArray, location, currentPath);
+            }
         }
+
+        for(let file of files) {
+            const pathArray = file.split(/\//g);
+            enterRecursive(pathArray, tree);
+        }
+
+        return tree;
     }
 
     getFile(resource) {
