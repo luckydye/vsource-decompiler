@@ -59,6 +59,7 @@ export default class VirtualFileSystem {
     constructor(root = "csgo/") {
         this.root = root;
         this.pakfile = null;
+        this.vpkfile = null;
         this.indexed = false;
         this.fileRegistry = {};
     }
@@ -69,6 +70,30 @@ export default class VirtualFileSystem {
 
     getRoot() {
         return this.root;
+    }
+
+    async attatchVPKFile(vpkFile) {
+        this.vpkfile = vpkFile;
+
+        const vpk = this.vpkfile;
+        const entries = Object.keys(vpk.files);
+
+        for(let entry of entries) {
+            if(logFile) {
+                logFile.write(entry + '\n');
+            }
+
+            const file = vpk.files[entry];
+
+            if(file.CRC > 0) {
+                this.fileRegistry[entry.toLocaleLowerCase()] = { 
+                    file: entry, 
+                    async arrayBuffer() {
+                        // get file data from vpk dir
+                    }
+                };
+            }
+        }
     }
 
     async attatchPakfile(pakfileBuffer) {
