@@ -46,6 +46,10 @@ export default class VPKFile extends BinaryFile {
                 EntryOffset: fileData.data.EntryOffset.valueOf(),
                 EntryLength: fileData.data.EntryLength.valueOf(),
                 Terminator: fileData.data.Terminator.valueOf(),
+                preloadData: vpk.buffer.slice(
+                    fileData.data.Terminator.byteOffset,
+                    fileData.data.Terminator.byteOffset + fileData.data.PreloadBytes.valueOf()
+                ),
             };
 
             return true;
@@ -81,11 +85,44 @@ export default class VPKFile extends BinaryFile {
 
         vpk.header = this.unserialize(vpk.view, 0, VPK.VPKHeader_v2);
 
-        // const dataOffset = vpk.header.byteOffset + vpk.header.data.TreeSize.valueOf();
+        vpk.dataOffset = vpk.header.byteOffset + vpk.header.data.TreeSize.valueOf();
 
         vpk.files = this.deserializeNodeTree(vpk, vpk.header.byteOffset);
+        vpk.archives = [];
 
         return vpk;
+    }
+
+    addArchive(index, archiveFile) {
+        this.archives[index] = archiveFile;
+    }
+
+    async getFile(fileKey) {
+        const file = this.files[fileKey];
+        const archiveIndex = file.ArchiveIndex;
+
+        let archive = this.archives[archiveIndex];
+
+        if(archiveIndex == 0x7fff) {
+            const index = file.EntryOffset + this.dataOffset;
+            const len = file.EntryLength;
+            
+            if(len > 0) {
+                return this.buffer.slice(index, index + len);
+            } else {
+                return file.preloadData;
+            }
+
+        } else if(!archive) {
+            console.log(file);
+            throw new Error('Missing Archive ' + archiveIndex);
+        }
+
+        const buffer = await archive.arrayBuffer();
+        const index = file.EntryOffset;
+        const len = file.EntryLength;
+
+        return buffer.slice(index, index + len);
     }
 
 }

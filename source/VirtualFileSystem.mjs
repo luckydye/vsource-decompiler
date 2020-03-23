@@ -90,6 +90,7 @@ export default class VirtualFileSystem {
                     file: entry, 
                     async arrayBuffer() {
                         // get file data from vpk dir
+                        return vpk.getFile(entry);
                     }
                 };
             }
