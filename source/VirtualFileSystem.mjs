@@ -13,8 +13,8 @@ export default class VirtualFileSystem {
     static async indexFileTree(dir, filelist) {
         filelist = filelist || {};
 
-        fs = fs || await import('fs');
-        path = path || await import('path');
+        fs = fs || await import(/* webpackIgnore: true */ 'fs');
+        path = path || await import(/* webpackIgnore: true */ 'path');
 
         if(!logFile) {
             if(fs.existsSync('filesystem.log')) {
