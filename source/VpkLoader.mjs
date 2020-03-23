@@ -2,14 +2,12 @@ import VPKFile from "../files/VPKFile.mjs";
 
 export default class VpkLoader {
 
-    constructor(fileSystem) {
-        this.fileSystem = fileSystem;
+    constructor() {
+        
     }
 
-    async loadVPK(vpkPath) {
-        const vpkFetch = await this.fileSystem.getFile(vpkPath);
-        const vpkData = await vpkFetch.arrayBuffer();
-        const vpk = VPKFile.fromDataArray(vpkData);
+    async loadVPK(fileBuffer) {
+        const vpk = VPKFile.fromDataArray(fileBuffer);
         return vpk;
     }
 
