@@ -40,7 +40,7 @@ export default {
         // fs.writeFileSync(exportFileName + '.glb', bin, 'binary');
 
         const gltfFile = GLTFFile.fromGeometry(mapGeometry);
-        fs.writeFileSync(exportFileName + '.gltf', gltfFile.toString(), 'utf8');
+        fs.writeFileSync(exportFileName + '.gltf', await gltfFile.toString(), 'utf8');
 
         log('Saved map to file ' + exportFileName + '.gltf');
 

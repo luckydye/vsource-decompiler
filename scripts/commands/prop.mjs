@@ -55,7 +55,7 @@ export default {
         
         const exportFileName = (outputFilePath ? outputFilePath : propname).replace(/\/|\\/g, '_');
         const gltfFile = GLTFFile.fromGeometry(geometry);
-        fs.writeFileSync(exportFileName + '.gltf', gltfFile.toString(), 'utf8');
+        fs.writeFileSync(exportFileName + '.gltf', await gltfFile.toString(), 'utf8');
 
         log('Saved prop to file ' + exportFileName + '.gltf');
 
