@@ -24,11 +24,10 @@ export default class VPKFile extends BinaryFile {
             const fileData = this.unserialize(vpk.view, fileName.byteOffset, VPK.VPKDirectoryEntry);
 
             const preloadBytes = fileData.data.PreloadBytes.valueOf();
-            const followsDirectory = fileData.data.ArchiveIndex.valueOf() === 0x7fff;
 
-            if(fileData.data.Terminator.valueOf() !== 0xffff) {
-                throw new Error('Failed parsing VPK.');
-            }
+            // if(fileData.data.Terminator.valueOf() !== 0xffff) {
+            //     throw new Error('Failed parsing VPK.');
+            // }
 
             const entryOffset = fileData.data.EntryOffset.valueOf();
             const entryLength = fileData.data.EntryLength.valueOf();
@@ -99,6 +98,8 @@ export default class VPKFile extends BinaryFile {
             case 2:
                 vpk.header = this.unserialize(vpk.view, 0, VPK.VPKHeader_v2);
                 break;
+            default:
+                vpk.header = this.unserialize(vpk.view, 0, VPK.VPKHeader_Unknown);
         }
 
         vpk.files = this.deserializeNodeTree(vpk, vpk.header.byteOffset);
