@@ -131,22 +131,32 @@ export default class VirtualFileSystem {
             return fileEndingTypeMap[parts[parts.length-1]] || 'file';
         }
 
-        const enterRecursive = (pathArray, currentLocation, currentPath = "") => {
+        const enterRecursive = (pathArray, currentLocation, currentPath = []) => {
             
             const locationName = pathArray.splice(0, 1)[0];
-            currentPath += "/" + locationName;
+            currentPath.push(locationName);
 
             let location = currentLocation.children.find(child => child.name == locationName);
 
             if(location == undefined) {
                 location = {
                     name: locationName,
-                    path: currentPath,
-                    type: pathArray.length ? 'folder' : getFileType(locationName),
+                    path: currentPath.join('/'),
+                    type: locationName.split('.').length === 1 ? 'folder' : getFileType(locationName),
                     children: []
                 }
 
                 currentLocation.children.push(location);
+
+                // sort alphabeticly
+                currentLocation.children.sort((a, b) => {
+                    return a.name < b.name ? 1 : -1;
+                });
+
+                // sort for folder and types
+                currentLocation.children.sort((a, b) => {
+                    return (b.type == "folder" && a.type !== b.type) ? 1 : -1;
+                });
             }
 
             if(pathArray.length >= 1) {
@@ -155,7 +165,7 @@ export default class VirtualFileSystem {
         }
 
         for(let file of files) {
-            const pathArray = file.split(/\//g);
+            const pathArray = file.split(/\//g).filter(p => p != " ");
             enterRecursive(pathArray, tree);
         }
 
