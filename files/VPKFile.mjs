@@ -83,9 +83,23 @@ export default class VPKFile extends BinaryFile {
         vpk.buffer = dataArray;
         vpk.view = new DataView(dataArray);
 
-        vpk.header = this.unserialize(vpk.view, 0, VPK.VPKHeader_v2);
+        const versionSig = this.unserialize(vpk.view, 0, {
+            Signature: 'unsigned int',
+            Version: 'unsigned int',
+        });
 
-        vpk.dataOffset = vpk.header.byteOffset + vpk.header.data.TreeSize.valueOf();
+        if(versionSig.data.Signature.valueOf() != 0x55aa1234) {
+            throw new Error('Wrong signature on .vpk');
+        }
+
+        switch(versionSig.data.Version.valueOf()) {
+            case 1:
+                vpk.header = this.unserialize(vpk.view, 0, VPK.VPKHeader_v1);
+                break;
+            case 2:
+                vpk.header = this.unserialize(vpk.view, 0, VPK.VPKHeader_v2);
+                break;
+        }
 
         vpk.files = this.deserializeNodeTree(vpk, vpk.header.byteOffset);
         vpk.archives = [];
@@ -104,7 +118,10 @@ export default class VPKFile extends BinaryFile {
         let archive = this.archives[archiveIndex];
 
         if(archiveIndex == 0x7fff) {
-            const index = file.EntryOffset + this.dataOffset;
+
+            const dataOffset = this.header.byteOffset + this.header.data.TreeSize.valueOf();
+
+            const index = file.EntryOffset + dataOffset;
             const len = file.EntryLength;
             
             if(len > 0) {

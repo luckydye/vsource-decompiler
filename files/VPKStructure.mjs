@@ -1,5 +1,11 @@
 export const VPK =  {
 
+    VPKHeader_v1: {
+        Signature: 'unsigned int',
+        Version: 'unsigned int',
+        TreeSize: 'unsigned int',
+    },
+
     VPKHeader_v2: {
         Signature: 'unsigned int',
         Version: 'unsigned int',
