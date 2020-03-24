@@ -51,8 +51,16 @@ export default class MaterialLoader {
                         sprite
 
         if(!shader) {
-            console.log(vmt.data);
-            throw new Error('Unknown material.');
+            console.error(new Error('Unknown material.'));
+
+            return {
+                name: materialName,
+                translucent: 0,
+                texture: null,
+                texture2: null,
+                bumpmap: null,
+                material: vmt,
+            }
         }
 
         const texture = shader['$basetexture'];
