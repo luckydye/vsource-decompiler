@@ -51,7 +51,7 @@ export default class MaterialLoader {
                         sprite
 
         if(!shader) {
-            console.error(new Error('Unknown material.'));
+            error(new Error('Unknown material.'));
 
             return {
                 name: materialName,
