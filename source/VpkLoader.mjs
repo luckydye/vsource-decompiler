@@ -1,4 +1,4 @@
-import VPKFile from "../files/VPKFile.mjs";
+import VPKFile from "../files/valve/VPKFile.mjs";
 
 export default class VpkLoader {
 

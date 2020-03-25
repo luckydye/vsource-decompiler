@@ -1,5 +1,6 @@
 import fs from 'fs';
 import path from 'path';
+import ValveFile from '../../files/source2/ValveFile.mjs';
 
 export default {
 
@@ -11,6 +12,9 @@ export default {
             return;
         }
 
-        
+        const fileBuffer = fs.readFileSync(path.resolve(filename));
+        const vmat = new ValveFile(fileBuffer.buffer);
+
+        return true;
     }
 }

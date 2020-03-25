@@ -1,6 +1,6 @@
 import fs from 'fs';
 import path from 'path';
-import { GLTFFile } from 'binary-file-lib';
+import GLTFFile from '../../files/util/GLTFFile.mjs';
 import MapLoader from '../../source/MapLoader.mjs';
 import VirtualFileSystem from '../../source/VirtualFileSystem.mjs';
 

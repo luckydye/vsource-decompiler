@@ -1,6 +1,6 @@
 import { BinaryFile } from 'binary-file-lib';
 
-export default class VMAPFile extends ValveFile {
+export default class VMATFile extends ValveFile {
 
     static parseFile(file) {
 
