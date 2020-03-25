@@ -4,11 +4,6 @@ import { BinaryFile } from 'binary-file-lib';
 
 export default class VMTFile extends BinaryFile {
 
-    static readHeader(vmt) {
-        const fileHeader = this.unserialize(vmt.view, 0, VMT.vmtheader).data;
-        return fileHeader;
-    }
-
     static fromDataArray(dataArray) {
         const vmt = this.createFile(dataArray);
 
