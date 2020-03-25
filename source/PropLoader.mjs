@@ -1,6 +1,6 @@
-import MDLFile from "../files/MDLFile.mjs";
-import VTXFile from "../files/VTXFile.mjs";
-import VVDFile from "../files/VVDFile.mjs";
+import MDLFile from "../files/source/MDLFile.mjs";
+import VTXFile from "../files/source/VTXFile.mjs";
+import VVDFile from "../files/source/VVDFile.mjs";
 import MaterialLoader from "./MaterialLoader.mjs";
 
 export default class PropLoader {

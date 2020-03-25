@@ -1,4 +1,4 @@
-import BSPFile from "../files/BSPFile.mjs";
+import BSPFile from "../files/source/BSPFile.mjs";
 
 export default class PakLoader {
 
