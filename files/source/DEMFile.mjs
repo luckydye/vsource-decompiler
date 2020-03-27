@@ -20,8 +20,21 @@ export default class DEMFile extends BinaryFile {
 
         const header = this.unserialize(file, 0, FileHeader);
 
-        console.log(header);
+        file.header = {
+            magic: this.getValue(header, 'magic'),
+            demProtocol: this.getValue(header, 'demProtocol'),
+            netProtocol: this.getValue(header, 'netProtocol'),
+            serverName: this.getValue(header, 'serverName').replace(/\u0000+/g, ''),
+            clientName: this.getValue(header, 'clientName').replace(/\u0000+/g, ''),
+            mapName: this.getValue(header, 'mapName').replace(/\u0000+/g, ''),
+            gameDirectory: this.getValue(header, 'gameDirectory').replace(/\u0000+/g, ''),
+            playbackTime: this.getValue(header, 'playbackTime'),
+            ticks: this.getValue(header, 'ticks'),
+            frames: this.getValue(header, 'frames'),
+            signOnLength: this.getValue(header, 'signOnLength'),
+        }
 
+        console.log(file.header);
     }
 
 }
