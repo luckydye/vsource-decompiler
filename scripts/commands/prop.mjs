@@ -3,6 +3,7 @@ import path from 'path';
 import GLTFFile from '../../files/util/GLTFFile.mjs';
 import PropLoader from '../../source/PropLoader.mjs';
 import VirtualFileSystem from '../../source/VirtualFileSystem.mjs';
+import { VpkLoader } from '../../source/VpkLoader.mjs';
 
 const fileSystem = new VirtualFileSystem();
 
@@ -11,7 +12,7 @@ export default {
     usage: "prop <prop name> [<resource_path: csgo>] [<ouput_path>]",
     description: "Decompile CS:GO models from mdl to gltf format.",
 
-    async execute([ propname, resourcePath = "csgo/", outputFilePath ]) {
+    async execute([ propname, resourcePath = "csgo/", outputFilePath, vpkFile = "pak01" ]) {
         if(!propname) {
             error('Provide a prop file.');
             return;
@@ -23,6 +24,10 @@ export default {
             error(`Resource folder "${resourcePath}" not found.`);
             return;
         }
+
+        // load vpk
+        const vpk = VpkLoader.loadVpk(path.resolve(resourcePath, vpkFile + "_dir.vpk"));
+        fileSystem.attatchVPKFile(vpk);
 
         log('Loading prop.');
 

@@ -1,6 +1,7 @@
 import fs from 'fs';
 import path from 'path';
 import VPKFile from '../../files/valve/VPKFile.mjs';
+import { VpkLoader } from '../../source/VpkLoader.mjs';
 
 export default {
 
@@ -15,29 +16,8 @@ export default {
 
         log(filename, 'loading file.');
 
-        const parts = filename.replace('.vpk', '').split('_');
-
-        const pakName = parts[0];
-        const pakId = parts[1];
-
-        const file = fs.readFileSync(path.resolve(filename));
-        const vpk = VPKFile.fromDataArray(file.buffer);
-
-        const items = fs.readdirSync(path.resolve('./'));
-        
-        for(let item of items) {
-            const parts = item.replace('\.vpk', '').split('_');
-
-            if(parts[0] == pakName && parts[1] !== "dir") {
-                const index = parseInt(parts[1]);
-
-                vpk.addArchive(index, {
-                    async arrayBuffer() {
-                        return fs.readFileSync(path.resolve(item)).buffer;
-                    }
-                });
-            }
-        }
+        const vpk = VpkLoader.loadVpk(filename);
+        const pakName = vpk.name;
 
         let filesExtracted = 0;
 

@@ -132,7 +132,6 @@ export default class VPKFile extends BinaryFile {
             }
 
         } else if(!archive) {
-            console.log(file);
             throw new Error('Missing Archive ' + archiveIndex);
         }
 

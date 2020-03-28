@@ -11,7 +11,7 @@ export default {
     usage: 'map <map_name> [<resource_path: csgo>] [<ouput_path>]',
     description: 'Decompile CS:GO maps from bsp to gltf format.',
 
-    async execute([ mapName, resourcePath = "csgo/", outputFilePath ]) {
+    async execute([ mapName, resourcePath = "csgo/", outputFilePath, vpkFile = "pak01" ]) {
         if(!mapName) {
             error('Provide a map file.');
             return;
@@ -23,6 +23,10 @@ export default {
             error(`Resource folder "${resourcePath}" not found.`);
             return;
         }
+
+        // load vpk
+        const vpk = VpkLoader.loadVpk(path.resolve(resourcePath, vpkFile + "_dir.vpk"));
+        fileSystem.attatchVPKFile(vpk);
 
         const mapLoader = new MapLoader(fileSystem);
         const mapGeometry = await mapLoader.loadMap(mapName);
