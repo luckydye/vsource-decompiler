@@ -5,10 +5,12 @@
   "main": "index.mjs",
   "module": "vsource-decompiler",
   "bin": {
-    "source": "scripts/decompile.mjs"
+    "vsource": "scripts/decompile.mjs"
   },
   "scripts": {
-    "decompile": "node scripts/decompile.mjs"
+    "decompile": "node scripts/decompile.mjs",
+    "test": "node test/validate.js",
+    "setup": "npm install -g"
   },
   "repository": {
     "type": "git",
@@ -25,6 +27,6 @@
     "chalk": "^3.0.0",
     "gl-matrix": "^3.2.1",
     "jszip": "^3.2.2",
-    "light-cli": "git+ssh://git@github.com/luckydye/light-cli.git"
+    "light-cli": "git+https://github.com/luckydye/light-cli.git"
   }
 }

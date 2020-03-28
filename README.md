@@ -1,31 +1,30 @@
 A BSP library to read Source .bsp map files and convert into .gltf or .obj.
 
-## Todo
+## Features
+
+- Convert single prop to .gltf
+- Convert .bsp with all props to .gltf
+- Extract Pak file from .bsp
+- Extract all files from .vpk archives (slow)
+
+## Todos
 
 - glTF file writer  	                        ✓
 - read prop textures                            ✓
-- fix wrong prop orientation on some props      ✓
 - displacements                                 ✓
-- 3d skybox placement                           ✓
-- fix prop positioning (eg. de_nuke)            ✓
 - normal maps                                   ✓
 - bump maps                                     ✓
 - texture blends                                (✓)
 - texture transforms
 
-## Buggy todo list:
+## Buggy list:
 
 - _autocombine_metal_pipe_603.mdl_0 (nuke, orientation)
 - claypot03.mdl.001 (Index/Vertex Error)
 
-## Other Ideas
-
-Decompile Apex Legends VPKs?
-
 ## Known Issues:
 
 1. Sometimes the color of the textures becoms black because of the alpha layer in the image.
-    - Use a MixRGB node and multiply the image with the alpha layer as the factor.
 
 2. Some Props may not decompile properly
 
@@ -33,3 +32,11 @@ Decompile Apex Legends VPKs?
     - If a material has a blend texture, the second texture is included as a "OCCLUSION" Texture and has to be menually mixed with the base texture. Use the Alpha of the Vertex Color to blend the textures through the Mix Vertex Color Node.
 
 4. Some Props convert with a wrong orientation. This can be fixed manually in blender.
+
+## Installation
+
+1. Install Node.JS
+2. Clone or Download this repository
+3. Run ```npm install```
+4. Run ```npm run setup```
+5. Change to your CS:GO installtion directory and run ```vsource```
