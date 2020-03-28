@@ -3,6 +3,7 @@ import path from 'path';
 import GLTFFile from '../../files/util/GLTFFile.mjs';
 import MapLoader from '../../source/MapLoader.mjs';
 import VirtualFileSystem from '../../source/VirtualFileSystem.mjs';
+import { VpkLoader } from '../../source/VpkLoader.mjs';
 
 const fileSystem = new VirtualFileSystem();
 
