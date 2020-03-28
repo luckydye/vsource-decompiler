@@ -4,10 +4,6 @@ let fs, path, logFile;
 
 const env = typeof Buffer != "undefined" ? 'node' : 'browser';
 
-const fileEndingTypeMap = {
-    'mdl': "model",
-};
-
 export default class VirtualFileSystem {
 
     static async indexFileTree(dir, filelist) {
@@ -126,11 +122,6 @@ export default class VirtualFileSystem {
             children: []
         };
 
-        const getFileType = file => {
-            const parts = file.split('.');
-            return fileEndingTypeMap[parts[parts.length-1]] || 'file';
-        }
-
         const enterRecursive = (pathArray, currentLocation, currentPath = []) => {
             
             const locationName = pathArray.splice(0, 1)[0];
@@ -142,7 +133,7 @@ export default class VirtualFileSystem {
                 location = {
                     name: locationName,
                     path: currentPath.join('/'),
-                    type: locationName.split('.').length === 1 ? 'folder' : getFileType(locationName),
+                    type: locationName.split('.').length === 1 ? 'folder' : null,
                     children: []
                 }
 
