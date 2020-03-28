@@ -13,7 +13,7 @@ command('prop', command_prop);
 command('map', command_map);
 command('pak', command_pak);
 command('vpk', command_vpk);
-// command('source2', command_source2);
+command('source2', command_source2);
 // command('demo', command_demo);
 
 main();
