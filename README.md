@@ -4,10 +4,7 @@ A BSP library to read Source .bsp map files and convert into .gltf or .obj.
 
 - glTF file writer  	                        ✓
 - read prop textures                            ✓
-- fix wrong prop orientation on some props      ✓
 - displacements                                 ✓
-- 3d skybox placement                           ✓
-- fix prop positioning (eg. de_nuke)            ✓
 - normal maps                                   ✓
 - bump maps                                     ✓
 - texture blends                                (✓)
@@ -28,3 +25,11 @@ A BSP library to read Source .bsp map files and convert into .gltf or .obj.
     - If a material has a blend texture, the second texture is included as a "OCCLUSION" Texture and has to be menually mixed with the base texture. Use the Alpha of the Vertex Color to blend the textures through the Mix Vertex Color Node.
 
 4. Some Props convert with a wrong orientation. This can be fixed manually in blender.
+
+## Installation
+
+1. Install Node.JS
+2. Clone or Download this repository
+3. Run ```npm install```
+4. Run ```npm run setup```
+5. Change to your CS:GO installtion directory and run ```vsource```
