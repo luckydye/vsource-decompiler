@@ -189,12 +189,16 @@ export default class BSPFile extends BinaryFile {
 
         const usedGamelumpStruct = BSPFile.STRUCT[`StaticPropLumpV${gamelump.version}_t`];
 
-        for(let p = 0; p < entries.data; p++) {
-            const prop = this.unserialize(buffer, byteOffset, usedGamelumpStruct);
-            byteOffset = prop.byteOffset;
-
-            prop.data.PropType = models[prop.data.PropType.data];
-            props.push(prop.data);
+        if(usedGamelumpStruct) {
+            for(let p = 0; p < entries.data; p++) {
+                const prop = this.unserialize(buffer, byteOffset, usedGamelumpStruct);
+                byteOffset = prop.byteOffset;
+    
+                prop.data.PropType = models[prop.data.PropType.data];
+                props.push(prop.data);
+            }
+        } else {
+            throw new Error('BSP version not supported');
         }
 
         return props;
