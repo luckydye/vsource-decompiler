@@ -1,4 +1,4 @@
-A BSP library to read Source .bsp map files and convert into .gltf or .obj.
+A JavaScript library to read Source .bsp amd .vpk files and convert into .gltf or .obj.
 
 ## Features
 
