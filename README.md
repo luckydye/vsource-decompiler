@@ -1,5 +1,3 @@
-A JavaScript library to read Source .bsp amd .vpk files and convert into .gltf or .obj.
-
 ## Features
 
 - Convert single prop to .gltf
