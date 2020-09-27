@@ -1,4 +1,4 @@
-import { BinaryFile } from "binary-file-lib";
+import { BinaryFile } from "@luckydye/binary-file-lib";
 
 // https://www.khronos.org/opengl/wiki/S3_Texture_Compression
 // https://docs.microsoft.com/en-us/windows/win32/direct3ddds/dds-file-layout-for-textures

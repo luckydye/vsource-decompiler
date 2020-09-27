@@ -1,4 +1,4 @@
-import { TextFile } from 'binary-file-lib';
+import { TextFile } from "@luckydye/binary-file-lib";
 
 export default class MTLFile extends TextFile {
 

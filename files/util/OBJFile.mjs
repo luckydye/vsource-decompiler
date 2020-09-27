@@ -1,5 +1,5 @@
 import glmatrix from 'gl-matrix';
-import { TextFile } from 'binary-file-lib';
+import { TextFile } from "@luckydye/binary-file-lib";
 
 const { vec4, quat, mat4 } = glmatrix;
 

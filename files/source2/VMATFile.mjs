@@ -1,4 +1,4 @@
-import { BinaryFile } from 'binary-file-lib';
+import { BinaryFile } from "@luckydye/binary-file-lib";
 
 export default class VMATFile extends ValveFile {
 

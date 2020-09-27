@@ -1,4 +1,4 @@
-import { BinaryFile } from 'binary-file-lib';
+import { BinaryFile } from "@luckydye/binary-file-lib";
 import { IMAGE_FORMAT, VTF } from './VTFStructure.mjs';
 
 // https://developer.valvesoftware.com/wiki/Valve_Texture_Format

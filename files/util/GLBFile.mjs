@@ -1,4 +1,4 @@
-import { BinaryFile } from "binary-file-lib";
+import { BinaryFile } from "@luckydye/binary-file-lib";
 import GLTFFile from "./GLTFFile.mjs";
 
 const TPYE_JSON = 0x4E4F534A;

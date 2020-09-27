@@ -23,7 +23,8 @@
   },
   "homepage": "https://github.com/luckydye/source-bsp-lib#readme",
   "dependencies": {
-    "binary-file-lib": "git+https://github.com/luckydye/binary-file-lib.git",
+    "@luckydye/binary-file-lib": "file:../binary-file-lib",
+    "@luckydye/binary-file-lib": "git+https://github.com/luckydye/binary-file-lib.git",
     "chalk": "^3.0.0",
     "gl-matrix": "^3.2.1",
     "jszip": "^3.2.2",

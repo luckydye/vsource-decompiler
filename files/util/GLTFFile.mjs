@@ -1,4 +1,4 @@
-import { TextFile } from "binary-file-lib";
+import { TextFile } from "@luckydye/binary-file-lib";
 import { S3Texture } from "./S3Texture.mjs";
 
 // https://github.com/KhronosGroup/glTF/tree/master/specification/2.0#gltf-basics

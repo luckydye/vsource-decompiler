@@ -1,4 +1,4 @@
-import { BinaryFile } from 'binary-file-lib';
+import { BinaryFile } from "@luckydye/binary-file-lib";
 import { VPK } from './VPKStructure.mjs';
 
 // https://developer.valvesoftware.com/wiki/VPK_File_Format#Conception
@@ -79,8 +79,8 @@ export default class VPKFile extends BinaryFile {
     static fromDataArray(dataArray) {
         const vpk = new VPKFile();
 
-        vpk.buffer = dataArray;
-        vpk.view = new DataView(dataArray);
+        vpk._buffer = dataArray;
+        vpk.view = new DataView(vpk._buffer);
 
         const versionSig = this.unserialize(vpk.view, 0, {
             Signature: 'unsigned int',
@@ -126,7 +126,7 @@ export default class VPKFile extends BinaryFile {
             const len = file.EntryLength;
             
             if(len > 0) {
-                return this.buffer.slice(index, index + len);
+                return this._buffer.slice(index, index + len);
             } else {
                 return file.preloadData;
             }

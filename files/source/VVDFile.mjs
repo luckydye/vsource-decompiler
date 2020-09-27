@@ -1,4 +1,4 @@
-import { BinaryFile } from 'binary-file-lib';
+import { BinaryFile } from "@luckydye/binary-file-lib";
 import { VDD } from './VVDStructure.mjs';
 
 // https://developer.valvesoftware.com/wiki/VVD
@@ -12,7 +12,7 @@ export default class VVDFile extends BinaryFile {
     static fromDataArray(dataArray) {
         const vvd = this.createFile(dataArray);
 
-        vvd.header = this.unserialize(vvd.view, 0, VDD.vertexFileHeader_t).data;
+        vvd.header = this.unserialize(vvd.view, 0, VDD.vertexFileHeader_t, true, true).data;
         vvd.vertexCount = vvd.header.numLODVertexes.data[0];
 
         return vvd;

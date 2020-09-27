@@ -1,4 +1,4 @@
-import { BinaryFile } from 'binary-file-lib';
+import { BinaryFile } from "@luckydye/binary-file-lib";
 import { MDL } from './MDLStructure.mjs';
 
 // helped alot:

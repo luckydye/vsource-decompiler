@@ -1,4 +1,4 @@
-import { BinaryFile } from 'binary-file-lib';
+import { BinaryFile } from "@luckydye/binary-file-lib";
 import { BSP, Entity, LumpTypes, TextureFlags } from './BSPStructure.mjs';
 
 export default class BSPFile extends BinaryFile {
