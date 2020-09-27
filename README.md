@@ -1,5 +1,3 @@
-A BSP library to read Source .bsp map files and convert into .gltf or .obj.
-
 ## Features
 
 - Convert single prop to .gltf
