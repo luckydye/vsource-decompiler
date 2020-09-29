@@ -48,6 +48,8 @@ export default class VVDFile extends BinaryFile {
             ]);
         }
 
+        this.view = null;
+
         return {
             vertecies,
             uvs,

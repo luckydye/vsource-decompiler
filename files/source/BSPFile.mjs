@@ -180,7 +180,7 @@ export default class BSPFile extends BinaryFile {
         const propLeafs = this.unserialize(buffer, byteOffset, BSPFile.STRUCT.StaticPropLeafLump_t);
         byteOffset = propLeafs.byteOffset;
 
-        const entries = this.parseBytes(buffer, byteOffset, 'int');
+        const entries = this.parseBytes(buffer, byteOffset, 'int', true);
         byteOffset = entries.byteOffset;
 
         const models = dict.data.name.data.map(str => str.replace(/\W+$/g, ""));
@@ -191,11 +191,15 @@ export default class BSPFile extends BinaryFile {
 
         if(usedGamelumpStruct) {
             for(let p = 0; p < entries.data; p++) {
-                const prop = this.unserialize(buffer, byteOffset, usedGamelumpStruct);
-                byteOffset = prop.byteOffset;
-    
-                prop.data.PropType = models[prop.data.PropType.data];
-                props.push(prop.data);
+                try {
+                    const prop = this.unserialize(buffer, byteOffset, usedGamelumpStruct);
+                    byteOffset = prop.byteOffset;
+        
+                    prop.data.PropType = models[prop.data.PropType.data];
+                    props.push(prop.data);
+                } catch(err) {
+                    console.error(err);
+                }
             }
         } else {
             throw new Error('BSP version not supported');

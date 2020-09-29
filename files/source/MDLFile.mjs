@@ -86,6 +86,8 @@ export default class MDLFile extends BinaryFile {
         //     mdl.skins.push(part.data.replacement_table.toString());
         // }
 
+        mdl.view = null;
+
         return mdl;
     }
 

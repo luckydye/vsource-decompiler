@@ -121,6 +121,7 @@ export default class MapLoader {
                 error('Failed loading prop_dynamic: ' + prop.model);
                 log(err);
                 console.log('');
+                console.error(err);
             });
 
             if(!modelMeshes) continue;
@@ -192,7 +193,7 @@ export default class MapLoader {
     }
 
     async loadMapProps(props, callback) {
-        return new Promise((resolve, reject) => {
+        return new Promise(async (resolve, reject) => {
 
             if(props.length == 0) {
                 resolve();
@@ -217,8 +218,7 @@ export default class MapLoader {
             let propCounter = 0;
 
             for(let [_, propType] of propTypes) {
-
-                this.propLoader.loadProp(propType.mdlPath).then(meshes => {
+                await this.propLoader.loadProp(propType.mdlPath).then(meshes => {
                     for(let listener of propType.listeners) listener(meshes);
                     
                 }).catch(err => {
@@ -230,12 +230,12 @@ export default class MapLoader {
                 }).finally(() => {
                     propCounter++;
 
-                    process.stdout.cursorTo(0);
-                    process.stdout.write(`[INFO] Loading props ${propCounter.toString()} / ${propTypes.size.toString()}`);
+                    // process.stdout.cursorTo(0);
+                    // process.stdout.write(`[INFO] Loading props ${propCounter.toString()} / ${propTypes.size.toString()}`);
                     
                     if(propCounter == propTypes.size) {
                         resolve();
-                        process.stdout.write(`\n`);
+                        // process.stdout.write(`\n`);
                     }
                 })
             }

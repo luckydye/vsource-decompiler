@@ -17,6 +17,8 @@ export default class PropLoader {
         const vddPath = propType.replace('.mdl', '.vvd');
         const vtxPath = propType.replace('.mdl', '.dx90.vtx');
 
+        log('loading prop ' + mdlPath);
+
         const prop = {
             materials: [],
         };
@@ -55,6 +57,7 @@ export default class PropLoader {
 
         for(let mesh of vtx.meshes) {
             propMeshes.push({
+                name: mdlPath + '_' + meshIndex,
                 material: prop.materials[meshIndex],
                 indices: mesh.indices,
                 vertecies: mesh.vertexindices.map(rv => {

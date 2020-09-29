@@ -88,6 +88,8 @@ export default class VTXFile extends BinaryFile {
             }
         }
 
+        vtx.view = null;
+
         return vtx;
     }
 
