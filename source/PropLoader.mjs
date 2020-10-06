@@ -36,12 +36,8 @@ export default class PropLoader {
                 materialName = path + materialName;
             }
 
-            try {
-                const mat = await this.materialLoader.loadMaterial(materialName);
-                prop.materials.push(mat);
-            } catch(err) {
-                error(err);
-            }
+            const mat = await this.materialLoader.loadMaterial(materialName).catch(err => error(err));
+            prop.materials.push(mat);
         }
 
         // geometry info

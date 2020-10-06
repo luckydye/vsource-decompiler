@@ -3,6 +3,8 @@ import { VPK } from './VPKStructure.mjs';
 
 // https://developer.valvesoftware.com/wiki/VPK_File_Format#Conception
 
+const vpkBufferCache = new Map();
+
 export default class VPKFile extends BinaryFile {
 
     static deserializeNodeTree(vpk, offset) {
@@ -135,7 +137,15 @@ export default class VPKFile extends BinaryFile {
             throw new Error('Missing Archive ' + archiveIndex);
         }
 
-        const buffer = await archive.arrayBuffer();
+        let buffer = null;
+
+        if(vpkBufferCache.has(archiveIndex)) {
+            buffer = vpkBufferCache.get(archiveIndex);
+        } else {
+            buffer = await archive.arrayBuffer();
+            vpkBufferCache.set(archiveIndex, buffer);
+        }
+
         const index = file.EntryOffset;
         const len = file.EntryLength;
 
