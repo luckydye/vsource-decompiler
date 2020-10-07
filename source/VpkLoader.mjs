@@ -15,8 +15,9 @@ export class VpkLoader {
 
         vpk.name = pakName;
 
-        const items = fs.readdirSync(path.resolve(resourceFolder));
-        
+        const basePath = path.resolve(filename, '../');
+        const items = fs.readdirSync(basePath);
+
         for(let item of items) {
             const parts = item.replace('\.vpk', '').split('_');
 
@@ -25,7 +26,7 @@ export class VpkLoader {
 
                 vpk.addArchive(index, {
                     async arrayBuffer() {
-                        return fs.readFileSync(path.resolve(resourceFolder, item)).buffer;
+                        return fs.readFileSync(path.resolve(basePath, item)).buffer;
                     }
                 });
             }

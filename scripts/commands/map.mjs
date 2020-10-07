@@ -18,6 +18,13 @@ export default {
             return;
         }
 
+        const exportDirPath = outputFilePath ? outputFilePath : '.';
+
+        if(!fs.existsSync(path.resolve(exportDirPath))) {
+            error('Output path does not exist.');
+            return;
+        }
+
         if(resourcePath && fs.existsSync(path.resolve(resourcePath))) {
             fileSystem.setRoot(resourcePath);
         } else if(resourcePath) {
@@ -26,15 +33,13 @@ export default {
         }
 
         // load vpk
-        const vpk = VpkLoader.loadVpk(path.resolve(resourcePath, vpkFile + "_dir.vpk"));
+        const vpk = VpkLoader.loadVpk(path.resolve(resourcePath, vpkFile + "_dir.vpk"), "");
         fileSystem.attatchVPKFile(vpk);
 
         const mapLoader = new MapLoader(fileSystem);
         const mapGeometry = await mapLoader.loadMap(mapName);
 
         log(mapName, 'decompiled.');
-
-        const exportFileName = outputFilePath ? outputFilePath : mapName;
         
         // GLB file export:
         // const gltfFile = GLBFile.fromGeometry(mapGeometry);
@@ -42,12 +47,13 @@ export default {
         // const bin = Buffer.from(arrayBuffer);
         // const test = GLBFile.fromFile(arrayBuffer);
         // console.log(test);
-        // fs.writeFileSync(exportFileName + '.glb', bin, 'binary');
+        // fs.writeFileSync(exportDirPath + '.glb', bin, 'binary');
 
         const gltfFile = GLTFFile.fromGeometry(mapGeometry);
-        fs.writeFileSync(exportFileName + '.gltf', await gltfFile.toString(), 'utf8');
+        const exportDesitination = path.resolve(exportDirPath, mapName + '.gltf');
+        fs.writeFileSync(exportDesitination, await gltfFile.toString(), 'utf8');
 
-        log('Saved map to file ' + exportFileName + '.gltf');
+        log('Saved map to file ' + exportDirPath + '.gltf');
 
         return true;
     }
