@@ -70,8 +70,7 @@ export default class GLTFFile extends TextFile {
 
                 gltf.rootNode.children.push(parent);
 
-                for(let geo of geometryList) {
-
+                while(geometryList.length > 0) {
                     /* geometry:
                         vertecies: [0, 0, 0],
                         uvs: [0, 0, 0],
@@ -83,7 +82,7 @@ export default class GLTFFile extends TextFile {
                         materials: [ ... ]
                     */
 
-                    gltf.addObject(geo, parent);
+                   gltf.addObject(geometryList.pop(), parent);
                 }
             }
         }
