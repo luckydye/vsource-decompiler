@@ -149,7 +149,17 @@ export default class VPKFile extends BinaryFile {
         const index = file.EntryOffset;
         const len = file.EntryLength;
 
+		if (file.PreloadBytes !== 0) {
+            return this.concatenate(file.preloadData, buffer.slice(index, index + len));
+        }
         return buffer.slice(index, index + len);
+    }
+	
+	concatenate(buffer1, buffer2) {
+        var tmp = new Uint8Array(buffer1.byteLength + buffer2.byteLength);
+        tmp.set(new Uint8Array(buffer1), 0);
+        tmp.set(new Uint8Array(buffer2), buffer1.byteLength);
+        return tmp.buffer;
     }
 
 }
