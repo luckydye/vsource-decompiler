@@ -38,3 +38,6 @@
 3. Run ```npm install```
 4. Run ```npm run setup```
 5. Change to your CS:GO installtion directory and run ```vsource```
+
+## Partialy usable with my vsource-viewer
+https://vsource-viewer.web.app/
