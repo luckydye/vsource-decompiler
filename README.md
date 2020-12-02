@@ -30,6 +30,8 @@
 
 4. Some Props convert with a wrong orientation. This can be fixed manually in blender.
 
+5. Normal maps may be in a DirectX format (Y-), to be usable in blender with gltf they have to be manually modified in blender to fit the OpenGL format (Y+).
+
 ## Installation
 
 1. Install Node.JS
