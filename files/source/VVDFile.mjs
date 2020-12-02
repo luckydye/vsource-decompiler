@@ -42,9 +42,9 @@ export default class VVDFile extends BinaryFile {
             ]);
 
             normals.push([
-                -vert.data.norm_y.data,
-                -vert.data.norm_z.data,
-                -vert.data.norm_x.data,
+                vert.data.norm_y.data,
+                vert.data.norm_z.data,
+                vert.data.norm_x.data,
             ]);
         }
 

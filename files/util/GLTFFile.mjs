@@ -64,7 +64,7 @@ export default class GLTFFile extends TextFile {
                     name: key,
                     translation: geometryList.position || [0, 0, 0],
                     rotation: eulerDegreeToQuaternion(geometryList.rotation || [0, 0, 0]),
-                    scale: geometryList.scale || [1, 1, 1],
+                    scale: geometryList.scale || [0.1, 0.1, 0.1],
                     children: []
                 });
 
@@ -421,9 +421,8 @@ export default class GLTFFile extends TextFile {
                 name: materialName + "_texture.dds",
             });
 
-            reflectivity = 1 - ((baseTexture.reflectivity[0] +
-                                baseTexture.reflectivity[1] +
-                                baseTexture.reflectivity[2]) / 3);
+            const ref = baseTexture.reflectivity;
+            reflectivity = (0.299 * ref[0] + 0.587 * ref[1] + 0.114 * ref[2]);
         }
 
         if(bumpmapTexture) {
@@ -456,12 +455,12 @@ export default class GLTFFile extends TextFile {
 
         const matOptions = {
             name: materialName,
-            doubleSided: true,
+            doubleSided: translucent ? true : false,
             alphaMode: translucent ? "MASK" : "OPAQUE",
             pbrMetallicRoughness: {
                 baseColorFactor: [ 1, 1, 1, 1 ],
                 metallicFactor: 0,
-                roughnessFactor: reflectivity
+                roughnessFactor: 1 - reflectivity
             }
         };
 

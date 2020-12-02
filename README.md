@@ -13,7 +13,6 @@
 - normal maps                                   ✓
 - bump maps                                     ✓
 - texture blends                                (✓)
-- texture transforms
 
 ## Buggy list:
 

@@ -55,7 +55,7 @@ export default class PropLoader {
             propMeshes.push({
                 name: mdlPath + '_' + meshIndex,
                 material: prop.materials[meshIndex],
-                indices: mesh.indices,
+                indices: mesh.indices.reverse(),
                 vertecies: mesh.vertexindices.map(rv => {
                     const vert = geometry.vertecies[rv];
                     if(!vert) throw new Error('Vertex doesnt exist');

@@ -53,7 +53,7 @@ export default {
         const exportDesitination = path.resolve(exportDirPath, mapName + '.gltf');
         fs.writeFileSync(exportDesitination, await gltfFile.toString(), 'utf8');
 
-        log('Saved map to file ' + exportDirPath + '.gltf');
+        log('Saved map to file ' + exportDesitination);
 
         return true;
     }

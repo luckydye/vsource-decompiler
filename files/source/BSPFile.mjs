@@ -332,20 +332,23 @@ export default class BSPFile extends BinaryFile {
 
             const firstFace = model.firstface;
             const faceCount = model.numfaces;
-
             const faces = mapFaces.slice(firstFace, firstFace + faceCount);
+
+            let meshId = 0;
 
             for(let face of faces) {
 
                 const plane = planes[face.planenum.data];
-
                 const textureInfo = this.texinfo[face.texinfo.data];
                 const textureData = this.texdata[textureInfo.texdata.data];
                 const textureIndex = textureData.nameStringTableID.data;
                 const textureFlag = textureInfo.flags.data;
                 const dispInfo = this.displacements[face.dispinfo.data];
 
-                meshes[textureIndex] = meshes[textureIndex] || {
+                // group faces by texture id
+                meshId = textureIndex;
+
+                meshes[meshId] = meshes[meshId] || {
                     indices: [],
                     vertecies: [],
                     color: [],
@@ -476,16 +479,16 @@ export default class BSPFile extends BinaryFile {
                         displace.y = vec[1] * dist;
                         displace.z = vec[2] * dist;
 
-                        meshes[textureIndex].color.push([
+                        meshes[meshId].color.push([
                             1, 1, 1, alpha
                         ]);
                     } else {
-                        meshes[textureIndex].color.push([
+                        meshes[meshId].color.push([
                             1, 1, 1, 1
                         ]);
                     }
 
-                    meshes[textureIndex].vertecies.push([
+                    meshes[meshId].vertecies.push([
                         y + displace.y,
                         z + displace.z,
                         x + displace.x,
@@ -493,27 +496,27 @@ export default class BSPFile extends BinaryFile {
 
                     const tv = textureInfo.textureVecs.data;
 
-                    meshes[textureIndex].uvs.push([
+                    meshes[meshId].uvs.push([
                         (tv[0][0] * x + tv[0][1] * y + tv[0][2] * z + tv[0][3]) / textureData.width_height_0,
                         (tv[1][0] * x + tv[1][1] * y + tv[1][2] * z + tv[1][3]) / textureData.width_height_1
                     ]);
 
-                    meshes[textureIndex].normals.push([
-                        -normal[1].valueOf(),
-                        -normal[2].valueOf(),
-                        -normal[0].valueOf()
+                    meshes[meshId].normals.push([
+                        normal[1].valueOf(),
+                        normal[2].valueOf(),
+                        normal[0].valueOf()
                     ]);
 
                     i++;
                 }
 
-                const currentVertexIndex = meshes[textureIndex].currentVertexIndex;
+                const currentVertexIndex = meshes[meshId].currentVertexIndex;
 
                 for(let index of geo.indices.flat()) {
-                    meshes[textureIndex].indices.push(index += currentVertexIndex);
+                    meshes[meshId].indices.unshift(index += currentVertexIndex);
                 }
 
-                meshes[textureIndex].currentVertexIndex += geo.vertices.length;
+                meshes[meshId].currentVertexIndex += geo.vertices.length;
             }
 
             return meshes;
