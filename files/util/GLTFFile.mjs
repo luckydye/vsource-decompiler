@@ -64,7 +64,7 @@ export default class GLTFFile extends TextFile {
                     name: key,
                     translation: geometryList.position || [0, 0, 0],
                     rotation: eulerDegreeToQuaternion(geometryList.rotation || [0, 0, 0]),
-                    scale: geometryList.scale || [0.1, 0.1, 0.1],
+                    scale: geometryList.scale || [1, 1, 1],
                     children: []
                 });
 
@@ -138,11 +138,26 @@ export default class GLTFFile extends TextFile {
             accessors: [],
             bufferViews: [],
             buffers: [],
+            extensionsUsed: [
+                "KHR_lights_punctual"
+            ],
+            extensionsRequired: [
+                "KHR_lights_punctual"
+            ],
+            extensions: {
+                KHR_lights_punctual: {
+                    lights: []
+                }
+            }
         };
     }
 
     get rootNode() {
         return this.asset.nodes[0];
+    }
+
+    createLight(options) {
+        return this.asset.extensions['KHR_lights_punctual'].lights.push(options) - 1;
     }
 
     createBuffer(bufferArray) {
@@ -421,8 +436,7 @@ export default class GLTFFile extends TextFile {
                 name: materialName + "_texture.dds",
             });
 
-            const ref = baseTexture.reflectivity;
-            reflectivity = (0.299 * ref[0] + 0.587 * ref[1] + 0.114 * ref[2]);
+            reflectivity = luminosity(...baseTexture.reflectivity);
         }
 
         if(bumpmapTexture) {
@@ -550,24 +564,64 @@ export default class GLTFFile extends TextFile {
 
         const quat = eulerDegreeToQuaternion(object.rotation);
 
+        let nodeIndex;
+
         // node
-        const nodeIndex = this.createNode({
-            name: object.name,
-            mesh: mesh,
-            scale: [
-                object.scale[0],
-                object.scale[1],
-                object.scale[2]
-            ],
-            rotation: [
-                // blender import swaps z and y -,-
-                quat[0],
-                quat[2],
-                -quat[1],
-                quat[3],
-            ],
-            translation: object.position,
-        });
+        if(object.light) {
+            nodeIndex = this.createNode({
+                extensions: {
+                    KHR_lights_punctual : {
+                        light: this.createLight({
+                            color: [
+                                object.light[0] / 255,
+                                object.light[1] / 255,
+                                object.light[2] / 255,
+                            ],
+                            intensity: luminosity(...object.light) / 255 * 1000000,
+                            type: object.type == "light_spot" ? "spot" : "point",
+                            name: object.name + '_light',
+                            spot: object.type == "light_spot" ? {
+                                innerConeAngle: toRadians(object.inner_cone),
+                                outerConeAngle: toRadians(object.cone)
+                            } : null,
+                        })
+                    }
+                },
+                name: object.name,
+                mesh: mesh,
+                scale: [
+                    object.scale[0],
+                    object.scale[1],
+                    object.scale[2]
+                ],
+                rotation: [
+                    // blender import swaps z and y -,-
+                    quat[0],
+                    quat[2],
+                    -quat[1],
+                    quat[3],
+                ],
+                translation: object.position,
+            });
+        } else {
+            nodeIndex = this.createNode({
+                name: object.name,
+                mesh: mesh,
+                scale: [
+                    object.scale[0],
+                    object.scale[1],
+                    object.scale[2]
+                ],
+                rotation: [
+                    // blender import swaps z and y -,-
+                    quat[0],
+                    quat[2],
+                    -quat[1],
+                    quat[3],
+                ],
+                translation: object.position,
+            });
+        }
 
         if(parentNode) {
             const node = this.asset.nodes[parentNode];
@@ -602,6 +656,14 @@ export default class GLTFFile extends TextFile {
 }
 
 // helper functions
+
+function toRadians(deg) {
+    return deg * Math.PI / 180;
+}
+
+function luminosity(r, g, b) {
+    return (0.299 * r + 0.587 * g + 0.114 * b);
+}
 
 function eulerDegreeToQuaternion([ roll, pitch, yaw ]) { // [ x, y, z ]
 

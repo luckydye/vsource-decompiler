@@ -83,10 +83,15 @@ export default class MapLoader {
         // lights
         for(let light of bsp.lights) {
             this.geometry.lights.push(transformPropGeometry({
-                name: bsp.lights.indexOf(light) + "_light",
+                name: bsp.lights.indexOf(light) + "_" + light.classname,
                 scale: [1, 1, 1],
                 origin: light.origin,
-                angles: [0, 0, 0],
+                angles: light.angles || [0, 0, 0],
+                cone: light._cone,
+                inner_cone: light._inner_cone,
+                exponent: light._exponent,
+                light: light._light,
+                type: light.classname,
             }));
         }
 
@@ -278,5 +283,5 @@ function transformPropGeometry(prop) {
         position: originXYZ,
         rotation: anglesXYZ,
     }
-    return propGeometry;
+    return Object.assign(prop, propGeometry);
 }
