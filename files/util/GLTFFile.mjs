@@ -577,7 +577,7 @@ export default class GLTFFile extends TextFile {
                                 object.light[1] / 255,
                                 object.light[2] / 255,
                             ],
-                            intensity: luminosity(...object.light) / 255 * 1000000,
+                            intensity: luminosity(...object.light) / 255 * 100000,
                             type: object.type == "light_spot" ? "spot" : "point",
                             name: object.name + '_light',
                             spot: object.type == "light_spot" ? {

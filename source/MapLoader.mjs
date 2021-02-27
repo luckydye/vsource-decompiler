@@ -256,6 +256,8 @@ function getModelNameFromPath(modelPath) {
 
 function transformPropGeometry(prop) {
 
+    // coord conversion: x ; y ; z
+    //                  \/  \/  \/
     // coord conversion: y ; z ; x
     
     // prop.angles: y(0) ; z(1) ; x(2)
@@ -278,7 +280,7 @@ function transformPropGeometry(prop) {
         normals: prop.normals,
         indices: prop.indices,
         material: prop.material,
-        scale: [ 1, 1, 1 ],
+        scale: prop.scale || [ 1, 1, 1 ],
         origin: [ 0, 0, 0 ],
         position: originXYZ,
         rotation: anglesXYZ,

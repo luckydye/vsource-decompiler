@@ -11,16 +11,16 @@ export default class MaterialLoader {
         if(materialName == undefined) {
             throw new Error('Material name undefined.');
         }
-        
+
         const fileSystem = this.fileSystem;
 
-        const vmtFile = await fileSystem.getFile(`materials/${materialName}.vmt`);
+        const vmtFile = await fileSystem.getFile(`${materialName}.vmt`);
         let vmt = VMTFile.fromDataArray(await vmtFile.arrayBuffer());
 
         const patch = vmt.data.patch;
         
         if(patch && patch.include) {
-            const vmtFile = await fileSystem.getFile('materials/' + patch.include);
+            const vmtFile = await fileSystem.getFile(patch.include);
             vmt = VMTFile.fromDataArray(await vmtFile.arrayBuffer());
         }
         
@@ -73,19 +73,19 @@ export default class MaterialLoader {
         let bumpmapVtf = null;
 
         if(texture) {
-            const vtfFile = await fileSystem.getFile('materials/' + texture.replace('.vtf', '') + '.vtf');
+            const vtfFile = await fileSystem.getFile(texture.replace('.vtf', '') + '.vtf');
             textureVtf = VTFFile.fromDataArray(await vtfFile.arrayBuffer());
             textureVtf.name = texture;
         }
 
         if(texture2) {
-            const vtfFile = await fileSystem.getFile('materials/' + texture2.replace('.vtf', '') + '.vtf');
+            const vtfFile = await fileSystem.getFile(texture2.replace('.vtf', '') + '.vtf');
             texture2Vtf = VTFFile.fromDataArray(await vtfFile.arrayBuffer());
             texture2Vtf.name = texture2;
         }
 
         if(bumpmap) {
-            const vtfFile = await fileSystem.getFile('materials/' + bumpmap.replace('.vtf', '') + '.vtf');
+            const vtfFile = await fileSystem.getFile(bumpmap.replace('.vtf', '') + '.vtf');
             bumpmapVtf = VTFFile.fromDataArray(await vtfFile.arrayBuffer());
             bumpmapVtf.name = bumpmap;
         }

@@ -168,16 +168,14 @@ export default class VirtualFileSystem {
 
         return new Promise(async (resolve, reject) => {
 
-            const item = this.fileRegistry[resource];
-            if(item) {
-                return resolve(item);
+            if(this.fileRegistry.hasOwnProperty(resource)) {
+                return resolve(this.fileRegistry[resource]);
             } else {
-                const fileSystemEntries = Object.keys(this.fileRegistry);
-                for(let entry of fileSystemEntries) {
+                Object.keys(this.fileRegistry).find(entry => {
                     if(entry.match(resource)) {
                         return resolve(this.fileRegistry[entry]);
                     }
-                }
+                });
             }
 
             // index if not yet indexed

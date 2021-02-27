@@ -21,6 +21,7 @@ export default class BSPFile extends BinaryFile {
             LumpTypes.ENTITIES,
             LumpTypes.PAKFILE,
             LumpTypes.GAME_LUMP,
+            LumpTypes.NODES,
         ];
     }
 
@@ -214,7 +215,6 @@ export default class BSPFile extends BinaryFile {
         const headerStruct = this.unserialize(bsp.view, 0, BSPFile.STRUCT.dheader_t);
         headerStruct.data.ident = String.fromCharCode(...headerStruct.data.ident.data);
         bsp.header = headerStruct.data;
-
         bsp.version = bsp.header.version.valueOf();
 
         try {
@@ -236,6 +236,8 @@ export default class BSPFile extends BinaryFile {
         bsp.edges = this.unserializeArray(lumps[LumpTypes.EDGES], 0, this.STRUCT.dedge_t);
         bsp.surfedges = this.unserializeArray(lumps[LumpTypes.SURFEDGES], 0, { edge: 'int' });
         bsp.vertecies = this.unserializeArray(lumps[LumpTypes.VERTEXES], 0, this.STRUCT.vertex);
+
+        bsp.ndoes = this.unserializeArray(lumps[LumpTypes.NODES], 0, this.STRUCT.dnode_t, 10);
 
         // textures
         bsp.texinfo = this.unserializeArray(lumps[LumpTypes.TEXINFO], 0, this.STRUCT.texinfo_t);
@@ -304,6 +306,201 @@ export default class BSPFile extends BinaryFile {
         return bsp;
     }
 
+    facesToMesh(faces, angles = [0, 0, 0], origin = [0, 0, 0]) {
+        const planes = this.planes;
+        const edges = this.edges;
+        const surfedges = this.surfedges;
+        const vertecies = this.vertecies;
+
+        let meshId = 0;
+        let meshes = [];
+
+        for(let face of faces) {
+
+            const plane = planes[face.planenum.data];
+            const textureInfo = this.texinfo[face.texinfo.data];
+            const textureData = this.texdata[textureInfo.texdata.data];
+            const textureIndex = textureData.nameStringTableID.data;
+            const textureFlag = textureInfo.flags.data;
+            const dispInfo = this.displacements[face.dispinfo.data];
+
+            // group faces by texture id
+            meshId = textureIndex;
+
+            meshes[meshId] = meshes[meshId] || {
+                indices: [],
+                vertecies: [],
+                color: [],
+                uvs: [],
+                normals: [],
+                material: textureIndex,
+                angles: angles,
+                position: origin,
+                currentVertexIndex: 0,
+            };
+
+            switch(textureFlag) {
+                // not draw stuff:
+                case TextureFlags.SURF_NOPORTAL: continue;
+                case TextureFlags.SURF_TRIGGER: continue;
+                case TextureFlags.SURF_NODRAW: continue;
+                case TextureFlags.SURF_HINT: continue;
+                case TextureFlags.SURF_SKIP: continue;
+                case TextureFlags.SURF_HITBOX: continue;
+                // draw stuff:
+                case 0: break;
+                case TextureFlags.SURF_SKY2D: break;
+                case TextureFlags.SURF_SKY: break;
+                case TextureFlags.SURF_LIGHT: break;
+                case TextureFlags.SURF_WARP: break;
+                case TextureFlags.SURF_TRANS: break;
+                case TextureFlags.SURF_NOLIGHT: break;
+                case TextureFlags.SURF_BUMPLIGHT: break;
+                case TextureFlags.SURF_NOSHADOWS: break;
+                case TextureFlags.SURF_NODECALS: break;
+                case TextureFlags.SURF_NOCHOP: break;
+
+                default: continue;
+            }
+
+            const faces = face.side.data;
+            const normal = plane.normal.data;
+            const faceSurfedges = surfedges.slice(face.firstedge.data, face.firstedge.data + face.numedges.data);
+
+            const faceEdges = faceSurfedges.map(surfEdge => {
+                const edge = edges[Math.abs(surfEdge.edge.data)].v.data;
+                if(surfEdge.edge.data < 0) {
+                    edge.reverse();
+                }
+                return edge;
+            });
+
+            const verts = [];
+            const indexes = [];
+
+            for(let vertindices of faceEdges) {
+                verts.push(vertecies[vertindices[0]]);
+            }
+
+            for(let i = 0; i < ((verts.length - 2) * 3) / 3; i++) {
+                indexes.push([ 0, 1 + i, 2 + i ]);
+            }
+
+            let geo = {
+                vertices: verts,
+                indices: indexes
+            }
+
+            // displacements
+            let dispStartVertex = null,
+                dispPower = 0,
+                dispVerts = [],
+                startPosition = null;
+
+            if(dispInfo) {
+                dispPower = dispInfo.power.valueOf();
+                startPosition = dispInfo.startPosition;
+
+                const powerSize = 1 << dispPower;
+                const vertexCount = (powerSize + 1) * (powerSize + 1);
+
+                const dispStartVert = dispInfo.DispVertStart.valueOf();
+                dispVerts = this.displacementverts.slice(dispStartVert, dispStartVert + vertexCount);
+
+                const dx = Math.round(startPosition.data[0].valueOf());
+                const dy = Math.round(startPosition.data[1].valueOf());
+                const dz = Math.round(startPosition.data[2].valueOf());
+
+                for(let vert of geo.vertices) {
+                    if (
+                        Math.round(vert.x.valueOf()) == dx &&
+                        Math.round(vert.y.valueOf()) == dy &&
+                        Math.round(vert.z.valueOf()) == dz
+                    ) {
+                        dispStartVertex = geo.vertices.indexOf(vert);
+                        break;
+                    }
+                }
+
+                if(dispStartVertex == null) {
+                    warn('Could not decode displacements correctly.');
+                }
+
+                dispStartVertex = dispStartVertex || 0;
+
+                const sortedVerts = [];
+                for(let i = dispStartVertex; i < 4 + dispStartVertex; i++) {
+                    sortedVerts.push(geo.vertices[i % 4]);
+                }
+
+                geo.vertices = sortedVerts;
+
+                geo = remesh4SidedGeometry(geo, dispPower);
+            }
+
+            // vertexes and indexes
+
+            let i = 0;
+            for(let v of geo.vertices) {
+                const x = v.x.valueOf();
+                const y = v.y.valueOf();
+                const z = v.z.valueOf();
+
+                const displace = { x: 0, y: 0, z: 0 };
+
+                if(dispInfo) {
+                    // apply displacements:
+                    const dist = dispVerts[i].dist.valueOf();
+                    const vec = dispVerts[i].vec.valueOf();
+                    const alpha = dispVerts[i].alpha.valueOf();
+
+                    displace.x = vec[0] * dist;
+                    displace.y = vec[1] * dist;
+                    displace.z = vec[2] * dist;
+
+                    meshes[meshId].color.push([
+                        1, 1, 1, (alpha / 255)
+                    ]);
+                } else {
+                    meshes[meshId].color.push([
+                        1, 1, 1, 1
+                    ]);
+                }
+
+                meshes[meshId].vertecies.push([
+                    y + displace.y,
+                    z + displace.z,
+                    x + displace.x,
+                ]);
+
+                const tv = textureInfo.textureVecs.data;
+
+                meshes[meshId].uvs.push([
+                    (tv[0][0] * x + tv[0][1] * y + tv[0][2] * z + tv[0][3]) / textureData.width_height_0,
+                    (tv[1][0] * x + tv[1][1] * y + tv[1][2] * z + tv[1][3]) / textureData.width_height_1
+                ]);
+
+                meshes[meshId].normals.push([
+                    normal[1].valueOf(),
+                    normal[2].valueOf(),
+                    normal[0].valueOf()
+                ]);
+
+                i++;
+            }
+
+            const currentVertexIndex = meshes[meshId].currentVertexIndex;
+
+            for(let index of geo.indices.flat()) {
+                meshes[meshId].indices.unshift(index += currentVertexIndex);
+            }
+
+            meshes[meshId].currentVertexIndex += geo.vertices.length;
+        }
+
+        return meshes;
+    }
+
     convertToMesh() {
         const planes = this.planes;
         const edges = this.edges;
@@ -315,15 +512,12 @@ export default class BSPFile extends BinaryFile {
         const entities = this.entities;
 
         const convertModelToMesh = (model, position, rotation) => {
-
             const meshes = [];
-
             const origin = [
                 model.origin.data[1] + position[1],
                 model.origin.data[2] + position[2],
                 model.origin.data[0] + position[0],
             ]
-
             const angels = [
                 rotation[0],
                 rotation[1],
@@ -334,190 +528,7 @@ export default class BSPFile extends BinaryFile {
             const faceCount = model.numfaces;
             const faces = mapFaces.slice(firstFace, firstFace + faceCount);
 
-            let meshId = 0;
-
-            for(let face of faces) {
-
-                const plane = planes[face.planenum.data];
-                const textureInfo = this.texinfo[face.texinfo.data];
-                const textureData = this.texdata[textureInfo.texdata.data];
-                const textureIndex = textureData.nameStringTableID.data;
-                const textureFlag = textureInfo.flags.data;
-                const dispInfo = this.displacements[face.dispinfo.data];
-
-                // group faces by texture id
-                meshId = textureIndex;
-
-                meshes[meshId] = meshes[meshId] || {
-                    indices: [],
-                    vertecies: [],
-                    color: [],
-                    uvs: [],
-                    normals: [],
-                    material: textureIndex,
-                    angles: angels,
-                    position: origin,
-                    currentVertexIndex: 0,
-                };
-
-                switch(textureFlag) {
-                    // not draw stuff:
-                    case TextureFlags.SURF_NOPORTAL: continue;
-                    case TextureFlags.SURF_TRIGGER: continue;
-                    case TextureFlags.SURF_NODRAW: continue;
-                    case TextureFlags.SURF_HINT: continue;
-                    case TextureFlags.SURF_SKIP: continue;
-                    case TextureFlags.SURF_HITBOX: continue;
-                    // draw stuff:
-                    case 0: break;
-                    case TextureFlags.SURF_SKY2D: break;
-                    case TextureFlags.SURF_SKY: break;
-                    case TextureFlags.SURF_LIGHT: break;
-                    case TextureFlags.SURF_WARP: break;
-                    case TextureFlags.SURF_TRANS: break;
-                    case TextureFlags.SURF_NOLIGHT: break;
-                    case TextureFlags.SURF_BUMPLIGHT: break;
-                    case TextureFlags.SURF_NOSHADOWS: break;
-                    case TextureFlags.SURF_NODECALS: break;
-                    case TextureFlags.SURF_NOCHOP: break;
-
-                    default: continue;
-                }
-
-                const faces = face.side.data;
-                const normal = plane.normal.data;
-                const faceSurfedges = surfedges.slice(face.firstedge.data, face.firstedge.data + face.numedges.data);
-
-                const faceEdges = faceSurfedges.map(surfEdge => {
-                    const edge = edges[Math.abs(surfEdge.edge.data)].v.data;
-                    if(surfEdge.edge.data < 0) {
-                        edge.reverse();
-                    }
-                    return edge;
-                });
-
-                const verts = [];
-                const indexes = [];
-
-                for(let vertindices of faceEdges) {
-                    verts.push(vertecies[vertindices[0]]);
-                }
-
-                for(let i = 0; i < ((verts.length - 2) * 3) / 3; i++) {
-                    indexes.push([ 0, 1 + i, 2 + i ]);
-                }
-
-                let geo = {
-                    vertices: verts,
-                    indices: indexes
-                }
-
-                // displacements
-                let dispStartVertex = null,
-                    dispPower = 0,
-                    dispVerts = [],
-                    startPosition = null;
-
-                if(dispInfo) {
-                    dispPower = dispInfo.power.valueOf();
-                    startPosition = dispInfo.startPosition;
-
-                    const powerSize = 1 << dispPower;
-                    const vertexCount = (powerSize + 1) * (powerSize + 1);
-
-                    const dispStartVert = dispInfo.DispVertStart.valueOf();
-                    dispVerts = this.displacementverts.slice(dispStartVert, dispStartVert + vertexCount);
-
-                    const dx = Math.round(startPosition.data[0].valueOf());
-                    const dy = Math.round(startPosition.data[1].valueOf());
-                    const dz = Math.round(startPosition.data[2].valueOf());
-
-                    for(let vert of geo.vertices) {
-                        if (
-                            Math.round(vert.x.valueOf()) == dx &&
-                            Math.round(vert.y.valueOf()) == dy &&
-                            Math.round(vert.z.valueOf()) == dz
-                        ) {
-                            dispStartVertex = geo.vertices.indexOf(vert);
-                            break;
-                        }
-                    }
-
-                    if(dispStartVertex == null) {
-                        warn('Could not decode displacements correctly.');
-                    }
-
-                    dispStartVertex = dispStartVertex || 0;
-
-                    const sortedVerts = [];
-                    for(let i = dispStartVertex; i < 4 + dispStartVertex; i++) {
-                        sortedVerts.push(geo.vertices[i % 4]);
-                    }
-
-                    geo.vertices = sortedVerts;
-
-                    geo = remesh4SidedGeometry(geo, dispPower);
-                }
-
-                // vertexes and indexes
-
-                let i = 0;
-                for(let v of geo.vertices) {
-                    const x = v.x.valueOf();
-                    const y = v.y.valueOf();
-                    const z = v.z.valueOf();
-
-                    const displace = { x: 0, y: 0, z: 0 };
-
-                    if(dispInfo) {
-                        // apply displacements:
-                        const dist = dispVerts[i].dist.valueOf();
-                        const vec = dispVerts[i].vec.valueOf();
-                        const alpha = dispVerts[i].alpha.valueOf();
-
-                        displace.x = vec[0] * dist;
-                        displace.y = vec[1] * dist;
-                        displace.z = vec[2] * dist;
-
-                        meshes[meshId].color.push([
-                            1, 1, 1, alpha
-                        ]);
-                    } else {
-                        meshes[meshId].color.push([
-                            1, 1, 1, 1
-                        ]);
-                    }
-
-                    meshes[meshId].vertecies.push([
-                        y + displace.y,
-                        z + displace.z,
-                        x + displace.x,
-                    ]);
-
-                    const tv = textureInfo.textureVecs.data;
-
-                    meshes[meshId].uvs.push([
-                        (tv[0][0] * x + tv[0][1] * y + tv[0][2] * z + tv[0][3]) / textureData.width_height_0,
-                        (tv[1][0] * x + tv[1][1] * y + tv[1][2] * z + tv[1][3]) / textureData.width_height_1
-                    ]);
-
-                    meshes[meshId].normals.push([
-                        normal[1].valueOf(),
-                        normal[2].valueOf(),
-                        normal[0].valueOf()
-                    ]);
-
-                    i++;
-                }
-
-                const currentVertexIndex = meshes[meshId].currentVertexIndex;
-
-                for(let index of geo.indices.flat()) {
-                    meshes[meshId].indices.unshift(index += currentVertexIndex);
-                }
-
-                meshes[meshId].currentVertexIndex += geo.vertices.length;
-            }
+            meshes.push(...this.facesToMesh(faces, angels, origin));
 
             return meshes;
         }
