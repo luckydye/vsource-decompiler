@@ -261,11 +261,11 @@ function transformPropGeometry(prop) {
     // coord conversion: y ; z ; x
     
     // prop.angles: y(0) ; z(1) ; x(2)
-    const anglesXYZ = [
+    const anglesXYZ = prop.angles ? [
         prop.angles[0],
         -prop.angles[2],
         prop.angles[1],
-    ];
+    ] : [0, 0, 0];
 
     const originXYZ = [
         prop.origin[1],
