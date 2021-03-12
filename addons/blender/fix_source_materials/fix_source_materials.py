@@ -6,7 +6,6 @@ def setupGLTFFile():
     bpy.data.objects['Map'].scale.x = 0.1
     bpy.data.objects['Map'].scale.y = 0.1
     bpy.data.objects['Map'].scale.z = 0.1
-    bpy.data.objects['Map'].location.z = -161
 
 def fixMaterial(material):
     doFix = False
@@ -42,9 +41,30 @@ def fixMaterial(material):
         if hasNormal:
             material.node_tree.links.new(group.inputs['Normal'], normalTexture.outputs['Color'])
 
-setupGLTFFile()
-
-for mat in bpy.data.materials:
-    print(mat.name)
-    fixMaterial(mat)
     
+class VSDFixCycles(bpy.types.Operator):
+    bl_idname = "VSDFix.cycles"
+    bl_label = "Fix Materials for Cycles"
+    bl_description = "Fix Source Materials from VSource Decompiler"
+    bl_options = {"REGISTER"}
+
+    def execute(self, context):
+        setupGLTFFile()
+
+        for mat in bpy.data.materials:
+            print(mat.name)
+            fixMaterial(mat)
+
+        return {"FINISHED"}
+
+
+def register():
+    from bpy.utils import register_class
+    register_class(VSDFixCycles)
+
+def unregister():
+    from bpy.utils import unregister_class
+    unregister_class(VSDFixCycles)
+
+if __name__ == "__main__":
+    register()

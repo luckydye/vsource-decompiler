@@ -459,7 +459,7 @@ export default class BSPFile extends BinaryFile {
                     displace.z = vec[2] * dist;
 
                     meshes[meshId].color.push([
-                        1, 1, 1, (alpha / 255)
+                        (alpha / 255), (alpha / 255), (alpha / 255), 1
                     ]);
                 } else {
                     meshes[meshId].color.push([
