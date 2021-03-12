@@ -1,7 +1,5 @@
 import bpy
 
-fixNodeGroup = bpy.data.node_groups['MixSourceTextures'];
-
 def setupGLTFFile():
     bpy.data.objects['Map'].scale.x = 0.1
     bpy.data.objects['Map'].scale.y = 0.1
@@ -17,6 +15,7 @@ def fixMaterial(material):
     if doFix:
         group = material.node_tree.nodes.new('ShaderNodeGroup');
         group.label = "Mix Valve Source Textures";
+        fixNodeGroup = bpy.data.node_groups['MixSourceTextures'];
         group.node_tree = fixNodeGroup;
         
         hasNormal = 'Normal Map' in material.node_tree.nodes
@@ -43,7 +42,7 @@ def fixMaterial(material):
 
     
 class VSDFixCycles(bpy.types.Operator):
-    bl_idname = "VSDFix.cycles"
+    bl_idname = "vsdfix.cycles"
     bl_label = "Fix Materials for Cycles"
     bl_description = "Fix Source Materials from VSource Decompiler"
     bl_options = {"REGISTER"}

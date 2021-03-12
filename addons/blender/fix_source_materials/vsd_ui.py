@@ -2,10 +2,9 @@ import bpy
 from bpy.types import Menu, Panel
 from bpy import context
 
-class vsdCyclesPanel(bpy.types.Panel):
-    bl_idname = "VSDPanel"
+class VSDCyclesPanel(bpy.types.Panel):
+    bl_idname = "VSDPanelCycles"
     bl_label = "Fix Materials for Cycles"
-    bl_category = "VSD"
     bl_space_type = "VIEW_3D"
     bl_region_type = "TOOLS"
 
@@ -14,15 +13,14 @@ class vsdCyclesPanel(bpy.types.Panel):
         box = layout.box()
         col = box.column(align=True)
         col.operator(
-            "VSDFix.cylces",
-            text="Convert",
+            "vsdfix.cylces",
+            text="Fix",
             icon="ALIGN"
         )
 
-class vsdOctanePanel(bpy.types.Panel):
-    bl_idname = "VSDPanel"
+class VSDOctanePanel(bpy.types.Panel):
+    bl_idname = "VSDPanelOctane"
     bl_label = "Fix Materials for Octane"
-    bl_category = "VSD"
     bl_space_type = "VIEW_3D"
     bl_region_type = "TOOLS"
 
@@ -31,21 +29,21 @@ class vsdOctanePanel(bpy.types.Panel):
         box = layout.box()
         col = box.column(align=True)
         col.operator(
-            "VSDFix.octane",
-            text="Convert",
+            "vsdfix.octane",
+            text="Fix",
             icon="ALIGN"
         )
 
 
 def register():
     from bpy.utils import register_class
-    register_class(vsdCyclesPanel)
-    register_class(vsdOctanePanel)
+    register_class(VSDCyclesPanel)
+    register_class(VSDOctanePanel)
 
 def unregister():
     from bpy.utils import unregister_class
-    unregister_class(vsdCyclesPanel)
-    unregister_class(vsdOctanePanel)
+    unregister_class(VSDCyclesPanel)
+    unregister_class(VSDOctanePanel)
 
 if __name__ == "__main__":
     register()

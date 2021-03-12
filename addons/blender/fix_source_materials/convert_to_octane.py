@@ -1,7 +1,5 @@
 import bpy
 
-fixNodeGroup = bpy.data.node_groups['OctaneSourceMaterial'];
-
 def setupScene():
     bpy.data.objects['Map'].scale.x = 0.1
     bpy.data.objects['Map'].scale.y = 0.1
@@ -10,6 +8,7 @@ def setupScene():
 def createMaterialGroup(material):
     group = material.node_tree.nodes.new('ShaderNodeGroup');
     group.label = "OctaneSourceMaterialMixer";
+    fixNodeGroup = bpy.data.node_groups['OctaneSourceMaterial'];
     group.node_tree = fixNodeGroup;
 
     group.location = material.node_tree.nodes['Material Output'].location
@@ -78,7 +77,7 @@ def convertMaterial(material):
 # convertMaterial(mat)
 
 class VSDFixOctane(bpy.types.Operator):
-    bl_idname = "VSDFix.octane"
+    bl_idname = "vsdfix.octane"
     bl_label = "Fix Materials for Octane"
     bl_description = "Fix Source Materials from VSource Decompiler"
     bl_options = {"REGISTER"}
