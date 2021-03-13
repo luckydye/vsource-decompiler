@@ -1,3 +1,5 @@
+![Image of Dust2](/dust_2_hologram.png)
+
 ## Features
 
 - Convert single prop to .gltf
