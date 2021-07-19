@@ -7,6 +7,14 @@
 - Extract Pak file from .bsp
 - Extract all files from .vpk archives (slow)
 
+## Ideas to come (Rerender a demo scene in blender):
+- render a defined region of the map
+- extract animations for models
+- render section of demo file to animations etc.
+- convert dds textures to jpegs internally
+- decompile decals and wall sprays
+- fix bugs. make faster. lol
+
 ## Todos
 
 - glTF file writer  	                        ✓
@@ -42,5 +50,5 @@
 4. Run ```npm run setup```
 5. Change to your CS:GO installtion directory and run ```vsource```
 
-## Partialy usable with my vsource-viewer
+## Partialy usable with my vsource-viewer (may not be up to date)
 https://vsource-viewer.web.app/
