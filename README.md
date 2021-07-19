@@ -28,6 +28,7 @@
 
 - _autocombine_metal_pipe_603.mdl_0 (nuke, orientation)
 - claypot03.mdl.001 (Index/Vertex Error)
+- ctm_fbi.mdl (No textures)
 
 ## Known Issues:
 
