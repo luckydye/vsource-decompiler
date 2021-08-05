@@ -639,10 +639,11 @@ export default class GLTFFile extends TextFile {
     async toString() {
         return new Promise((resolve) => {
             if(this.loaded) {
-                resolve(JSON.stringify(this.asset, null, '\t'));
+                const res = JSON.stringify(this.asset);
+                resolve(res);
             } else {
                 this._finalize = () => {
-                    resolve(JSON.stringify(this.asset, null, '\t'));
+                    resolve(JSON.stringify(this.asset));
                 }
             }
         })
