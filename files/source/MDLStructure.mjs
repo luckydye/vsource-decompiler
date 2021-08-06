@@ -5,6 +5,115 @@ export const MDL = {
         version: 'int',
     },
 
+    mstudioseqdesc_t: {
+        baseptr: 'int',
+        szlabelindex: 'int',
+        szactivitynameindex: 'int',
+        flags: 'int',
+        activity: 'int',
+        actweight: 'int',
+        numevents: 'int',
+        eventindex: 'int',
+
+        bbmin: 'vector',
+        bbmax: 'vector',
+
+        numblends: 'int',
+        animindexindex: 'int',
+
+        movementindex: 'int',
+        groupsize: 'int[2]',
+        paramindex: 'int[2]',
+        paramstart: 'float[2]',
+        paramend: 'float[2]',
+        paramparent: 'int',
+
+        fadeintime: 'float',
+        fadeouttime: 'float',
+
+        localentrynode: 'int',
+        localexitnode: 'int',
+        nodeflags: 'int',
+
+        entryphase: 'float',
+        exitphase: 'float',
+
+        lastframe: 'float',
+
+        nextseq: 'int',
+        pose: 'int',
+
+        numikrules: 'int',
+        numautolayers: 'int',
+        autolayerindex: 'int',
+        weightlistindex: 'int',
+        posekeyindex: 'int',
+
+        // missing something?
+        numiklocks: 'int',
+        iklockindex: 'int',
+        keyvalueindex: 'int',
+        keyvaluesize: 'int',
+
+        cycleposeindex: 'int',
+        activitymodifierindex: 'int',
+        numactivitymodifiers: 'int',
+        unsused: 'int[5]',
+    },
+
+    mstudioanimdesc_t: {
+        baseptr: 'int',
+        szlabelindex: 'int',
+        szactivitynameindex: 'int',
+        flags: 'int',
+        activity: 'int',
+        actweight: 'int',
+        numevents: 'int',
+        eventindex: 'int',
+        bbmin: 'vector',
+        bbmax: 'vector',
+        numblends: 'int',
+        animindexindex: 'int',
+
+        movementindex: 'int',
+        groupsize: 'int[2]',
+        paramindex: 'int[2]',
+        paramstart: 'float[2]',
+        paramend: 'float[2]',
+        paramparent: 'float',
+        fadeouttime: 'float',
+
+        localentrynode: 'int',
+        localexitnode: 'int',
+        nodeflags: 'int',
+
+        entryphase: 'float',
+        exitphase: 'float',
+        lastframe: 'float',
+
+        nextseq: 'int',
+        pose: 'int',
+
+        numikrules: 'int',
+
+        numautolayers: 'int',
+        autolayerindex: 'int',
+
+        weightlistindex: 'int',
+        posekeyindex: 'int',
+        numiklocks: 'int',
+        iklockindex: 'int',
+
+        keyvalueindex: 'int',
+        keyvaluesize: 'int',
+
+        cycleposeindex: 'int',
+        activitymodifierindex: 'int',
+        numactivitymodifiers: 'int',
+
+        unused: 'int[5]',
+    },
+
     studiohdr_t_v49: {
         id: 'char[4]',
         version: 'int',

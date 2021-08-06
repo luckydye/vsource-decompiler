@@ -27,32 +27,35 @@ export default class MDLFile extends BinaryFile {
         mdl.textures = [];
         mdl.texturePaths = [];
         mdl.skins = [];
+        mdl.animations = [];
+        mdl.sequences = [];
 
-        // // bodyparts
-        // for(let b = 0; b < mdl.header.bodypart_count; b++) {
-        //     if(mdlhead.version == 49) {
-        //         const part = this.unserialize(mdl.view, mdl.header.bodypart_offset.valueOf(), MDL.mstudiobodyparts_t_49);
-        //         mdl.bodyparts.push(part.data);
-        //     } else {
-        //         const part = this.unserialize(mdl.view, mdl.header.bodypart_offset.valueOf(), MDL.mstudiobodyparts_t);
-        //         mdl.bodyparts.push(part.data);
-        //     }
-        // }
+        // bodyparts
+        for(let b = 0; b < mdl.header.bodypart_count; b++) {
+            if(mdlhead.version == 49) {
+                const part = this.unserialize(mdl.view, mdl.header.bodypart_offset.valueOf(), MDL.mstudiobodyparts_t_49);
+                mdl.bodyparts.push(part.data);
+            } else {
+                const part = this.unserialize(mdl.view, mdl.header.bodypart_offset.valueOf(), MDL.mstudiobodyparts_t);
+                mdl.bodyparts.push(part.data);
+            }
+        }
 
-        // // meshes
-        // for(let part of mdl.bodyparts) {
-        //     for(let model of part.models.valueOf()) {
-        //         mdl.models.push(model);
+        // meshes
+        for(let part of mdl.bodyparts) {
+            for(let model of part.models.valueOf()) {
+                mdl.models.push(model);
 
-        //         for(let b = 0; b < model.mesh_count.data; b++) {
-        //             const byteOffset = mdl.header.bodypart_offset.valueOf() + part.model_offset.valueOf() + model.mesh_offset.valueOf();
-        //             const mesh = this.unserialize(mdl.view, byteOffset, MDL.mstudiomesh_t);
+                for(let b = 0; b < model.mesh_count.data; b++) {
+                    const byteOffset = mdl.header.bodypart_offset.valueOf() + part.model_offset.valueOf() + model.mesh_offset.valueOf();
+                    const mesh = this.unserialize(mdl.view, byteOffset, MDL.mstudiomesh_t);
 
-        //             mdl.meshes.push(mesh.valueOf());
-        //         }
-        //     }
-        // }
+                    mdl.meshes.push(mesh.valueOf());
+                }
+            }
+        }
 
+        console.log('loading textures...');
         // textures
         let byteOffset = mdl.header.texture_offset.data;
         for(let t = 0; t < mdl.header.texture_count.data; t++) {
@@ -78,13 +81,32 @@ export default class MDLFile extends BinaryFile {
             mdl.texturePaths.push(texPathString.path.toString());
         }
 
+        console.log(`loading ${mdl.header.localanim_count} animations...`);
+        // animations
+        for(let i = 0; i < mdl.header.localanim_count; i++) {
+            const localAnimString = this.unserialize(mdl.view, mdl.header.localanim_offset, MDL.mstudioanimdesc_t).data;
+
+            console.log('loaded anim', i);
+
+            mdl.animations.push(localAnimString);
+        }
+
+        console.log(`loading ${mdl.header.localseq_count} sequences...`);
+        // sequences
+        for(let i = 0; i < mdl.header.localseq_count; i++) {
+            const localSeqString = this.unserialize(mdl.view, mdl.header.localseq_offset, MDL.mstudioseqdesc_t).data;
+
+            mdl.animations.push(localSeqString);
+        }
+
+        console.log('loading skin...');
         // skins
-        // for(let i = 0; i < mdl.header.skinfamily_count; i++) {
-        //     const part = this.unserialize(mdl.view, mdl.header.skin_index, {
-        //         replacement_table: `byte[${mdl.header.skinfamily_count * mdl.header.skinreference_count * 2}]`,
-        //     });
-        //     mdl.skins.push(part.data.replacement_table.toString());
-        // }
+        for(let i = 0; i < mdl.header.skinfamily_count; i++) {
+            const part = this.unserialize(mdl.view, mdl.header.skin_index, {
+                replacement_table: `byte[${mdl.header.skinfamily_count * mdl.header.skinreference_count * 2}]`,
+            });
+            mdl.skins.push(part.data.replacement_table.toString());
+        }
 
         mdl.view = null;
 
