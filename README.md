@@ -7,8 +7,8 @@
 - Extract Pak file from .bsp
 - Extract all files from .vpk archives (slow)
 
-## Ideas to come (Rerender a demo scene in blender):
-- render a defined region of the map
+## Ideas to come:
+- extract a defined region of the map
 - extract animations for models
 - render section of demo file to animations etc.
 - convert dds textures to jpegs internally
